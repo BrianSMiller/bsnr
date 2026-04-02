@@ -1,0 +1,28 @@
+# MATLAB Autosave Files
+*.asv
+*.m~
+*.autosave
+*.slx.r*
+*.mdl.r*
+
+# Derived/Compiled Content
+*.p
+*.mex*
+*.mlappinstall
+*.mltbx
+*.ctf
+*.slxc
+
+# Generated Code & Reports
+codegen/
+slprj/
+sccprj/
+helpsearch/
+
+# Projects & Data
+*.prj
+.MATLABDriveTag
+
+# OS specific
+.DS_Store
+desktop.ini
