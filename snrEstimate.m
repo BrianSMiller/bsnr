@@ -218,6 +218,14 @@ end
 
 function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = processOne(annot, params)
 
+% Unwrap cell-array fields that arise when table2struct converts a
+% single table row — e.g. soundFolder becomes {1x1 cell} not char.
+if iscell(annot.soundFolder), annot.soundFolder = annot.soundFolder{1}; end
+if iscell(annot.freq),        annot.freq        = annot.freq{1};        end
+if iscell(annot.t0),          annot.t0          = annot.t0{1};          end
+if iscell(annot.tEnd),        annot.tEnd        = annot.tEnd{1};        end
+if iscell(annot.channel),     annot.channel     = annot.channel{1};     end
+
 if ~isempty(params.freq)
     freq = params.freq;
 else

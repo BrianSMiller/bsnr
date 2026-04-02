@@ -4,7 +4,7 @@ function [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = snrTimeDomain( ..
 %
 % Both signal and noise are filtered with a bandpass FIR. RMS power is
 % computed from the squared filtered waveforms; noiseVar is the variance
-% of the squared filtered noise waveform. The caller (annotationSNR)
+% of the squared filtered noise waveform. The caller (snrEstimate)
 % applies whichever SNR formula is requested.
 %
 % If metadata is provided, rmsSignal/rmsNoise/noiseVar are scaled to
@@ -61,10 +61,9 @@ try
     sigFilt   = filtfilt(d, sigAudio);
     noiseFilt = filtfilt(d, noiseAudio);
 
-catch me
-    warning('snrTimeDomain:failed', ...
-        'Filter/filtfilt failed for freq=[%.1f %.1f] Hz, fs=%.1f Hz: %s', ...
-        freq(1), freq(2), sampleRate, me.message);
+catch
+    % Filter failed (e.g. audio too short for filter order).
+    % Return NaN silently — the caller handles NaN gracefully.
     [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = ...
         deal(nan, nan, nan, [], []);
     return
