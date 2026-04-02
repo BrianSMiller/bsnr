@@ -5,7 +5,7 @@ function test_snrEstimate_noiseWindows()
 % placement drives getAudioFromFiles via buildNoiseWindow.
 %
 % Tests:
-%   1. noiseDelay gap — 0s vs 1s vs 2s gap between signal and noise
+%   1. noiseDelay gap — 0s vs 0.5s vs 1.0s gap (0.5s is now the default)
 %   2. noiseDuration='before' — noise measured only before detection
 %   3. noiseDuration='beforeAndAfter' — symmetric (default); must equal params default
 %   4. Edge: detection at file start — noise window truncated, should not error
@@ -32,19 +32,21 @@ fprintf('--- noiseDelay gap ---\n');
     'toneFreqHz', toneFreq, 'freq', freq, 'durationSec', durationSec);
 try
     snrs = nan(1, 3);
-    for delay = [0 1 2]
+    delays = [0, 0.5, 1.0];
+    for k = 1:3
+        delay  = delays(k);
         params = struct('snrType', 'spectrogram', 'showClips', false, ...
             'noiseDelay', delay);
-        snrs(delay+1) = snrEstimate(annot, params);
-        assert(isfinite(snrs(delay+1)), ...
-            sprintf('noiseDelay=%ds: SNR should be finite', delay));
+        snrs(k) = snrEstimate(annot, params);
+        assert(isfinite(snrs(k)), ...
+            sprintf('noiseDelay=%.1fs: SNR should be finite', delay));
     end
     % Gap should not substantially change the SNR — all windows measure
     % the same background noise, just offset slightly in time
     assert(max(snrs) - min(snrs) < tolerance, ...
-        sprintf('noiseDelay 0/1/2s SNRs differ by %.1f dB (expected < %d)', ...
+        sprintf('noiseDelay 0/0.5/1.0s SNRs differ by %.1f dB (expected < %d)', ...
         max(snrs)-min(snrs), tolerance));
-    fprintf('  [PASS] noiseDelay 0/1/2s: SNR=%.1f / %.1f / %.1f dB\n', snrs(1), snrs(2), snrs(3));
+    fprintf('  [PASS] noiseDelay 0/0.5/1.0s: SNR=%.1f / %.1f / %.1f dB\n', snrs(1), snrs(2), snrs(3));
 catch err; cleanup(); rethrow(err); end
 cleanup();
 

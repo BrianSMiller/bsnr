@@ -172,16 +172,17 @@ if isfield(spectroParams, 'quantileThresh') && ~isempty(spectroParams.quantileTh
     line([tSig1 tSig1], [yMin yMax], 'color', 'c', 'linewidth', 1.5, 'linestyle', '--');
 
     % Contour lines: use the full p matrix but restrict frequency to band
-    % contour() adds to the existing imagesc axes correctly
     fMask = f >= freq(1) & f <= freq(2);
     if sum(fMask) > 1 && length(t) > 1
-        pBanddB = 20 * log10(p(fMask, :));
-        fBand   = f(fMask);
-        % Contour over full time axis at threshold levels
+        pBanddB   = 20 * log10(p(fMask, :));
+        fBand     = f(fMask);
+        holdState = ishold;
+        hold on;
         contour(t, fBand, pBanddB, [thresh85dB thresh85dB], ...
             'color', [0 0.5 0], 'linewidth', 1.5);
         contour(t, fBand, pBanddB, [thresh15dB thresh15dB], ...
             'color', [0.5 0 0], 'linewidth', 1.5);
+        if ~holdState; hold off; end
     end
 
     % Labels inside the annotation region
@@ -193,9 +194,30 @@ if isfield(spectroParams, 'quantileThresh') && ~isempty(spectroParams.quantileTh
     text(tSig0, freq(1), ' p=0.15', ...
         'color', [0.5 0 0], 'FontSize', 7, 'verticalAlignment', 'top');
 else
-    % Standard: noise window (dark red) and signal window (dark green) lines
-    line(tOffset([noise.t0, noise.tEnd]), [1 1]' * freq, ...
-        'color', [0.5 0 0], 'linewidth', 2);
+    % Standard: noise window (dark red) and signal window (dark green) lines.
+    % When excludeTimes is present (gap between noise and signal), draw
+    % the noise lines only at the actual measured noise bounds — i.e.
+    % noise.t0..excludeTimes(1) and excludeTimes(2)..noise.tEnd.
+    % The gap region is left blank so it is visually distinct.
+    hasGap = isfield(spectroParams, 'excludeTimes') && ...
+             ~isempty(spectroParams.excludeTimes);
+    if hasGap
+        exT = spectroParams.excludeTimes;   % [gapStart, gapEnd] in datenums
+        % Before-gap noise segment
+        line(tOffset([noise.t0, exT(1)]), [1 1]' * freq, ...
+            'color', [0.5 0 0], 'linewidth', 2);
+        % After-gap noise segment
+        line(tOffset([exT(2), noise.tEnd]), [1 1]' * freq, ...
+            'color', [0.5 0 0], 'linewidth', 2);
+        % Gap boundary markers — thin dark red vertical dashes
+        line([tOffset(exT(1)) tOffset(exT(1))], freq, ...
+            'color', [0.5 0 0], 'linewidth', 1, 'linestyle', ':');
+        line([tOffset(exT(2)) tOffset(exT(2))], freq, ...
+            'color', [0.5 0 0], 'linewidth', 1, 'linestyle', ':');
+    else
+        line(tOffset([noise.t0, noise.tEnd]), [1 1]' * freq, ...
+            'color', [0.5 0 0], 'linewidth', 2);
+    end
     text(tOffset(noise.t0), freq(1), ...
         sprintf('Noise = %4.1f %s', noise.rmsLevel, levelUnit), ...
         'color', [0.5 0 0], 'verticalAlignment', 'top', 'BackgroundColor', 'none');
@@ -206,12 +228,6 @@ else
         sprintf('Signal = %4.1f %s', detection.rmsLevel, levelUnit), ...
         'color', [0 0.5 0], 'verticalAlignment', 'bottom', ...
         'horizontalAlignment', 'center', 'BackgroundColor', 'none');
-
-    % Excluded gap (dark red, matching noise window colour)
-    line(tOffset([detection.t0,   detection.t0   - spectroParams.noiseDelay]), ...
-        [1 1]' * freq, 'color', [0.5 0 0], 'linewidth', 2);
-    line(tOffset([detection.tEnd, detection.tEnd + spectroParams.noiseDelay]), ...
-        [1 1]' * freq, 'color', [0.5 0 0], 'linewidth', 2);
 end
 
 % SNR label — centred at ymax, cap aligned to top

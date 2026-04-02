@@ -26,7 +26,7 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                  Default: 100. Set Inf to force serial,
 %                                  1 to force parallel.
 %              .noiseDelay         Gap in seconds between signal and noise
-%                                  windows. Default: 0.
+%                                  windows. Default: 0.5 s.
 %              .noiseDuration      Noise window placement strategy:
 %                                    'beforeAndAfter'       (default)
 %                                    'before'
@@ -38,34 +38,29 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %              .snrType            Power estimation method:
 %                                    'spectrogram'          (default)
 %                                    'spectrogramSlices'
-%                                    'quantiles'
-%                                    'nist'
-%                                    'wada'          (WADA-SNR, Kim & Stern 2008)          (NIST STNR quick method)
 %                                    'timeDomain'
 %                                    'ridge'
 %                                    'synchrosqueeze'
+%                                    'quantiles'    (within-window percentile;
+%                                                   see Miller et al. 2022)
+%                                    'nist'         (frame energy histogram;
+%                                                   Ellis 2011 / NIST STNR)
 %              .ridgeParams        Sub-struct for ridge and synchrosqueeze:
-
-%                                    .ridgePenalty  tfridge penalty
-%                                                   (default 1)
-%                                    .guardBins     bins excluded
-%                                                   around ridge
+%                                    .ridgePenalty  tfridge penalty (default 1)
+%                                    .guardBins     bins excluded around ridge
 %                                                   (default 2)
-%                                  Also used by 'synchrosqueeze'.
-%              .useLurton          If true, SNR is computed using the
-%                                  Lurton (2010) eq. 6.26 estimator:
-%                                    10*log10((S-N)^2 / noiseVar)
-%                                  If false (default), SNR is the simple
-%                                  power ratio:
-%                                    10*log10(rmsSignal / rmsNoise)
+%              .useLurton          If true, use Lurton (2010) eq. 6.26:
+%                                    SNR = 10*log10((S-N)^2 / noiseVar)
+%                                  If false (default), use simple power ratio:
+%                                    SNR = 10*log10(rmsSignal / rmsNoise)
+%                                  See Miller et al. (2021) for usage.
 %              .showClips          Plot signal/noise spectrogram (scalar
 %                                  input only). Default false. Ignored
 %                                  (with a warning) in parallel mode.
-%              .pauseAfterPlot     Pause after each plot waiting for a
-%                                  keypress. Default true. Set false for
-%                                  automated or batch plot review.
+%              .pauseAfterPlot     Pause after each plot. Default true.
+%                                  Set false for automated review.
 %              .spectroParams      Sub-struct for plot appearance.
-%              .removeClicks       Struct for click suppression:
+%              .removeClicks       Click suppression parameters:
 %                                    .threshold  (default 3)
 %                                    .power      (default 1000)
 %              .metadata           Recording metadata for calibration.
@@ -332,10 +327,6 @@ switch params.snrType
         [rmsSignal, rmsNoise, noiseVar] = snrHistogram( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
 
-    case 'wada'
-        [rmsSignal, rmsNoise, noiseVar] = snrWADA( ...
-            annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
-
     case 'timeDomain'
         [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = ...
             snrTimeDomain(annot.audio, noise.audio, freq, sampleRate, params.metadata);
@@ -388,6 +379,9 @@ if params.showClips
     if ~isempty(quantileThresh)
         spectroParams.quantileThresh = quantileThresh;
     end
+    if ~isempty(excludeTimes)
+        spectroParams.excludeTimes = excludeTimes;   % gap bounds for display
+    end
     spectroAnnotationAndNoise(annot, noise, soundFolder, spectroParams, snr, ...
         params.metadata);
 
@@ -419,7 +413,7 @@ if ~isfield(params, 'parallelThreshold') || isempty(params.parallelThreshold)
     params.parallelThreshold = 100;
 end
 if ~isfield(params, 'noiseDelay') || isempty(params.noiseDelay)
-    params.noiseDelay = 0;
+    params.noiseDelay = 0.5;   % 0.5 s gap between signal and noise windows
 end
 if ~isfield(params, 'noiseDuration') || isempty(params.noiseDuration)
     params.noiseDuration = 'beforeAndAfter';

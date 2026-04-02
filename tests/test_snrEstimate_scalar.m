@@ -142,7 +142,7 @@ cleanup();
 %% (8) All four snrType values run without error
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-snrTypes = {'spectrogram', 'spectrogramSlices', 'quantiles', 'nist', 'wada', 'timeDomain', 'ridge', 'synchrosqueeze'};
+snrTypes = {'spectrogram', 'spectrogramSlices', 'quantiles', 'nist', 'timeDomain', 'ridge', 'synchrosqueeze'};
 for k = 1:length(snrTypes)
     [annot, cleanup] = createTestFixture();
     try

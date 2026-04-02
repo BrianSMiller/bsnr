@@ -68,7 +68,7 @@ fprintf('Building SRW upcall fixture...\n');
 srwRate     = 1000;
 srwNoiseRMS = 0.1;
 srwFreq     = [75 210];
-bufferSec   = 2;
+bufferSec   = 3;   % 3s buffer each side — enough for noise window + pre/post at any noiseDelay
 
 [srwSig, ~] = makeSRWUpcall(srwRate, srwNoiseRMS);
 rng(7);
@@ -110,7 +110,7 @@ figW   = 300 * nCols;   % 300px per column
 figH   = 350;
 figPos = [50 50 figW figH];
 
-snrTable = nan(9, nCols);   % rows=methods, cols=signals
+snrTable = nan(8, nCols);   % rows=methods, cols=signals
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure 1: spectrogram
@@ -293,28 +293,6 @@ end
 fprintf('  [PASS] Figure 8 complete\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Figure 9: WADA SNR
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- Figure 9: wada ---\n');
-fig9 = figure('Name','wada','Position',figPos);
-tlo9 = tiledlayout(fig9,1,nCols,'TileSpacing','compact','Padding','compact');
-title(tlo9,'wada (Waveform Amplitude Distribution Analysis)','interpreter','none');
-for s = 1:nCols
-    nexttile(tlo9);
-    p = struct('snrType','wada','showClips',false,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
-    [snr, rmsS, rmsN] = snrEstimate(allAnnots{s}, p);
-    snrTable(9,s) = snr;
-    bar([10*log10(rmsS), 10*log10(rmsN)], 'FaceColor', [0.3 0.5 0.7]);
-    set(gca,'XTickLabel',{'Signal','Noise'});
-    ylabel('dB');
-    title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
-    fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
-end
-fprintf('  [PASS] Figure 9 complete\n');
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Cleanup and summary
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -322,7 +300,7 @@ for s = 1:nTone, toneCleanups{s}(); end
 srwCleanup();
 
 methodNames = {'spectrogram','spectrogramSlices','timeDomain','ridge',...
-               'synchrosqueeze','quantiles','spectrogram(Lurton)','nist','wada'};
+               'synchrosqueeze','quantiles','spectrogram(Lurton)','nist'};
 sigNames    = strrep(colLabels, ' ', '_');
 sigNames    = strrep(sigNames, '(', '');
 sigNames    = strrep(sigNames, ')', '');
