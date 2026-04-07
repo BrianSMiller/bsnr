@@ -421,8 +421,15 @@ if params.showClips
     if ~isempty(excludeTimes)
         spectroParams.excludeTimes = excludeTimes;   % gap bounds for display
     end
-    spectroAnnotationAndNoise(annot, noise, soundFolder, spectroParams, snr, ...
-        params.metadata);
+    % Methods that draw their own plot (not a spectrogram).
+    % For these, skip spectroAnnotationAndNoise entirely.
+    drawsOwnPlot = strcmpi(params.snrType, 'nist') || ...
+                   (strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt));
+
+    if ~drawsOwnPlot
+        spectroAnnotationAndNoise(annot, noise, soundFolder, spectroParams, snr, ...
+            params.metadata);
+    end
 
     if strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt)
         % Load continuous clip for time-domain power plot — draw into gca
@@ -437,7 +444,6 @@ if params.showClips
     end
 
     if strcmpi(params.snrType, 'nist') && isfield(histDiag, 'binCentres')
-        colorbar(gca,'off');
         levelUnit = 'dBFS';
         if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
         plotHistogramSNR(histDiag, snr, annot.rmsLevel, noise.rmsLevel, levelUnit);

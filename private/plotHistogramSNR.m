@@ -52,18 +52,26 @@ nw  = diagData.noiseWidth_dB;      % width is unchanged by a rigid shift
 yMax = max(hs) * 1.25;
 yLim = [0 yMax];
 
-ax = gca;
-cla(ax, 'reset');
-% Reset all axis properties that spectroAnnotationAndNoise may have set
-% (datetime tick format, XLim, YLim, etc.) before drawing numeric dB axes.
-axis(ax, 'auto');
-% set(ax, 'XTickLabelRotation', 0);
-% ax.XAxis.TickLabelFormat = '';   % clear any datetime format
+% Trim x-axis to the 1st–99th percentile of the frame energy distribution.
+% The full 500-bin NIST range spans ~125 dB; most of it is empty for any
+% real recording. Using the cumulative histogram avoids hard-coding limits
+% while still showing the full interesting range around the noise and signal
+% peaks with a small margin.
+cumHs  = cumsum(hs) / sum(hs);
+xLoIdx = find(cumHs >= 0.01, 1, 'first');
+xHiIdx = find(cumHs >= 0.99, 1, 'first');
+if isempty(xLoIdx), xLoIdx = 1; end
+if isempty(xHiIdx), xHiIdx = numel(bc); end
+margin = (bc(xHiIdx) - bc(xLoIdx)) * 0.05;   % 5% padding on each side
+xLo = bc(xLoIdx) - margin;
+xHi = bc(xHiIdx) + margin;
 
+ax = gca;
+cla(ax);
+hold(ax, 'on');
 
 % Histogram as a step plot (cleaner than fill for a pdf-style view)
 stairs(ax, bc, hs, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
-hold(ax, 'on');
 area(ax, bc, hs, 'FaceColor', [0.85 0.85 0.85], 'EdgeColor', 'none', 'FaceAlpha', 0.6);
 
 % Noise peak half-width shading
@@ -96,15 +104,15 @@ text(ax, mean([ndb sdb]), bracketY + tickH * 1.5, ...
     'FontSize', 7, 'FontWeight', 'bold', ...
     'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 
-% Bottom-right of occupied range: signal and noise levels in physical units
-text(ax, sdb + nw, yMax * 0.40, ...
+% Bottom-right: signal and noise levels in physical units
+text(ax, xHi, yMax * 0.40, ...
     sprintf('Sig   = %.1f %s\nNoise = %.1f %s', ...
         signalRMSdB, levelUnit, noiseRMSdB, levelUnit), ...
     'Color', [0.2 0.2 0.2], 'FontSize', 6, ...
     'HorizontalAlignment', 'right', 'VerticalAlignment', 'top', ...
     'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 
-set(ax, 'YLim', yLim);
+set(ax, 'XLim', [xLo xHi], 'YLim', yLim);
 xlabel(ax, sprintf('Frame energy (%s)', levelUnit), 'FontSize', 7);
 ylabel(ax, 'Relative frequency', 'FontSize', 7);
 hold(ax, 'off');
