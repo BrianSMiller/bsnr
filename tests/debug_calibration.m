@@ -89,7 +89,6 @@ spectroParams.pre        = 2;
 spectroParams.post       = 2;
 spectroParams.yLims      = [0 500];
 spectroParams.freq       = freq;
-spectroParams.noiseDelay = 0;
 spectroParams.win        = floor(sampleRate / 4);
 spectroParams.overlap    = floor(spectroParams.win * 0.75);
 

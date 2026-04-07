@@ -20,16 +20,24 @@
 %   snrQuantiles          - Within-window percentile estimator (no noise window)
 %
 % SNR METHODS (speech/engineering, adapted for bioacoustics)
-%   snrNIST               - Frame energy histogram; Ellis (2011) / NIST STNR
+%   snrHistogram          - Frame energy histogram; Ellis (2011) / NIST STNR
 %
 % DISPLAY
 %   spectroAnnotationAndNoise  - Spectrogram with signal/noise overlays;
 %                                contour overlay for quantiles method
 %   plotTimeDomainPower        - Time-domain bandpass power time series
 %
+%   plotHistogramSNR           - (private) NIST histogram diagnostic plot;
+%                                called automatically by snrEstimate when
+%                                snrType='nist' and showClips=true
+%
 % UTILITIES
 %   removeClicks          - Suppress impulsive noise (PAMGuard soft amplitude gate)
 %   simpleFlatMetadata    - Example calibration metadata struct (flat 20 dB gain)
+%
+% EXPERIMENTAL (not integrated into snrEstimate)
+%   experimental/snrWADA  - WADA-SNR (Kim & Stern 2008); amplitude distribution
+%                           analysis; does not require a separate noise window
 %
 % QUICK START
 %
@@ -94,7 +102,7 @@
 %   run('tests/run_tests.m')
 %
 % See also snrEstimate, snrSpectrogram, snrTimeDomain, snrRidge,
-%          snrSynchrosqueeze, snrQuantiles, snrNIST, removeClicks.
+%          snrSynchrosqueeze, snrQuantiles, snrHistogram, removeClicks.
 
 % Brian Miller, Australian Antarctic Division.
 % https://github.com/aaad/bsnr

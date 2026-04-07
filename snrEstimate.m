@@ -224,7 +224,32 @@ if iscell(annot.soundFolder), annot.soundFolder = annot.soundFolder{1}; end
 if iscell(annot.freq),        annot.freq        = annot.freq{1};        end
 if iscell(annot.t0),          annot.t0          = annot.t0{1};          end
 if iscell(annot.tEnd),        annot.tEnd        = annot.tEnd{1};        end
-if iscell(annot.channel),     annot.channel     = annot.channel{1};     end
+
+% channel is optional — default to 1 if missing, cell-wrapped, or not a
+% valid scalar (e.g. when table2struct produces a matrix from joined tables)
+if ~isfield(annot, 'channel')
+    annot.channel = 1;
+elseif iscell(annot.channel)
+    annot.channel = annot.channel{1};
+end
+if ~isscalar(annot.channel) || ~isnumeric(annot.channel)
+    annot.channel = 1;
+end
+
+% duration is optional — compute from t0/tEnd if missing or NaN
+if ~isfield(annot, 'duration') || ~isscalar(annot.duration) || ~isfinite(annot.duration)
+    annot.duration = (annot.tEnd - annot.t0) * 86400;
+end
+
+% freq is optional if params.freq is set — but must exist for annot.freq fallback
+if ~isfield(annot, 'freq')
+    if ~isempty(params.freq)
+        annot.freq = params.freq;
+    else
+        error('snrEstimate:missingFreq', ...
+            'annot.freq is missing and params.freq is not set.');
+    end
+end
 
 if ~isempty(params.freq)
     freq = params.freq;
@@ -254,10 +279,14 @@ if isempty(soundFolder)
     return
 end
 
-nativeRate = soundFolder(1).sampleRate;
+nativeRate  = soundFolder(1).sampleRate;
+targetRate  = nativeRate;
+if ~isempty(params.resampleRate)
+    targetRate = params.resampleRate;
+end
 
 [annot.audio, ~, annot.fileInfo] = getAudioFromFiles( ...
-    soundFolder, annot.t0, annot.tEnd, newRate=nativeRate);
+    soundFolder, annot.t0, annot.tEnd, newRate=targetRate);
 
 fileInfo = annot.fileInfo;
 if isempty(annot.fileInfo) || isempty(annot.audio)
@@ -289,7 +318,8 @@ end
 [noise, excludeTimes] = buildNoiseWindow(annot, params);
 
 [noise.audio, ~, ~] = getAudioFromFiles(soundFolder, ...
-    noise.t0, noise.tEnd, exclusions=excludeTimes, channel=noise.channel);
+    noise.t0, noise.tEnd, exclusions=excludeTimes, channel=noise.channel, ...
+    newRate=targetRate);
 
 if needsSpectrogram && size(noise.audio, 1) < nfft
     [snr, rmsSignal, rmsNoise, noiseVar] = deal(nan, nan, nan, nan);
@@ -315,6 +345,7 @@ sigFilt   = [];
 noiseFilt = [];
 ridgeFreq      = [];
 quantileThresh = [];
+histDiag       = [];
 
 switch params.snrType
     case 'spectrogram'
@@ -332,7 +363,7 @@ switch params.snrType
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
 
     case 'nist'
-        [rmsSignal, rmsNoise, noiseVar] = snrHistogram( ...
+        [rmsSignal, rmsNoise, noiseVar, histDiag] = snrHistogram( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
 
     case 'timeDomain'
@@ -394,14 +425,22 @@ if params.showClips
         params.metadata);
 
     if strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt)
-        % Load continuous clip for time-domain power plot
+        % Load continuous clip for time-domain power plot — draw into gca
+        % so it respects tiledlayout / any axes the caller has set up.
         clipT0    = noise.t0 - spectroParams.pre / 86400;
         clipTEnd  = max([annot.tEnd, noise.tEnd]) + spectroParams.post / 86400;
         clipAudio = getAudioFromFiles(soundFolder, clipT0, clipTEnd, ...
             channel=annot.channel, newRate=sampleRate);
-        figure();
+        cla(gca); colorbar(gca,'off');
         plotTimeDomainPower(clipAudio, clipT0, annot, noise, ...
             freq, sampleRate, rmsSignal, rmsNoise, noiseVar);
+    end
+
+    if strcmpi(params.snrType, 'nist') && isfield(histDiag, 'binCentres')
+        colorbar(gca,'off');
+        levelUnit = 'dBFS';
+        if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
+        plotHistogramSNR(histDiag, snr, annot.rmsLevel, noise.rmsLevel, levelUnit);
     end
 
     if params.pauseAfterPlot
@@ -456,6 +495,9 @@ else
     if ~isfield(params.removeClicks, 'power')
         params.removeClicks.power = 1000;
     end
+end
+if ~isfield(params, 'resampleRate') || isempty(params.resampleRate)
+    params.resampleRate = [];   % empty = use native rate
 end
 
 end
@@ -518,7 +560,6 @@ spectroParams.win         = win;
 spectroParams.overlap     = floor(win * overlapPercent);
 spectroParams.yLims       = [10 125];
 spectroParams.freq        = annot.freq;
-spectroParams.noiseDelay  = params.noiseDelay / 86400;
 
 end
 

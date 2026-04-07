@@ -134,8 +134,9 @@ sigSlice     = nan(nSlices, 1);
 noiseSlice   = nan(nSlices, 1);
 noiseSliceN  = nan(nSlices, 1);
 
-% Restrict the noise spectrogram to the same band
-noiseBand = noisePsd(fIx, :);
+% Restrict the noise spectrogram to the same band and average over time
+% (noise is a background estimate — no need for per-slice indexing)
+noiseBand = mean(noisePsd(fIx, :), 2);   % [nBand x 1]
 
 for i = 1:nSlices
     rb = ridgeBinIdx(i);
@@ -150,9 +151,8 @@ for i = 1:nSlices
     noiseIx(guardLo:guardHi) = false;
 
     if any(noiseIx)
-        % Use noise audio for off-ridge noise estimate
-        noiseSlice(i)  = mean(noiseBand(noiseIx, i));
-        noiseSliceN(i) = noiseSlice(i);   % store for variance calc
+        noiseSlice(i)  = mean(noiseBand(noiseIx));
+        noiseSliceN(i) = noiseSlice(i);
     end
 end
 

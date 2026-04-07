@@ -48,10 +48,11 @@ end
 % Scale to avoid audiowrite clipping
 audio = audio * (0.9 / max(abs(audio)));
 
-tmpDir       = fullfile(tempdir, sprintf('annotSNR_batch_%s', ...
+tmpDir  = fullfile(tempdir, sprintf('annotSNR_batch_%s', ...
     datestr(now, 'yyyymmdd_HHMMSS_FFF')));
 mkdir(tmpDir);
-wavPath      = fullfile(tmpDir, '2024-01-01_00-00-00.wav');
+% Use yyyy-mm-dd_HH-MM-SS format — unambiguous in guessFileNameTimestamp
+wavPath = fullfile(tmpDir, '2024-01-01_00-00-00.wav');
 audiowrite(wavPath, audio, sampleRate);
 cleanup = @() rmdir(tmpDir, 's');
 

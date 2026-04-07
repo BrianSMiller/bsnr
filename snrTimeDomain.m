@@ -52,10 +52,22 @@ end
 % This matters most for narrow bands at high sample rates (e.g. 40 Hz at 12 kHz).
 filterOrder = max(48, round(10 * sampleRate / diff(freq)));
 filterOrder = filterOrder + mod(filterOrder, 2);   % ensure even order
+
+% designfilt requires cutoffs strictly within (0, Nyquist).
+% If either cutoff is outside this range, return NaN.
+% If a cutoff equals Nyquist exactly, clamp inward by 1% to avoid failure.
+nyquist = sampleRate / 2;
+if freq(1) <= 0 || freq(2) >= nyquist * 1.01
+    % Clearly out of range — return NaN
+    [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = ...
+        deal(nan, nan, nan, [], []);
+    return
+end
+freqSafe = [max(freq(1), nyquist * 0.01), min(freq(2), nyquist * 0.99)];
 try
     d = designfilt('bandpassfir', 'FilterOrder', filterOrder, ...
-        'CutoffFrequency1', freq(1), ...
-        'CutoffFrequency2', freq(2), ...
+        'CutoffFrequency1', freqSafe(1), ...
+        'CutoffFrequency2', freqSafe(2), ...
         'SampleRate',       sampleRate);
 
     sigFilt   = filtfilt(d, sigAudio);

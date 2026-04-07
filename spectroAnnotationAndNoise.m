@@ -28,7 +28,6 @@ function spectroAnnotationAndNoise( ...
 %                   .overlap     FFT overlap (samples)
 %                   .pre         pre-clip buffer before noise window (s)
 %                   .post        post-clip buffer after detection (s)
-%                   .noiseDelay  gap between signal and noise (days)
 %                   .ridgeFreq   (optional) Hz vector, one per signal slice,
 %                                drawn as a cyan overlay for ridge method
 %
@@ -185,31 +184,24 @@ if isfield(spectroParams, 'quantileThresh') && ~isempty(spectroParams.quantileTh
         if ~holdState; hold off; end
     end
 
-    % Labels inside the annotation region
-    text(tSigMid, yMax, sprintf('SNR = %.1f dB', snr), ...
-        'color', 'g', 'verticalAlignment', 'top', ...
-        'horizontalAlignment', 'center', 'BackgroundColor', 'none');
-    text(tSig0, freq(2), ' p=0.85', ...
-        'color', [0 0.5 0], 'FontSize', 7, 'verticalAlignment', 'bottom');
-    text(tSig0, freq(1), ' p=0.15', ...
-        'color', [0.5 0 0], 'FontSize', 7, 'verticalAlignment', 'top');
+    % Quantiles: p=0.85/0.15 labels at top-left of signal region
+    % SNR combined with signal level at top-right (yMax)
+    text(tSig0, yMax, sprintf('SNR = %.1f dB\np=0.85/0.15', snr), ...
+        'color', 'g', 'verticalAlignment', 'top', 'FontSize', 7, ...
+        'horizontalAlignment', 'left', 'BackgroundColor', 'w', 'EdgeColor', 'none', ...
+        'Margin', 1);
 else
     % Standard: noise window (dark red) and signal window (dark green) lines.
     % When excludeTimes is present (gap between noise and signal), draw
-    % the noise lines only at the actual measured noise bounds — i.e.
-    % noise.t0..excludeTimes(1) and excludeTimes(2)..noise.tEnd.
-    % The gap region is left blank so it is visually distinct.
+    % the noise lines only at the actual measured noise bounds.
     hasGap = isfield(spectroParams, 'excludeTimes') && ...
              ~isempty(spectroParams.excludeTimes);
     if hasGap
         exT = spectroParams.excludeTimes;   % [gapStart, gapEnd] in datenums
-        % Before-gap noise segment
         line(tOffset([noise.t0, exT(1)]), [1 1]' * freq, ...
             'color', [0.5 0 0], 'linewidth', 2);
-        % After-gap noise segment
         line(tOffset([exT(2), noise.tEnd]), [1 1]' * freq, ...
             'color', [0.5 0 0], 'linewidth', 2);
-        % Gap boundary markers — thin dark red vertical dashes
         line([tOffset(exT(1)) tOffset(exT(1))], freq, ...
             'color', [0.5 0 0], 'linewidth', 1, 'linestyle', ':');
         line([tOffset(exT(2)) tOffset(exT(2))], freq, ...
@@ -218,30 +210,35 @@ else
         line(tOffset([noise.t0, noise.tEnd]), [1 1]' * freq, ...
             'color', [0.5 0 0], 'linewidth', 2);
     end
-    text(tOffset(noise.t0), freq(1), ...
-        sprintf('Noise = %4.1f %s', noise.rmsLevel, levelUnit), ...
-        'color', [0.5 0 0], 'verticalAlignment', 'top', 'BackgroundColor', 'none');
-
     line(tOffset([detection.t0, detection.tEnd]), [1 1]' * freq, ...
         'color', [0 0.5 0], 'linewidth', 2);
-    text(tSigMid, freq(2), ...
-        sprintf('Signal = %4.1f %s', detection.rmsLevel, levelUnit), ...
-        'color', [0 0.5 0], 'verticalAlignment', 'bottom', ...
-        'horizontalAlignment', 'center', 'BackgroundColor', 'none');
 end
 
-% SNR label — centred at ymax, cap aligned to top
-text(tSigMid, yMax, sprintf('SNR = %4.1f dB', snr), ...
-    'color', 'g', 'verticalAlignment', 'cap', ...
-    'horizontalAlignment', 'center', 'BackgroundColor', 'none');
+% --- Two corner labels, combining related info ---
 
-% noiseVar label — same x as noise label, at ymin
+% Top-right: SNR + signal level (green)
+if isfield(detection, 'rmsLevel') && isfinite(detection.rmsLevel)
+    sigStr = sprintf('SNR = %4.1f dB\nSig = %4.1f %s', snr, detection.rmsLevel, levelUnit);
+else
+    sigStr = sprintf('SNR = %4.1f dB', snr);
+end
+text(tOffset(detection.tEnd), yMax, sigStr, ...
+    'color', [0 0.5 0], 'FontSize', 7, 'verticalAlignment', 'top', ...
+    'horizontalAlignment', 'right', 'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
+
+% Bottom-left: noise level + noiseVar (dark red)
+noiseVarStr = '';
 if isfield(spectroParams, 'noiseVar') && ~isempty(spectroParams.noiseVar)
-    text(tOffset(noise.t0), yMin, ...
-        sprintf('noiseVar = %.2g', spectroParams.noiseVar), ...
-        'color', [0.5 0 0], 'verticalAlignment', 'bottom', ...
-        'BackgroundColor', 'none');
+    noiseVarStr = sprintf('\nnVar = %.2g', spectroParams.noiseVar);
 end
+if isfield(noise, 'rmsLevel') && isfinite(noise.rmsLevel)
+    noiseStr = sprintf('Noise = %4.1f %s%s', noise.rmsLevel, levelUnit, noiseVarStr);
+else
+    noiseStr = sprintf('Noise%s', noiseVarStr);
+end
+text(tOffset(noise.t0), yMin, noiseStr, ...
+    'color', [0.5 0 0], 'FontSize', 7, 'verticalAlignment', 'bottom', ...
+    'horizontalAlignment', 'left', 'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 
 % Ridge overlay (cyan) — only present for snrType='ridge'
 if isfield(spectroParams, 'ridgeFreq') && ~isempty(spectroParams.ridgeFreq)
@@ -249,7 +246,8 @@ if isfield(spectroParams, 'ridgeFreq') && ~isempty(spectroParams.ridgeFreq)
     tRidge = linspace(tOffset(detection.t0), tOffset(detection.tEnd), nRidge);
     line(tRidge, spectroParams.ridgeFreq(:)', 'color', 'c', 'linewidth', 1.5);
     text(tOffset(detection.t0), freq(1), 'Ridge', ...
-        'color', 'c', 'verticalAlignment', 'bottom', 'BackgroundColor', 'none');
+        'color', 'c', 'FontSize', 7, 'verticalAlignment', 'bottom', ...
+        'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 end
 
 end

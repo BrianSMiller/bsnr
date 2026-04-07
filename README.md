@@ -21,7 +21,7 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 | Ridge | `'ridge'` | FM tonal | tfridge dominant ridge |
 | Synchrosqueeze | `'synchrosqueeze'` | FM tonal | FSST ridge, sharper TF localisation |
 | Quantiles | `'quantiles'` | Tonal (no noise window) | Within-window 85th/15th percentile |
-| NIST histogram | `'nist'` | Any | Frame energy histogram; Ellis (2011) |
+| NIST histogram | `'nist'` | Any | Frame energy histogram; Ellis (2011); bandpass-filtered to annotation band |
 
 The simple power ratio and Lurton formula are both available for spectrogram, spectrogramSlices, timeDomain, ridge, and synchrosqueeze methods via `params.useLurton`.
 
@@ -137,28 +137,33 @@ bsnr/
 ├── snrRidge.m                   Ridge tracking method
 ├── snrSynchrosqueeze.m          Synchrosqueezing method
 ├── snrQuantiles.m               Within-window quantile method
-├── snrNIST.m                    Frame energy histogram (NIST STNR)
+├── snrHistogram.m               Frame energy histogram (NIST STNR)
 ├── spectroAnnotationAndNoise.m  Spectrogram display with overlays
 ├── plotTimeDomainPower.m        Time-domain power display
 ├── removeClicks.m               Impulsive noise suppression
-├── simpleFlatMetadata.m         Example calibration metadata
+├── validate_dcalls_miller2022.m Validation script (Miller et al. 2022)
+├── private/
+│   └── plotHistogramSNR.m       NIST histogram diagnostic plot (internal)
+├── experimental/
+│   └── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
 ├── examples/
 │   ├── bsnr_gallery.m           Publishable gallery of examples
-│   └── simpleFlatMetadata.m     Flat-response instrument metadata
+│   ├── simpleFlatMetadata.m     Flat-response instrument metadata example
+│   └── prepareGalleryAudio.m    Extract gallery audio clips from library
 └── tests/
     ├── run_tests.m                   Test suite driver
-    ├── test_snrMethods.m             Unit tests for SNR methods
+    ├── test_snrMethods.m             Unit tests for all SNR methods
     ├── test_removeClicks.m           Click removal tests
     ├── test_snrEstimate_scalar.m     Integration tests (scalar)
     ├── test_snrEstimate_batch.m      Batch processing tests
     ├── test_snrEstimate_noiseWindows.m  Noise window strategy tests
     ├── test_calibration.m            Calibration chain verification
-    ├── test_plots.m                  Visual inspection (9 figures)
+    ├── test_plots.m                  Visual inspection figures
     ├── createTestFixture.m           Synthetic WAV fixture generator
     ├── createCalibratedTestFixture.m Calibrated fixture generator
-    ├── makeSyntheticAudio.m          Audio array generator
-    ├── makeSRWUpcall.m               SRW upcall generator
-    └── makeClickAudio.m              Click-contaminated audio
+    ├── makeSyntheticAudio.m          Audio array generator (tone-in-noise)
+    ├── makeSRWUpcall.m               SRW FM upcall generator
+    └── makeClickAudio.m              Click-contaminated audio generator
 ```
 
 ## Licence

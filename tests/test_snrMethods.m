@@ -1,19 +1,27 @@
 function test_snrMethods()
 % Unit tests for snrSpectrogram, snrSpectrogramSlices, snrQuantiles,
-% snrTimeDomain, snrRidge.
+% snrTimeDomain, snrRidge, snrSynchrosqueeze, and snrHistogram (NIST).
 %
 % Tests operate directly on audio arrays — no WAV files needed.
 %
-% All methods now return [rmsSignal, rmsNoise, noiseVar] only. The SNR
-% formula is applied by the caller (annotationSNR). Tests check that:
+% All methods return [rmsSignal, rmsNoise, noiseVar] only. The SNR
+% formula is applied by the caller (snrEstimate). Tests check that:
 %   (1) rmsSignal > rmsNoise for a high-SNR tone-in-noise signal
 %   (2) rmsSignal <= rmsNoise for a noise-only signal
 %   (3) Both values are positive and finite for valid input
 %   (4) Too-short audio does not error and returns a scalar
+%   (5) snrHistogram: noise peak bin is in the correct dB region
+%       (regression guard against the BINS/2 search-range bug)
 %
-% The simple SNR formula 10*log10(rmsSignal/rmsNoise) is also tested
-% directly here to confirm it recovers approximately the true power ratio
-% (within +/-3 dB) for a long stationary signal.
+% The simple SNR formula 10*log10(rmsSignal/rmsNoise) is tested against
+% the correct reference for each method. There are three distinct tiers:
+%
+%   inBandSNRdB      (band-average) — spectrogram, spectrogramSlices,
+%                     quantiles, histogram: noise averaged over all band bins
+%   inBandSNRdB-3dB  (band-average, sine) — timeDomain: FIR filter,
+%                     mean(sin^2)=0.5 lowers signal estimate by 3 dB
+%   ridgeSNRdB       (per-bin) — ridge, synchrosqueeze: signal at one bin,
+%                     noise averaged over other bins; = inBandSNRdB + 10*log10(nBandBins)
 
 fprintf('\n=== test_snrMethods ===\n');
 
@@ -36,7 +44,25 @@ rng(99);
 noiseOnly  = noiseRMS * randn(size(sigAudio));
 shortAudio = sigAudio(1:10);
 
-fprintf('True power-ratio SNR: %.1f dB\n\n', trueSNRdB);
+% In-band true SNR: all bsnr methods operate on the annotation frequency
+% band [freq(1) freq(2)] — not wideband. For a pure tone sitting entirely
+% within the band, signal power is unchanged. White noise power scales
+% with bandwidth: in-band noise power = noiseRMS^2 * BW/Nyquist.
+% This is the correct reference for every method test.
+%
+%   inBandSNRdB = 10*log10( toneRMS^2 / (noiseRMS^2 * BW/Nyquist) )
+%               = trueSNRdB + 10*log10(Nyquist/BW)
+%               = 20 + 10*log10(1000/100) = 30 dB  for these parameters
+%
+% Note: snrTimeDomain divides by 2 for sine RMS (mean(sin^2)=0.5) while
+% snrSpectrogram integrates PSD bin power — both yield ~inBandSNRdB with
+% method-specific tolerances.  trueSNRdB is retained only for documentation.
+nyquist       = sampleRate / 2;
+bw            = diff(freq);
+inBandSNRdB   = trueSNRdB + 10 * log10(nyquist / bw);   % ~30 dB
+
+fprintf('True wideband SNR: %.1f dB   In-band true SNR [%.0f-%.0f Hz]: %.1f dB\n\n', ...
+    trueSNRdB, freq(1), freq(2), inBandSNRdB);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Noise spectrum check: verify wideband noise is spectrally flat
@@ -108,12 +134,12 @@ assert(isfinite(nVar) && nVar > 0, 'snrSpectrogram: noiseVar should be positive 
 assert(rmsS > rmsN, ...
     sprintf('snrSpectrogram: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
 simpleSNR = 10 * log10(rmsS / rmsN);
-% Spectrogram methods integrate PSD which includes spectral leakage from
-% the pure tone, so the estimated power is higher than the true RMS power.
-% Use a wider tolerance here; snrTimeDomain is the precision reference.
-assert(abs(simpleSNR - trueSNRdB) < 10, ...
-    sprintf('snrSpectrogram: simple SNR %.2f dB is >10 dB from true %.2f dB', simpleSNR, trueSNRdB));
-fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB\n', rmsS, rmsN, simpleSNR);
+% Spectrogram methods integrate band PSD. Spectral leakage from the pure
+% tone broadens the power estimate slightly, so allow ±5 dB around
+% the in-band true SNR.
+assert(abs(simpleSNR - inBandSNRdB) < 5, ...
+    sprintf('snrSpectrogram: simple SNR %.2f dB is >5 dB from in-band true %.2f dB', simpleSNR, inBandSNRdB));
+fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (in-band true=%.2f dB)\n', rmsS, rmsN, simpleSNR, inBandSNRdB);
 
 [rmsS_n, rmsN_n, ~] = snrSpectrogram( ...
     noiseOnly, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
@@ -141,9 +167,9 @@ assert(isfinite(nVar) && nVar > 0, 'snrSpectrogramSlices: noiseVar should be pos
 assert(rmsS > rmsN, ...
     sprintf('snrSpectrogramSlices: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
 simpleSNR = 10 * log10(rmsS / rmsN);
-assert(abs(simpleSNR - trueSNRdB) < 10, ...
-    sprintf('snrSpectrogramSlices: simple SNR %.2f dB is >10 dB from true %.2f dB', simpleSNR, trueSNRdB));
-fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB\n', rmsS, rmsN, simpleSNR);
+assert(abs(simpleSNR - inBandSNRdB) < 5, ...
+    sprintf('snrSpectrogramSlices: simple SNR %.2f dB is >5 dB from in-band true %.2f dB', simpleSNR, inBandSNRdB));
+fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (in-band true=%.2f dB)\n', rmsS, rmsN, simpleSNR, inBandSNRdB);
 
 [rmsS_n, rmsN_n, ~] = snrSpectrogramSlices( ...
     noiseOnly, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
@@ -168,7 +194,13 @@ assert(isfinite(rmsN) && rmsN > 0, 'snrQuantiles: rmsNoise should be positive an
 assert(isfinite(nVar),              'snrQuantiles: noiseVar should be finite');
 assert(rmsS > rmsN, ...
     sprintf('snrQuantiles: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
-fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g\n', rmsS, rmsN);
+simpleSNR = 10 * log10(rmsS / rmsN);
+% snrQuantiles operates on spectrogram cells within the annotation band,
+% so it also measures in-band SNR. The 85th-percentile split introduces
+% extra variance; allow ±8 dB.
+assert(abs(simpleSNR - inBandSNRdB) < 8, ...
+    sprintf('snrQuantiles: simple SNR %.2f dB is >8 dB from in-band true %.2f dB', simpleSNR, inBandSNRdB));
+fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (in-band true=%.2f dB)\n', rmsS, rmsN, simpleSNR, inBandSNRdB);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% snrTimeDomain
@@ -188,17 +220,18 @@ assert(~isempty(sigFilt) && length(sigFilt) == length(sigAudio), ...
     'snrTimeDomain: sigFilt should match input length on success');
 assert(~isempty(noiseFilt), ...
     'snrTimeDomain: noiseFilt should be non-empty on success');
-% snrTimeDomain measures in-band power: the bandpass filter rejects
-% out-of-band noise, so rmsNoise << wideband noiseRMS. The in-band
-% SNR is therefore much higher than the wideband trueSNRdB. Instead
-% of asserting a specific dB value, verify the power ratio is
-% self-consistent: rmsSignal should be dominated by the tone.
-inBandNoisePower = noiseRMS^2 * (freq(2)-freq(1)) / (sampleRate/2);
-inBandSNRdB = 10 * log10((signalRMS^2/2) / inBandNoisePower); % /2 for sine RMS
+% snrTimeDomain applies a bandpass FIR, so it measures in-band power.
+% The tone sits entirely in-band (RMS = signalRMS/sqrt(2) for a sine).
+% inBandSNRdB already accounts for BW/Nyquist noise reduction; the
+% additional /2 for sine power is implicitly included since
+% signalRMS = peak amplitude and mean(sin^2) = 0.5 — so the true
+% in-band signal power is signalRMS^2/2, not signalRMS^2.
+% Adjust reference by -10*log10(2) ≈ -3 dB for the sine factor.
+inBandSNRdB_sine = inBandSNRdB - 10*log10(2);   % ~27 dB for these params
 simpleSNR = 10 * log10(rmsS / rmsN);
-assert(abs(simpleSNR - inBandSNRdB) < 4, ...
-    sprintf('snrTimeDomain: simple SNR %.2f dB is >4 dB from in-band true %.2f dB', simpleSNR, inBandSNRdB));
-fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (in-band true=%.2f dB)\n', rmsS, rmsN, simpleSNR, inBandSNRdB);
+assert(abs(simpleSNR - inBandSNRdB_sine) < 4, ...
+    sprintf('snrTimeDomain: simple SNR %.2f dB is >4 dB from in-band true %.2f dB', simpleSNR, inBandSNRdB_sine));
+fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (in-band true=%.2f dB)\n', rmsS, rmsN, simpleSNR, inBandSNRdB_sine);
 
 [rmsS_n, rmsN_n, ~, ~, ~] = snrTimeDomain(noiseOnly, noiseAudio, freq, sampleRate);
 assert(isfinite(rmsS_n) && isfinite(rmsN_n), 'snrTimeDomain: noise-only should return finite values');
@@ -231,7 +264,20 @@ assert(abs(ridgeMeanHz - toneHz) < 50, ...
     sprintf('snrRidge: mean ridge freq %.1f Hz should be within 50 Hz of tone %.1f Hz', ...
     ridgeMeanHz, toneHz));
 simpleSNR = 10 * log10(rmsS / rmsN);
-fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB\n', rmsS, rmsN, simpleSNR);
+% snrRidge compares power at the tracked ridge bin to the mean power of
+% the remaining (non-guard) bins within the band. For white noise each
+% bin carries an equal share of the band power, so the effective noise
+% reference is inBandNoisePower / nBandBins — not the full band power.
+% The correct reference is therefore:
+%   ridgeSNRdB = inBandSNRdB + 10*log10(nBandBins)
+% where nBandBins = round(BW * nfft / sampleRate).
+nBandBins    = round(bw * nfft / sampleRate);
+ridgeSNRdB   = inBandSNRdB + 10 * log10(nBandBins);
+assert(abs(simpleSNR - ridgeSNRdB) < 6, ...
+    sprintf('snrRidge: simple SNR %.2f dB is >6 dB from per-bin true %.2f dB (inBand=%.1f, nBins=%d)', ...
+    simpleSNR, ridgeSNRdB, inBandSNRdB, nBandBins));
+fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (per-bin true=%.2f dB)\n', ...
+    rmsS, rmsN, simpleSNR, ridgeSNRdB);
 fprintf('  [PASS] mean ridge frequency = %.1f Hz (tone = %.1f Hz)\n', ridgeMeanHz, toneHz);
 
 % (2) Noise-only: rmsSignal should be comparable to rmsNoise
@@ -300,7 +346,12 @@ assert(isfinite(rmsN) && rmsN > 0, 'snrSynchrosqueeze: rmsNoise should be positi
 assert(rmsS > rmsN, ...
     sprintf('snrSynchrosqueeze: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
 simpleSNR = 10 * log10(rmsS / rmsN);
-fprintf('  [PASS] high-SNR tone: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB\n', rmsS, rmsN, simpleSNR);
+% snrSynchrosqueeze has the same single-bin-vs-noise-bins geometry as
+% snrRidge; use the same per-bin reference.
+assert(abs(simpleSNR - ridgeSNRdB) < 6, ...
+    sprintf('snrSynchrosqueeze: simple SNR %.2f dB is >6 dB from per-bin true %.2f dB', simpleSNR, ridgeSNRdB));
+fprintf('  [PASS] high-SNR tone: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (per-bin true=%.2f dB)\n', ...
+    rmsS, rmsN, simpleSNR, ridgeSNRdB);
 
 % (2) Noise-only
 [rmsS_n, rmsN_n, ~, ~, ~] = snrSynchrosqueeze( ...
@@ -360,7 +411,104 @@ fprintf('  [PASS] SRW upcall: SNR=%.2f dB, ridge %.1f->%.1f Hz (sweep 80->198 Hz
     10*log10(rmsS_srw/rmsN_srw), ridgeStart, ridgeEnd);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Simple SNR formula recovers true SNR (via annotationSNR params)
+%% snrHistogram (NIST STNR 'quick')
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('--- snrHistogram (NIST quick) ---\n');
+
+% snrHistogram needs longer audio so the frame-energy histogram has enough
+% frames (>=10) to be meaningful. Use 30 s with the same parameters as the
+% other tests (sampleRate=2000, freq=[150 250], toneHz=200).
+rng(77);
+[sigH, noiseH] = makeSyntheticAudio(sampleRate, 30, toneHz, signalRMS, noiseRMS);
+
+% (1) Basic outputs: positive, finite, signal > noise
+[rmsS, rmsN, nVar, diagH] = snrHistogram(sigH, noiseH, [], [], sampleRate, freq, []);
+
+assert(isfinite(rmsS) && rmsS > 0, 'snrHistogram: rmsSignal should be positive and finite');
+assert(isfinite(rmsN) && rmsN > 0, 'snrHistogram: rmsNoise should be positive and finite');
+assert(isfinite(nVar) && nVar >= 0, 'snrHistogram: noiseVar should be non-negative and finite');
+assert(rmsS > rmsN, ...
+    sprintf('snrHistogram: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
+simpleSNR = 10 * log10(rmsS / rmsN);
+fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB\n', ...
+    rmsS, rmsN, simpleSNR);
+
+% (2) SNR within 6 dB of the in-band true SNR.
+% snrHistogram bandpass-filters both windows before computing frame energies,
+% so it measures IN-BAND SNR — consistent with all other bsnr methods.
+% inBandSNRdB is computed in the shared setup above.
+% The NIST estimator is coarse by design; allow ±6 dB.
+assert(abs(simpleSNR - inBandSNRdB) < 6, ...
+    sprintf('snrHistogram: simple SNR %.2f dB is >6 dB from in-band true %.2f dB', ...
+    simpleSNR, inBandSNRdB));
+fprintf('  [PASS] SNR accuracy: estimated=%.2f dB, in-band true=%.2f dB (within 6 dB)\n', ...
+    simpleSNR, inBandSNRdB);
+
+% (3) diagData structure has required fields for plotting
+assert(isstruct(diagH), 'snrHistogram: diagData should be a struct');
+for fld = {'binCentres','histSmooth','histRaw','noisedB','signaldB','noiseWidth_dB','noisePeakBin'}
+    assert(isfield(diagH, fld{1}), ...
+        sprintf('snrHistogram: diagData missing field .%s', fld{1}));
+end
+fprintf('  [PASS] diagData has all required fields\n');
+
+% (4) Noise peak bin is in the correct region of the histogram.
+% For noiseRMS=0.1 at this sample rate, frame energies map to ~67 dB in
+% the NIST internal scale. The noise peak should be in the upper half of
+% the 500-bin range (bins 251-500, covering ~34-97 dB), NOT the lower
+% half where the old buggy code searched (bins 1-250, -28 to 34 dB).
+BINS = 500;
+assert(diagH.noisePeakBin > BINS/2, ...
+    sprintf(['snrHistogram: noisePeakBin=%d is in lower half of histogram (bins 1-%d).\n' ...
+             '  This indicates the old search-range bug has re-appeared.\n' ...
+             '  Real audio noise at noiseRMS=0.1 maps to ~67 dB (bin ~380) in NIST scale.'], ...
+    diagH.noisePeakBin, BINS/2));
+fprintf('  [PASS] noisePeakBin=%d is correctly in upper half of histogram (>%d)\n', ...
+    diagH.noisePeakBin, BINS/2);
+
+% (5) noisedB < signaldB (noise peak is to the LEFT of signal 95th percentile)
+assert(diagH.noisedB < diagH.signaldB, ...
+    sprintf('snrHistogram: noisedB (%.1f) should be less than signaldB (%.1f)', ...
+    diagH.noisedB, diagH.signaldB));
+fprintf('  [PASS] noisedB=%.1f dB < signaldB=%.1f dB (separation=%.1f dB)\n', ...
+    diagH.noisedB, diagH.signaldB, diagH.signaldB - diagH.noisedB);
+
+% (6) Noise-only: rmsSignal should be comparable to rmsNoise (no large exceedance)
+rng(88);
+noiseOnlyH = noiseRMS * randn(length(sigH), 1);
+[rmsS_n, rmsN_n, ~, diagN] = snrHistogram(noiseOnlyH, noiseH, [], [], sampleRate, freq, []);
+assert(isfinite(rmsS_n) && isfinite(rmsN_n), ...
+    'snrHistogram: noise-only should return finite values');
+% For noise-only input the 95th percentile of the combined histogram will
+% be at most a few dB above the noise peak, so SNR estimate should be small.
+noiseOnlySNR = 10 * log10(rmsS_n / rmsN_n);
+assert(noiseOnlySNR < 10, ...
+    sprintf('snrHistogram: noise-only SNR=%.1f dB should be small (<10 dB)', noiseOnlySNR));
+fprintf('  [PASS] noise-only: rmsSignal=%.4g, rmsNoise=%.4g, SNR=%.1f dB\n', ...
+    rmsS_n, rmsN_n, noiseOnlySNR);
+
+% (7) Too-short audio falls back to RMS ratio without error
+shortH = sigH(1:5);
+[rmsS_sh, rmsN_sh, ~, diagSh] = snrHistogram(shortH, noiseH, [], [], sampleRate, freq, []);
+assert(isscalar(rmsS_sh), 'snrHistogram: too-short audio should return scalar without error');
+assert(isstruct(diagSh) && isempty(fieldnames(diagSh)), ...
+    'snrHistogram: too-short audio should return empty struct for diagData');
+fprintf('  [PASS] too-short audio returns scalar (%.4g) and empty diagData\n', rmsS_sh);
+
+% (8) noiseVar is consistent with rmsNoise scale
+% noiseVar = var(frame_powers); for stationary noise, std(frame_powers)/mean(frame_powers)
+% should be small (Chi-squared variation over many frames). Check it is not
+% many orders of magnitude away from rmsNoise^2 (which would indicate a scale bug).
+logRatio = log10(nVar / rmsN^2);
+assert(abs(logRatio) < 4, ...
+    sprintf(['snrHistogram: noiseVar (%.4g) is %.1f decades from rmsNoise^2 (%.4g).\n' ...
+             '  These should be on the same power scale.'], nVar, logRatio, rmsN^2));
+fprintf('  [PASS] noiseVar=%.4g is %.1f decades from rmsNoise^2=%.4g (scale consistent)\n', ...
+    nVar, logRatio, rmsN^2);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Simple SNR formula recovers true SNR (via snrEstimate params)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fprintf('--- SNR formula: simple vs Lurton ---\n');
@@ -368,9 +516,131 @@ fprintf('--- SNR formula: simple vs Lurton ---\n');
 % Document expected behaviour clearly:
 %   simple:  10*log10(rmsSignal/rmsNoise) ≈ trueSNRdB  (within ~3 dB)
 %   Lurton:  10*log10((S-N)^2/noiseVar)  >> trueSNRdB  (can be 30-50 dB higher)
-% The Lurton formula is not tested here since it is applied in annotationSNR,
-% not in the method functions. See test_annotationSNR_scalar for formula tests.
-fprintf('  [INFO] simple SNR formula tested above; Lurton tested in test_annotationSNR_scalar\n');
+% The Lurton formula is not tested here since it is applied in snrEstimate,
+% not in the method functions. See test_snrEstimate_scalar for formula tests.
+fprintf('  [INFO] simple SNR formula tested above; Lurton tested in test_snrEstimate_scalar\n');
 
 fprintf('\n=== test_snrMethods PASSED ===\n');
+end
+
+%% Bioduck fixture tests
+% These tests use a bout of repeated FM downsweeps (60-100 Hz) mimicking
+% Antarctic minke whale bio-duck calls. The annotation covers the full bout
+% as a single box — the typical analyst annotation style for bioduck.
+% This is a harder test than tone: signal power is intermittent (pulses +
+% silence), so methods that average over the full window will underestimate
+% signal power relative to methods that track instantaneous power.
+
+function test_bioduck_spectrogram_detects_signal(tc)
+    [annot, cleanup] = createTestFixture( ...
+        'signalType',    'bioduck', ...
+        'durationSec',   20, ...
+        'freqHigh',      100, ...
+        'freqLow',       60, ...
+        'pulseDuration', 0.15, ...
+        'pulseInterval', 0.30, ...
+        'signalRMS',     1.0, ...
+        'noiseRMS',      0.1, ...
+        'sampleRate',    1000);
+    cleanupObj = onCleanup(cleanup);
+    params = struct('snrType','spectrogram','noiseDuration','beforeAndAfter', ...
+        'noiseDelay',0.5,'showClips',false);
+    snr = snrEstimate(annot, params);
+    tc.verifyGreaterThan(snr.snr, 0, ...
+        'spectrogram SNR should be positive for bioduck at 20 dB signal-to-noise');
+end
+
+function test_bioduck_snr_lower_than_tone(tc)
+    % Bioduck SNR should be lower than an equivalent continuous tone at the
+    % same RMS, because the pulse train has silent inter-pulse gaps that
+    % reduce the effective signal power averaged over the annotation window.
+    [annotTone, cleanupTone] = createTestFixture( ...
+        'signalType',  'tone', ...
+        'durationSec', 20, ...
+        'toneFreqHz',  80, ...
+        'signalRMS',   1.0, ...
+        'noiseRMS',    0.1, ...
+        'freq',        [30 500], ...
+        'sampleRate',  1000);
+    cleanupObjT = onCleanup(cleanupTone);
+
+    [annotBd, cleanupBd] = createTestFixture( ...
+        'signalType',    'bioduck', ...
+        'durationSec',   20, ...
+        'freqHigh',      100, ...
+        'freqLow',       60, ...
+        'pulseDuration', 0.15, ...
+        'pulseInterval', 0.30, ...
+        'signalRMS',     1.0, ...
+        'noiseRMS',      0.1, ...
+        'sampleRate',    1000);
+    cleanupObjB = onCleanup(cleanupBd);
+
+    params = struct('snrType','spectrogram','noiseDuration','beforeAndAfter', ...
+        'noiseDelay',0.5,'showClips',false);
+    snrTone = snrEstimate(annotTone, params);
+    snrBd   = snrEstimate(annotBd,   params);
+    tc.verifyGreaterThan(snrTone.snr, snrBd.snr, ...
+        'Continuous tone SNR should exceed bioduck SNR at same RMS (duty cycle effect)');
+end
+
+function test_bioduck_duty_cycle_snr(tc)
+    % Verify that bioduck SNR scales approximately with duty cycle.
+    % At pulseDuration=0.15s and pulseInterval=0.30s, duty cycle = 0.5,
+    % so SNR should be roughly 3 dB lower than a continuous tone (10*log10(0.5)).
+    [annotTone, cleanupTone] = createTestFixture( ...
+        'signalType',  'tone', ...
+        'durationSec', 30, ...
+        'toneFreqHz',  80, ...
+        'signalRMS',   1.0, ...
+        'noiseRMS',    0.05, ...
+        'freq',        [30 500], ...
+        'sampleRate',  1000);
+    cleanupObjT = onCleanup(cleanupTone);
+
+    [annotBd, cleanupBd] = createTestFixture( ...
+        'signalType',    'bioduck', ...
+        'durationSec',   30, ...
+        'freqHigh',      100, ...
+        'freqLow',       60, ...
+        'pulseDuration', 0.15, ...
+        'pulseInterval', 0.30, ...   % duty cycle = 0.15/0.30 = 0.5
+        'signalRMS',     1.0, ...
+        'noiseRMS',      0.05, ...
+        'sampleRate',    1000);
+    cleanupObjB = onCleanup(cleanupBd);
+
+    params = struct('snrType','spectrogram','noiseDuration','beforeAndAfter', ...
+        'noiseDelay',0.5,'showClips',false);
+    snrTone = snrEstimate(annotTone, params);
+    snrBd   = snrEstimate(annotBd,   params);
+    dutyCycledB = 10 * log10(0.5);   % expected ~-3 dB
+    actual_diff = snrBd.snr - snrTone.snr;
+    tc.verifyGreaterThan(actual_diff, dutyCycledB - 3, ...
+        'Bioduck SNR should be within 3 dB of duty-cycle-adjusted tone SNR');
+    tc.verifyLessThan(actual_diff, dutyCycledB + 3, ...
+        'Bioduck SNR should be within 3 dB of duty-cycle-adjusted tone SNR');
+end
+
+function test_bioduck_all_methods_positive(tc)
+    % All SNR methods should return positive SNR for a high-SNR bioduck bout.
+    [annot, cleanup] = createTestFixture( ...
+        'signalType',    'bioduck', ...
+        'durationSec',   20, ...
+        'freqHigh',      100, ...
+        'freqLow',       60, ...
+        'pulseDuration', 0.15, ...
+        'pulseInterval', 0.25, ...
+        'signalRMS',     2.0, ...
+        'noiseRMS',      0.05, ...
+        'sampleRate',    1000);
+    cleanupObj = onCleanup(cleanup);
+    methods = {'spectrogram', 'spectrogramSlices', 'timeDomain'};
+    for i = 1:numel(methods)
+        params = struct('snrType', methods{i}, 'noiseDuration', 'beforeAndAfter', ...
+            'noiseDelay', 0.5, 'showClips', false);
+        snr = snrEstimate(annot, params);
+        tc.verifyGreaterThan(snr.snr, 0, ...
+            sprintf('%s SNR should be positive for high-SNR bioduck', methods{i}));
+    end
 end

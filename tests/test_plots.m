@@ -1,8 +1,9 @@
 function test_plots()
 % Visual inspection tests for snrEstimate plotting output.
 %
-% Produces one figure per SNR method, each showing a 1x4 grid of test
-% signals (columns): noise only | moderate SNR | high SNR | SRW upcall
+% Produces one figure per SNR method, each showing a 1x5 grid of test
+% signals (columns): noise only | moderate SNR | high SNR | SRW upcall |
+% bioduck bout
 %
 % This layout allows methods to be compared by placing figures side by
 % side, and signals to be compared by reading across the row.
@@ -10,7 +11,7 @@ function test_plots()
 % Methods shown:
 %   Figure 1  spectrogram
 %   Figure 2  spectrogramSlices
-%   Figure 3  timeDomain          (power time series, all four signals)
+%   Figure 3  timeDomain          (power time series, all five signals)
 %   Figure 4  ridge
 %   Figure 5  synchrosqueeze
 %   Figure 6  quantiles           (with 85th/15th percentile contours)
@@ -33,9 +34,8 @@ toneFreq    = [150 250];
 
 sp.pre        = 1;
 sp.post       = 1;
-sp.yLims      = [0 500];
+sp.yLims      = [0 300];
 sp.freq       = toneFreq;
-sp.noiseDelay = 0;
 sp.win        = floor(sampleRate / 4);
 sp.overlap    = floor(sp.win * 0.75);
 
@@ -61,14 +61,14 @@ for s = 1:nTone
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Build SRW upcall fixture (shared across method figures)
+%% Build SRW upcall fixture
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fprintf('Building SRW upcall fixture...\n');
 srwRate     = 1000;
 srwNoiseRMS = 0.1;
 srwFreq     = [75 210];
-bufferSec   = 3;   % 3s buffer each side — enough for noise window + pre/post at any noiseDelay
+bufferSec   = 3;
 
 [srwSig, ~] = makeSRWUpcall(srwRate, srwNoiseRMS);
 rng(7);
@@ -92,25 +92,57 @@ srwAnnot.channel        = 1;
 srwAnnot.classification = 'SRW upcall f(t)=80+118t^2 Hz';
 
 srwSP           = sp;
-srwSP.yLims     = [0 300];
+srwSP.yLims   = [0 300];
 srwSP.freq      = srwFreq;
 srwSP.win       = floor(srwRate/4);
 srwSP.overlap   = floor(srwSP.win * 0.9);
 
-colLabels = [sigConfigs(:,1); {'SRW upcall'}];
-allAnnots = [toneAnnots; {srwAnnot}];
-allSP     = [repmat({sp}, nTone, 1); {srwSP}];
-nCols     = nTone + 1;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Build bioduck fixture (20s bout of repeated FM downsweeps, 60-100 Hz)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('Building bioduck fixture...\n');
+% Bioduck spectro params from spectroParams('bioduck'):
+% sampleRate=1000, nfft=256, noverlap=224 (87.5%%), freq=30-500 Hz, pre/post=1s
+bdRate  = 1000;
+bdFreq  = [30 500];
+bdDur   = 10;    % ~2 series — mimics Dominello & Sirovic 2016 Fig 2a
+
+[bdAnnot, bdCleanup] = createTestFixture( ...
+    'signalType',  'bioduck', ...
+    'sampleRate',  bdRate, ...
+    'durationSec', bdDur, ...
+    'signalRMS',   1.0, ...
+    'noiseRMS',    0.1, ...
+    'classification', 'AMW bioduck A1: 4x(200->60Hz/0.1s) @ 0.3s IPI, 3.1s ISI');
+
+bdSP          = sp;
+bdSP.yLims    = [0 300];
+bdSP.freq     = bdFreq;
+bdSP.pre      = 1;
+bdSP.post     = 1;
+bdSP.win      = 256;
+bdSP.overlap  = 224;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Assemble signal list
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+colLabels = [sigConfigs(:,1); {'SRW upcall'}; {'Bioduck bout'}];
+allAnnots = [toneAnnots; {srwAnnot}; {bdAnnot}];
+allSP     = [repmat({sp}, nTone, 1); {srwSP}; {bdSP}];
+nCols     = numel(colLabels);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Helper: draw one method figure (1 x nCols grid)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-figW   = 300 * nCols;   % 300px per column
+figW   = 300 * nCols;
 figH   = 350;
 figPos = [50 50 figW figH];
 
-snrTable = nan(8, nCols);   % rows=methods, cols=signals
+nMethods = 8;
+snrTable = nan(nMethods, nCols);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure 1: spectrogram
@@ -160,33 +192,10 @@ tlo3 = tiledlayout(fig3,1,nCols,'TileSpacing','compact','Padding','compact');
 title(tlo3,'timeDomain','interpreter','none');
 for s = 1:nCols
     nexttile(tlo3);
-    p = struct('snrType','timeDomain','showClips',false);
-    [snr, rmsS, rmsN, ~, fileInfo] = snrEstimate(allAnnots{s}, p);
+    p = struct('snrType','timeDomain','showClips',true,'pauseAfterPlot',false,...
+        'spectroParams',allSP{s});
+    snr = snrEstimate(allAnnots{s}, p);
     snrTable(3,s) = snr;
-
-    % Load audio for plotTimeDomainPower
-    try
-        annot = allAnnots{s};
-        thisSP = allSP{s};
-        sf = wavFolderInfo(annot.soundFolder);
-        fs = sf(1).sampleRate;
-        [sigA,~,~] = getAudioFromFiles(sf, annot.t0, annot.tEnd, newRate=fs);
-        noiseT0   = annot.t0   - 0.5*annot.duration/86400;
-        noiseTEnd = annot.tEnd + 0.5*annot.duration/86400;
-        [noiseA,~,~] = getAudioFromFiles(sf, noiseT0, noiseTEnd, ...
-            exclusions=[annot.t0 annot.tEnd], channel=annot.channel);
-        [~,~,noiseVar] = snrTimeDomain(sigA, noiseA, annot.freq, fs);
-        clipT0   = noiseT0 - thisSP.pre/86400;
-        clipTEnd = max([annot.tEnd, noiseTEnd]) + thisSP.post/86400;
-        clipA    = getAudioFromFiles(sf, clipT0, clipTEnd, channel=annot.channel, newRate=fs);
-        tdDet          = annot; tdDet.rmsLevel = 10*log10(rmsS);
-        tdNoise        = struct('t0',noiseT0,'tEnd',noiseTEnd,'rmsLevel',10*log10(rmsN));
-        plotTimeDomainPower(clipA, clipT0, tdDet, tdNoise, annot.freq, fs, rmsS, rmsN, noiseVar);
-    catch
-        text(0.5,0.5,sprintf('timeDomain\n%.1f dB',snr),...
-            'Units','normalized','HorizontalAlignment','center');
-        axis off;
-    end
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
 end
@@ -278,15 +287,10 @@ tlo8 = tiledlayout(fig8,1,nCols,'TileSpacing','compact','Padding','compact');
 title(tlo8,'nist (frame energy histogram)','interpreter','none');
 for s = 1:nCols
     nexttile(tlo8);
-    p = struct('snrType','nist','showClips',false,'pauseAfterPlot',false,...
+    p = struct('snrType','nist','showClips',true,'pauseAfterPlot',false,...
         'spectroParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(8,s) = snr;
-    % nist has no spectrogram — show a bar chart of signal vs noise power
-    [~, rmsS, rmsN] = snrEstimate(allAnnots{s}, p);
-    bar([10*log10(rmsS), 10*log10(rmsN)], 'FaceColor', [0.3 0.5 0.7]);
-    set(gca,'XTickLabel',{'Signal','Noise'});
-    ylabel('dB');
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
 end
@@ -298,6 +302,7 @@ fprintf('  [PASS] Figure 8 complete\n');
 
 for s = 1:nTone, toneCleanups{s}(); end
 srwCleanup();
+bdCleanup();
 
 methodNames = {'spectrogram','spectrogramSlices','timeDomain','ridge',...
                'synchrosqueeze','quantiles','spectrogram(Lurton)','nist'};
