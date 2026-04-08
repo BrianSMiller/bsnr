@@ -1,4 +1,4 @@
-function plotHistogramSNR(diagData, snr, signalRMSdB, noiseRMSdB, levelUnit)
+function plotHistogramSNR(histogramData, snr, signalRMSdB, noiseRMSdB, levelUnit)
 % Plot the NIST frame-energy histogram with noise and signal levels marked.
 %
 % Draws into the current axes (gca). The histogram shows the distribution
@@ -18,7 +18,7 @@ function plotHistogramSNR(diagData, snr, signalRMSdB, noiseRMSdB, levelUnit)
 %   Bracket        — SNR = gap between noise peak and signal level
 %
 % INPUTS
-%   diagData     Struct from snrHistogram:
+%   histogramData     Struct from snrHistogram:
 %                  .binCentres    bin centres (dB, NIST internal scale)
 %                  .histSmooth    smoothed histogram counts
 %                  .noisedB       noise peak (dB, NIST internal scale)
@@ -37,17 +37,17 @@ end
 % The histogram is stored in 10*log10(Pfull) where Pfull = sum of two
 % half-window mean((x*16384)^2). The linear outputs rmsSignal/rmsNoise
 % are derived from the same scale, so noiseRMSdB = 10*log10(rmsNoise)
-% is offset from diagData.noisedB by a fixed constant (84.29 dB).
+% is offset from histogramData.noisedB by a fixed constant (84.29 dB).
 % Applying shift = noiseRMSdB - noisedB to all bin centres maps the
 % entire x-axis to physical power dB (dBFS or dB re 1 µPa if calibrated),
 % with the noise peak landing exactly at noiseRMSdB.
-shift = noiseRMSdB - diagData.noisedB;
+shift = noiseRMSdB - histogramData.noisedB;
 
-bc  = diagData.binCentres + shift;
-hs  = diagData.histSmooth / sum(diagData.histSmooth);  % normalise to density
-ndb = diagData.noisedB  + shift;   % = noiseRMSdB
-sdb = diagData.signaldB + shift;
-nw  = diagData.noiseWidth_dB;      % width is unchanged by a rigid shift
+bc  = histogramData.binCentres + shift;
+hs  = histogramData.histSmooth / sum(histogramData.histSmooth);  % normalise to density
+ndb = histogramData.noisedB  + shift;   % = noiseRMSdB
+sdb = histogramData.signaldB + shift;
+nw  = histogramData.noiseWidth_dB;      % width is unchanged by a rigid shift
 
 yMax = max(hs) * 1.25;
 yLim = [0 yMax];

@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, q85thresh] = snrQuantiles( ...
+function [rmsSignal, rmsNoise, noiseVar, q85thresh, psdCells] = snrQuantiles( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate signal and noise power using quantiles of the spectrogram distribution.
 %
@@ -23,17 +23,19 @@ function [rmsSignal, rmsNoise, noiseVar, q85thresh] = snrQuantiles( ...
 %   rmsSignal  Mean PSD of high-percentile (top 15%) cells
 %   rmsNoise   Mean PSD of low-percentile (bottom 85%) cells
 %   noiseVar   Variance of low-percentile cells
+%   q85thresh  85th percentile PSD threshold (linear, V^2/Hz or Pa^2/Hz)
+%   psdCells   All in-band PSD cell values (column vector, for histogram display)
 
 if nargin < 7, metadata = []; end
 
-[rmsSignal, rmsNoise, noiseVar, q85thresh] = quantilePower( ...
+[rmsSignal, rmsNoise, noiseVar, q85thresh, psdCells] = quantilePower( ...
     sigAudio, nfft, nOverlap, sampleRate, freq, metadata);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [signal, noise, noiseVar, q85thresh] = quantilePower(x, window, nOverlap, sampleRate, freq, metadata)
+function [signal, noise, noiseVar, q85thresh, psdCells] = quantilePower(x, window, nOverlap, sampleRate, freq, metadata)
 
 nfft = window;
 if length(x) < window
@@ -49,14 +51,15 @@ if ~isempty(metadata)
     P = applyCalibration(P, F, sT, metadata);
 end
 
-specPsd  = P(F >= freq(1) & F <= freq(2), :);
-q85      = quantile(specPsd(:), 0.85);
-sigIx    = specPsd >= q85;
-noiseIx  = specPsd <  q85;
-signal   = mean(specPsd(sigIx));
-noise    = mean(specPsd(noiseIx));
-noiseVar = var( specPsd(noiseIx));
+specPsd   = P(F >= freq(1) & F <= freq(2), :);
+q85       = quantile(specPsd(:), 0.85);
+sigIx     = specPsd >= q85;
+noiseIx   = specPsd <  q85;
+signal    = mean(specPsd(sigIx));
+noise     = mean(specPsd(noiseIx));
+noiseVar  = var( specPsd(noiseIx));
 q85thresh = q85;
+psdCells  = specPsd(:);   % all in-band cells, for histogram display
 
 end
 

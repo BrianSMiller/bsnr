@@ -110,6 +110,10 @@ if isempty(fBand) || size(sigBand, 1) < 3
     return
 end
 
+% Cap guardBins so at least one noise bin is always available.
+nBand = size(sigBand, 1);
+params.guardBins = min(params.guardBins, floor((nBand - 1) / 2));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Noise floor normalisation and ridge tracking
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

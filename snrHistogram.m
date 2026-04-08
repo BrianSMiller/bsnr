@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, diagData] = snrHistogram( ...
+function [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate SNR using a frame-energy histogram method.
 %
@@ -55,7 +55,7 @@ function [rmsSignal, rmsNoise, noiseVar, diagData] = snrHistogram( ...
 %   rmsSignal  Signal power estimate (linear; uPa^2 if calibrated)
 %   rmsNoise   Noise power estimate  (linear; uPa^2 if calibrated)
 %   noiseVar   Variance of noise frame energies
-%   diagData   Struct with fields for plotting and diagnostics:
+%   histogramData   Struct with fields for plotting and diagnostics:
 %                .binCentres    histogram bin centres (dB, NIST internal scale)
 %                .histSmooth    smoothed histogram counts (normalised to density
 %                               by plotHistogramSNR; stored raw here)
@@ -66,7 +66,7 @@ function [rmsSignal, rmsNoise, noiseVar, diagData] = snrHistogram( ...
 %                .noisePeakBin  bin index of noise peak (regression guard: should
 %                               be > BINS/2 for typical audio; see test_snrMethods)
 %              Empty struct if signal window is too short for the histogram
-%              (< 10 frames); caller should check isfield(diagData,'binCentres').
+%              (< 10 frames); caller should check isfield(histogramData,'binCentres').
 
 if nargin < 7, metadata = []; end
 
@@ -124,7 +124,7 @@ if floor(length(sigFiltered) / frameAdv) < 10
     rmsSignal = mean(sigFiltered.^2)   * calFactor2;
     rmsNoise  = mean(noiseFiltered.^2) * calFactor2;
     noiseVar  = var(noiseFiltered.^2)  * calFactor2^2;
-    diagData  = struct();
+    histogramData  = struct();
     return
 end
 
@@ -237,12 +237,12 @@ else
 end
 
 %% Diagnostic data for plotting
-diagData.binCentres    = binCentres;
-diagData.histSmooth    = histSmooth;
-diagData.histRaw       = histRaw;        % pre-smoothing counts
-diagData.noisedB       = noisedB;
-diagData.signaldB      = signaldB;
-diagData.noiseWidth_dB = noiseWidth_dB;
-diagData.noisePeakBin  = noisePeakBin;  % for test inspection
+histogramData.binCentres    = binCentres;
+histogramData.histSmooth    = histSmooth;
+histogramData.histRaw       = histRaw;        % pre-smoothing counts
+histogramData.noisedB       = noisedB;
+histogramData.signaldB      = signaldB;
+histogramData.noiseWidth_dB = noiseWidth_dB;
+histogramData.noisePeakBin  = noisePeakBin;  % for test inspection
 
 end

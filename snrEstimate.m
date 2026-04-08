@@ -25,6 +25,10 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %              .parallelThreshold  Min annotations to trigger parfor.
 %                                  Default: 100. Set Inf to force serial,
 %                                  1 to force parallel.
+%              .nSlices            Target number of STFT windows across the
+%                                  detection for spectrogram-based methods.
+%                                  Default: 30. Also sets the display
+%                                  spectrogram window size.
 %              .noiseDelay         Gap in seconds between signal and noise
 %                                  windows. Default: 0.5 s.
 %              .noiseDuration      Noise window placement strategy:
@@ -258,9 +262,11 @@ else
 end
 
 % Spectrogram shape: target ~nSlices windows across the detection.
-% TODO: expose nSlices and overlap through params when needed.
 nSlices = 30;
 overlap = 0.75;
+if isfield(params, 'nSlices') && ~isempty(params.nSlices)
+    nSlices = params.nSlices;
+end
 
 %--------------------------------------------------------------------------
 % Load signal audio
@@ -270,7 +276,7 @@ overlap = 0.75;
 % when the folder does not exist or contains no WAV files. Catch both
 % the unassigned-output error and the empty-struct case.
 try
-    soundFolder = wavFolderInfo(annot.soundFolder);
+    soundFolder = wavFolderInfo(annot.soundFolder, '', false, false);
 catch
     soundFolder = [];
 end
@@ -341,11 +347,13 @@ end
 % Estimate signal and noise power
 %--------------------------------------------------------------------------
 
-sigFilt   = [];
-noiseFilt = [];
+sigFilt        = [];
+noiseFilt      = [];
 ridgeFreq      = [];
 quantileThresh = [];
-histDiag       = [];
+psdCells       = [];
+histogramData  = [];
+nistDisplay    = 'histogram';   % default; overridden by params.nistDisplay if set
 
 switch params.snrType
     case 'spectrogram'
@@ -359,11 +367,11 @@ switch params.snrType
             params.metadata);
 
     case 'quantiles'
-        [rmsSignal, rmsNoise, noiseVar, quantileThresh] = snrQuantiles( ...
+        [rmsSignal, rmsNoise, noiseVar, quantileThresh, psdCells] = snrQuantiles( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
 
     case 'nist'
-        [rmsSignal, rmsNoise, noiseVar, histDiag] = snrHistogram( ...
+        [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
 
     case 'timeDomain'
@@ -407,7 +415,7 @@ noise.rmsLevel = 10 * log10(rmsNoise);
 %--------------------------------------------------------------------------
 
 if params.showClips
-    spectroParams = buildSpectroParams(params, annot, sampleRate, freq);
+    spectroParams = buildSpectroParams(params, annot, sampleRate, freq, nfft);
     spectroParams.snrType = params.snrType;   % for fsst vs spectrogram display routing
     if ~isempty(ridgeFreq)
         spectroParams.ridgeFreq = ridgeFreq;
@@ -418,13 +426,31 @@ if params.showClips
     if ~isempty(quantileThresh)
         spectroParams.quantileThresh = quantileThresh;
     end
-    if ~isempty(excludeTimes)
-        spectroParams.excludeTimes = excludeTimes;   % gap bounds for display
+    if ~isempty(psdCells)
+        spectroParams.psdCells = psdCells;   % for histogram display
     end
-    % Methods that draw their own plot (not a spectrogram).
-    % For these, skip spectroAnnotationAndNoise entirely.
-    drawsOwnPlot = strcmpi(params.snrType, 'nist') || ...
-                   (strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt));
+    if ~isempty(excludeTimes)
+        spectroParams.excludeTimes = excludeTimes;
+    end
+    if ~isempty(params.removeClicks)
+        spectroParams.removeClicks = params.removeClicks;
+    end
+    if strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres')
+        % Resolve display mode; used for both the spectroParams path and
+        % the post-spectro histogram path below.
+        if isfield(params, 'nistDisplay') && ~isempty(params.nistDisplay)
+            nistDisplay = params.nistDisplay;
+        end
+        if strcmpi(nistDisplay, 'spectrogram')
+            bw = diff(freq);
+            spectroParams.nistThresh = [rmsNoise / bw, rmsSignal / bw];
+        end
+    end
+
+    % Methods that draw their own plot (not via spectroAnnotationAndNoise).
+    drawsOwnPlot = (strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt)) || ...
+                   (strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres') && ...
+                    ~strcmpi(nistDisplay, 'spectrogram'));
 
     if ~drawsOwnPlot
         spectroAnnotationAndNoise(annot, noise, soundFolder, spectroParams, snr, ...
@@ -432,8 +458,6 @@ if params.showClips
     end
 
     if strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt)
-        % Load continuous clip for time-domain power plot — draw into gca
-        % so it respects tiledlayout / any axes the caller has set up.
         clipT0    = noise.t0 - spectroParams.pre / 86400;
         clipTEnd  = max([annot.tEnd, noise.tEnd]) + spectroParams.post / 86400;
         clipAudio = getAudioFromFiles(soundFolder, clipT0, clipTEnd, ...
@@ -443,10 +467,24 @@ if params.showClips
             freq, sampleRate, rmsSignal, rmsNoise, noiseVar);
     end
 
-    if strcmpi(params.snrType, 'nist') && isfield(histDiag, 'binCentres')
+    if strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres') && ...
+            strcmpi(nistDisplay, 'histogram')
         levelUnit = 'dBFS';
         if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
-        plotHistogramSNR(histDiag, snr, annot.rmsLevel, noise.rmsLevel, levelUnit);
+        plotHistogramSNR(histogramData, snr, annot.rmsLevel, noise.rmsLevel, levelUnit);
+    end
+
+    if strcmpi(params.snrType, 'quantiles') && ~isempty(psdCells)
+        quantDisplay = 'spectrogram';
+        if isfield(params, 'quantDisplay') && ~isempty(params.quantDisplay)
+            quantDisplay = params.quantDisplay;
+        end
+        if strcmpi(quantDisplay, 'histogram')
+            levelUnit = 'dBFS';
+            if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
+            plotQuantilesHistogram(psdCells, quantileThresh, snr, ...
+                annot.rmsLevel, noise.rmsLevel, levelUnit);
+        end
     end
 
     if params.pauseAfterPlot
@@ -505,6 +543,9 @@ end
 if ~isfield(params, 'resampleRate') || isempty(params.resampleRate)
     params.resampleRate = [];   % empty = use native rate
 end
+if ~isfield(params, 'nSlices') || isempty(params.nSlices)
+    params.nSlices = 30;
+end
 
 end
 
@@ -547,7 +588,7 @@ end
 
 % -------------------------------------------------------------------------
 
-function spectroParams = buildSpectroParams(params, annot, sampleRate, freq)
+function spectroParams = buildSpectroParams(params, annot, sampleRate, freq, computedNfft)
 
 if isfield(params, 'spectroParams') && ~isempty(params.spectroParams)
     spectroParams = params.spectroParams;
@@ -557,14 +598,28 @@ if isfield(params, 'spectroParams') && ~isempty(params.spectroParams)
     return
 end
 
+% Use the nfft computed from the 30-slices formula so the display
+% spectrogram uses the same window as the SNR computation.
 overlapPercent = 0.75;
-win            = floor(sampleRate / 4);
+if nargin >= 5 && ~isempty(computedNfft)
+    win = computedNfft;
+else
+    win = floor(sampleRate / 4);
+end
 
 spectroParams.pre         = 1;
 spectroParams.post        = 1;
 spectroParams.win         = win;
 spectroParams.overlap     = floor(win * overlapPercent);
-spectroParams.yLims       = [10 125];
+% Set display range to show the annotation band with comfortable margins.
+% Default [10 125] is appropriate for low-frequency cetacean calls but wrong
+% for arbitrary bands — e.g. a 150-250 Hz band at 2000 Hz sample rate would
+% be invisible. Derive from the annotation freq with 50% padding each side,
+% clamped to [0, Nyquist].
+nyquist = sampleRate / 2;
+yLo = max(0,       freq(1) - 0.5 * diff(freq));
+yHi = min(nyquist, freq(2) + 0.5 * diff(freq));
+spectroParams.yLims       = [yLo yHi];
 spectroParams.freq        = annot.freq;
 
 end

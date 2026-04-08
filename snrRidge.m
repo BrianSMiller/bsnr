@@ -91,6 +91,12 @@ if isempty(fBand) || size(sigBand, 1) < 3
     return
 end
 
+% Cap guardBins so there is always at least one noise bin available.
+% With a narrow band (e.g. 4 bins), the default guardBins=2 would exclude
+% all non-ridge bins for central ridge positions, giving NaN noise estimates.
+nBand = size(sigBand, 1);
+params.guardBins = min(params.guardBins, floor((nBand - 1) / 2));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Per-bin median subtraction (noise floor normalisation)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -92,28 +92,49 @@ line([tSigEnd     tSigEnd],     yLim, 'color', [0 0.5 0], 'linewidth', 1, 'lines
 line([tNoiseStart tNoiseStart], yLim, 'color', [0.5 0 0], 'linewidth', 1, 'linestyle', '--');
 line([tNoiseEnd   tNoiseEnd],   yLim, 'color', [0.5 0 0], 'linewidth', 1, 'linestyle', '--');
 
-% Text labels instead of legend
-text(tSigStart, rmsSignal, sprintf('  Signal = %.1f dBFS', detection.rmsLevel), ...
-    'color', 'k', 'verticalAlignment', 'bottom', 'BackgroundColor', 'none');
-text(tNoiseStart, rmsNoise, sprintf('  Noise = %.1f dBFS', noise.rmsLevel), ...
-    'color', 'k', 'verticalAlignment', 'top', 'BackgroundColor', 'none');
+% Text labels — font and colour matching spectroAnnotationAndNoise conventions.
+% Signal: centred horizontally in the signal window, near the top.
+% Noise: right-aligned at the right edge of the noise region, near the bottom.
+yLim     = ylim;
+yMax     = yLim(2);
+yMin     = yLim(1);
+tSigMid  = (tSigStart + tSigEnd) / 2;
+tNoiseR  = max(tNoiseStart, tSigStart - 0.01*(tClip(end)-tClip(1)));   % rightmost noise edge
+
+levelUnit = 'dBFS';   % plotTimeDomainPower has no metadata access; always dBFS
+
+if isfield(detection, 'rmsLevel') && isfinite(detection.rmsLevel)
+    sigStr = sprintf('SNR = %4.1f dB\nSig = %4.1f %s', ...
+        10*log10(rmsSignal/rmsNoise), detection.rmsLevel, levelUnit);
+else
+    sigStr = sprintf('SNR = %4.1f dB', 10*log10(rmsSignal/rmsNoise));
+end
+text(tSigMid, yMax, sigStr, ...
+    'color', [0 0.5 0], 'FontSize', 7, 'verticalAlignment', 'top', ...
+    'horizontalAlignment', 'center', 'BackgroundColor', 'w', ...
+    'EdgeColor', 'none', 'Margin', 1);
+
+if isfield(noise, 'rmsLevel') && isfinite(noise.rmsLevel)
+    noiseStr = sprintf('Noise = %4.1f %s', noise.rmsLevel, levelUnit);
+else
+    noiseStr = 'Noise';
+end
+text(tNoiseEnd, yMin, noiseStr, ...
+    'color', [0.5 0 0], 'FontSize', 7, 'verticalAlignment', 'bottom', ...
+    'horizontalAlignment', 'right', 'BackgroundColor', 'w', ...
+    'EdgeColor', 'none', 'Margin', 1);
 
 hold off
 
-xlabel('Time (s)');
-ylabel('Power (au)');
+xlabel('Time (s)', 'FontSize', 7);
+ylabel('Power (au)', 'FontSize', 7);
 xlim([tClip(1) tClip(end)]);
 
-cl = '';
 if isfield(detection, 'classification')
-    cl = [char(detection.classification) ' — '];
-end
-snrdB = 10 * log10(rmsSignal / rmsNoise);
-if isfield(detection, 't0')
-    title(sprintf('%stimeDomain | SNR = %.1f dB | %s', cl, snrdB, datestr(detection.t0)), ...
-        'interpreter', 'none');
+    titleStr = sprintf('%s — timeDomain', char(detection.classification));
 else
-    title(sprintf('%stimeDomain | SNR = %.1f dB', cl, snrdB), 'interpreter', 'none');
+    titleStr = 'timeDomain';
 end
+title(titleStr, 'interpreter', 'none', 'FontSize', 7);
 
 end

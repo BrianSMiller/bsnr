@@ -62,13 +62,21 @@ if isempty(clip.audio) || clip.duration * sampleRate < spectroParams.win
     return
 end
 
-% removeClicks is an optional dependency from longTermRecorders.
-% Disabled by default — the threshold (3x wideband RMS) suppresses out-of-band
-% energy in wideband noise, making spectrograms appear bandpass-filtered.
-% Enable via spectroParams.removeClicks = true for real recordings with clicks.
-if isfield(spectroParams, 'removeClicks') && spectroParams.removeClicks ...
-        && exist('removeClicks', 'file')
-    clip.audio = removeClicks(clip.audio, 3, 1000);
+% Apply click removal to the display clip if requested.
+% When snrEstimate threads params.removeClicks through to spectroParams,
+% the displayed spectrogram uses the same cleaned audio as the SNR computation.
+if isfield(spectroParams, 'removeClicks') && ~isempty(spectroParams.removeClicks)
+    rc = spectroParams.removeClicks;
+    if isstruct(rc)
+        rcThresh = rc.threshold;
+        rcPower  = rc.power;
+    else
+        rcThresh = 3;     % legacy boolean true -> use defaults
+        rcPower  = 1000;
+    end
+    if exist('removeClicks', 'file')
+        clip.audio = removeClicks(clip.audio, rcThresh, rcPower);
+    end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,13 +110,20 @@ end
 % signals skewing the percentiles and compressing the colour scale.
 % Upper clim is set well above the noise floor so the signal band
 % is clearly visible without saturating the display.
+%
+% PSD from spectrogram() is in V^2/Hz (uncalibrated) or Pa^2/Hz (calibrated).
+% Both are power spectral density — 10*log10 is the correct conversion in
+% both cases.  Using 20*log10 would double all values and is appropriate
+% only for amplitude spectra, not PSD.
+pToDb = @(x) 10 * log10(x);
+
 fIx      = f >= freq(1) & f <= freq(2);            % annotation band (for overlays)
 fDispIx  = f >= spectroParams.yLims(1) & f <= spectroParams.yLims(2);
 fNoiseIx = fDispIx & ~fIx;                         % display range minus annotation band
 if sum(fNoiseIx) < 3
     fNoiseIx = fDispIx;                            % fallback if band covers most of display
 end
-pNoisedB    = 20 * log10(p(fNoiseIx, :));
+pNoisedB    = pToDb(p(fNoiseIx, :));
 noiseFloor  = median(pNoisedB(:));
 noiseSpread = min(diff(quantile(pNoisedB(:), [0.1 0.9])), 20);   % cap spread at 20 dB
 cLim        = [noiseFloor - noiseSpread, noiseFloor + 3*noiseSpread];
@@ -118,17 +133,16 @@ cLim(2)     = min(cLim(2), cLim(1) + 60);   % cap total range at 60 dB
 %% Draw into current axes
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-imagesc(t, f, 20 * log10(p));
+imagesc(t, f, pToDb(p));
 set(gca, 'ydir',   'normal');
 set(gca, 'clim',   cLim);
-set(gca, 'xtick',  0 : floor(clip.duration));
 set(gca, 'layer',  'top');
 colormap(gca, flipud(gray));
 cb = colorbar('eastoutside');
 if ~isempty(metadata)
     ylabel(cb, 'dB re 1 \muPa^2/Hz');
 else
-    ylabel(cb, 'dBFS');
+    ylabel(cb, 'dB re 1 V^2/Hz');
 end
 xlabel('Time (s)');
 ylabel('Frequency (Hz)');
@@ -156,24 +170,24 @@ levelUnit = 'dBFS';
 if ~isempty(metadata), levelUnit = 'dBuPa'; end
 
 if isfield(spectroParams, 'quantileThresh') && ~isempty(spectroParams.quantileThresh)
-    % Quantiles method: show full clip spectrogram (same as other methods)
-    % with cyan dashed lines marking the annotation bounds, and horizontal
-    % contour lines at the 85th/15th percentile PSD thresholds within the band.
+    % Quantiles method: no separate noise window, so only the signal window
+    % boundary is drawn — as a dark green horizontal line at freq, matching
+    % the standard overlay. The 85th/15th percentile contours show where the
+    % signal/noise threshold sits within the TF plane.
     tSig0 = tOffset(detection.t0);
     tSig1 = tOffset(detection.tEnd);
     thresh85 = spectroParams.quantileThresh;   % linear PSD, 85th percentile
     thresh15 = thresh85 * (0.665214 / 2.897120);   % 15th percentile (exponential theory)
-    thresh85dB = 20 * log10(thresh85);
-    thresh15dB = 20 * log10(thresh15);
+    thresh85dB = pToDb(thresh85);
+    thresh15dB = pToDb(thresh15);
 
-    % Annotation bounds — cyan dashed vertical lines full height
-    line([tSig0 tSig0], [yMin yMax], 'color', 'c', 'linewidth', 1.5, 'linestyle', '--');
-    line([tSig1 tSig1], [yMin yMax], 'color', 'c', 'linewidth', 1.5, 'linestyle', '--');
+    % Signal window boundary — dark green horizontal line, same as standard overlay
+    line([tSig0 tSig1], [1 1]' * freq, 'color', [0 0.5 0], 'linewidth', 2);
 
-    % Contour lines: use the full p matrix but restrict frequency to band
+    % Contour lines at 85th/15th percentile PSD thresholds within the band
     fMask = f >= freq(1) & f <= freq(2);
     if sum(fMask) > 1 && length(t) > 1
-        pBanddB   = 20 * log10(p(fMask, :));
+        pBanddB   = pToDb(p(fMask, :));
         fBand     = f(fMask);
         holdState = ishold;
         hold on;
@@ -184,12 +198,6 @@ if isfield(spectroParams, 'quantileThresh') && ~isempty(spectroParams.quantileTh
         if ~holdState; hold off; end
     end
 
-    % Quantiles: p=0.85/0.15 labels at top-left of signal region
-    % SNR combined with signal level at top-right (yMax)
-    text(tSig0, yMax, sprintf('SNR = %.1f dB\np=0.85/0.15', snr), ...
-        'color', 'g', 'verticalAlignment', 'top', 'FontSize', 7, ...
-        'horizontalAlignment', 'left', 'BackgroundColor', 'w', 'EdgeColor', 'none', ...
-        'Margin', 1);
 else
     % Standard: noise window (dark red) and signal window (dark green) lines.
     % When excludeTimes is present (gap between noise and signal), draw
@@ -240,14 +248,38 @@ text(tOffset(noise.t0), yMin, noiseStr, ...
     'color', [0.5 0 0], 'FontSize', 7, 'verticalAlignment', 'bottom', ...
     'horizontalAlignment', 'left', 'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 
-% Ridge overlay (cyan) — only present for snrType='ridge'
+% Ridge overlay (cyan) — only present for snrType='ridge' or 'synchrosqueeze'
 if isfield(spectroParams, 'ridgeFreq') && ~isempty(spectroParams.ridgeFreq)
     nRidge = length(spectroParams.ridgeFreq);
     tRidge = linspace(tOffset(detection.t0), tOffset(detection.tEnd), nRidge);
     line(tRidge, spectroParams.ridgeFreq(:)', 'color', 'c', 'linewidth', 1.5);
-    text(tOffset(detection.t0), freq(1), 'Ridge', ...
-        'color', 'c', 'FontSize', 7, 'verticalAlignment', 'bottom', ...
+    % Place label just below the annotation band (below freq(1)) so it does
+    % not overlap the green/red signal-window boundary lines.
+    labelOffset = (freq(2) - freq(1)) * 0.15;   % 15% of band width below band
+    text(tOffset(detection.t0), freq(1) - labelOffset, 'Ridge', ...
+        'color', 'c', 'FontSize', 7, 'verticalAlignment', 'top', ...
         'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
+end
+
+% NIST spectrogram contour overlay — only when params.nistDisplay='spectrogram'.
+% Draws iso-power contour lines on the spectrogram at the noise-peak and
+% signal 95th-percentile PSD thresholds estimated by the NIST algorithm.
+% These are the same two levels shown as vertical lines on the histogram,
+% but expressed as contours on the time-frequency plane — directly
+% analogous to the quantile contours.
+if isfield(spectroParams, 'nistThresh') && ~isempty(spectroParams.nistThresh)
+    fMask = f >= freq(1) & f <= freq(2);
+    if sum(fMask) > 1 && length(t) > 1
+        pBanddB     = pToDb(p(fMask, :));
+        fBand       = f(fMask);
+        noiseThrdB  = pToDb(spectroParams.nistThresh(1));
+        signalThrdB = pToDb(spectroParams.nistThresh(2));
+        holdState   = ishold;
+        hold on;
+        contour(t, fBand, pBanddB, [noiseThrdB  noiseThrdB],  'color', [0.5 0 0], 'linewidth', 1.5);
+        contour(t, fBand, pBanddB, [signalThrdB signalThrdB], 'color', [0 0.5 0], 'linewidth', 1.5);
+        if ~holdState; hold off; end
+    end
 end
 
 end
