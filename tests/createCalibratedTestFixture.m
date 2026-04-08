@@ -122,8 +122,7 @@ end
 %% Write WAV and build annotation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tmpDir = fullfile(tempdir, sprintf('annotSNR_cal_%s', ...
-    datestr(now, 'yyyymmdd_HHMMSS_FFF')));
+tmpDir = tempname();
 mkdir(tmpDir);
 fileStart = floor(now() * 86400) / 86400;
 wavPath   = fullfile(tmpDir, [datestr(fileStart, 'yyyy-mm-dd_HH-MM-SS') '.wav']);

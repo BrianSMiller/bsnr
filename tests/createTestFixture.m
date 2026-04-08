@@ -186,9 +186,10 @@ if audioPeak > 0
     audio = audio * (0.9 / audioPeak);
 end
 
-% Write to a uniquely-named temp folder
-tmpDir = fullfile(tempdir, sprintf('annotSNR_test_%s', ...
-    datestr(now, 'yyyymmdd_HHMMSS_FFF')));
+% Write to a uniquely-named temp folder.
+% tempname() is guaranteed unique by the OS, avoiding collisions when
+% multiple fixtures are created in rapid succession.
+tmpDir = tempname();
 mkdir(tmpDir);
 
 fileStartDatenum = floor(now() * 86400) / 86400;

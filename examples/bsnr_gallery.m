@@ -767,8 +767,7 @@ function [annot, cleanupFn] = audioToFixture(audioData, sampleRate, freqBand, ..
 if nargin < 6 || isempty(detOffsetSec)
     detOffsetSec = (length(audioData)/sampleRate - detDurSec) / 2;
 end
-tmpDir = fullfile(tempdir, sprintf('bsnr_gallery_%s', ...
-    datestr(now, 'yyyymmdd_HHMMSS_FFF')));
+tmpDir = tempname();
 mkdir(tmpDir);
 fileStartDatenum = floor(now*86400) / 86400;
 wavFilename      = [datestr(fileStartDatenum, 'yyyy-mm-dd_HH-MM-SS') '.wav'];

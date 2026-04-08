@@ -77,7 +77,7 @@ bufSamps    = round(bufferSec * srwRate);
 fullAudio   = [srwWideRMS*randn(bufSamps,1); srwSig; srwWideRMS*randn(bufSamps,1)];
 fullAudio   = fullAudio * (0.9/max(abs(fullAudio)));
 
-srwDir = fullfile(tempdir, sprintf('bsnr_plots_srw_%s', datestr(now,'yyyymmdd_HHMMSS_FFF')));
+srwDir = tempname();
 mkdir(srwDir);
 srwStart = floor(now()*86400)/86400;
 audiowrite(fullfile(srwDir, [datestr(srwStart,'yyyy-mm-dd_HH-MM-SS') '.wav']), fullAudio, srwRate);
