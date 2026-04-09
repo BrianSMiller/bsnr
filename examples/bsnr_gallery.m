@@ -202,8 +202,7 @@ fprintf('--- 3. calibrated levels ---\n');
     'toneFreqHz', 100, 'freq', [80 120], 'durationSec', 4, ...
     'classification', '122 dB re 1 µPa tone at 100 Hz');
 
-calSP = struct('win', 512, 'overlap', 384, 'yLims', [0 300], ...
-    'freq', [80 120], 'pre', 1, 'post', 1);
+calSP = struct('yLims', [0 300], 'pre', 1, 'post', 1);
 
 figCal = figure('Name', 'calibration', 'Position', [50 520 800 340]);
 tloCal = tiledlayout(figCal, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
@@ -404,8 +403,7 @@ pulseBuf      = pulseWbRMS * randn(round(pulseBufDur*pulseSR), 1);
     'signalRMS', 0.5, 'noiseRMS', 0.1, ...
     'freq', [30 250], ...
     'classification', 'Bio-duck A1 bout (~9% duty cycle)');
-bioduckSP = struct('win', 256, 'overlap', 230, 'yLims', [0 300], ...
-    'freq', [30 250], 'pre', 1, 'post', 1);
+bioduckSP = struct('yLims', [0 300], 'pre', 1, 'post', 1);
 
 figDuty = figure('Name', 'duty cycle', 'Position', [50 520 1200 340]);
 tloDuty = tiledlayout(figDuty, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
@@ -465,8 +463,7 @@ fprintf('--- 7a/7b. quantiles and NIST (SRW upcall) ---\n');
 % frames, well above the 10-frame minimum for a smooth histogram.
 srwFreq   = [75 210];
 srwBufDur = 4;    % s each side
-srwSP     = struct('win', 128, 'overlap', 96, 'yLims', [0 250], ...
-    'freq', srwFreq, 'pre', 1, 'post', 1);
+srwSP = struct('yLims', [0 250], 'pre', 1, 'post', 1);
 
 distConfigs = {'Noise only', 0.0, 0.1; 'Moderate SNR', 0.3, 0.1; 'High SNR', 1.0, 0.1};
 nDist       = size(distConfigs, 1);
@@ -566,9 +563,7 @@ srwFullAudio   = srwFullAudio * (0.9 / max(abs(srwFullAudio)));
 [annotSRW, cleanupSRW] = audioToFixture(srwFullAudio, srwSampleRate, srwFreqBand, ...
     srwDuration, 'SRW upcall  f(t)=80+118t^2 Hz', srwBufDur);
 
-srwSpectroDisp = struct('win', round(srwSampleRate/6), ...
-    'overlap', round(srwSampleRate/6*0.90), ...
-    'yLims', [0 250], 'freq', srwFreqBand, 'pre', 1, 'post', 1);
+srwSpectroDisp = struct('yLims', [0 250], 'pre', 1, 'post', 1);
 
 fig2 = figure('Name', 'ridge + synchrosqueeze', 'Position', [50 520 800 340]);
 tlo2 = tiledlayout(fig2, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
@@ -790,31 +785,26 @@ end
 
 function spectroParams = fixtureSP(sampleRate, freqBand)
 % Spectrogram display params for synthetic fixtures.
-winLen = floor(sampleRate / 4);
-spectroParams = struct('win', winLen, 'overlap', floor(winLen*0.75), ...
-    'yLims', [0 sampleRate/2*0.6], 'freq', freqBand, 'pre', 1, 'post', 1);
+% Only display-only fields: yLims, pre, post.
+% win/overlap are always derived from nSlices in snrEstimate.
+spectroParams = struct('yLims', [0 sampleRate/2*0.6], 'pre', 1, 'post', 1);
 end
 
 function spectroParams = realCallSP(subdir, freqBand)
-% Spectrogram display params for real calls at 250 Hz, matched to
-% Miller et al. (2021) published figure parameters.
-% ABW A/B use nfft=512 (not 256) to give sufficient frequency bins for
-% the ridge method in their 4 Hz band ([24-28] and [20-28] Hz).
+% Spectrogram display params for real calls at 250 Hz.
+% Only display-only fields: yLims, pre, post.
+% win/overlap are always derived from nSlices in snrEstimate, ensuring the
+% displayed spectrogram matches the SNR computation window.
 switch subdir
-    case {'abw_a', 'abw_b'}              % very narrow tonal: more bins needed for ridge
-        spectroParams = struct('win', 512, 'overlap', 460, 'yLims', [0 60], ...
-            'freq', freqBand, 'pre', 3, 'post', 3);
-    case 'abw_z'                         % narrow tonal, wider band than A/B
-        spectroParams = struct('win', 256, 'overlap', 230, 'yLims', [0 80], ...
-            'freq', freqBand, 'pre', 3, 'post', 3);
-    case {'abw_d', 'bp_40'}              % short broadband
-        spectroParams = struct('win', 128, 'overlap', 115, 'yLims', [0 125], ...
-            'freq', freqBand, 'pre', 2, 'post', 2);
-    case 'bp_20'                         % very low frequency narrow tonal
-        spectroParams = struct('win', 256, 'overlap', 230, 'yLims', [0 80], ...
-            'freq', freqBand, 'pre', 3, 'post', 3);
+    case {'abw_a', 'abw_b'}     % very narrow tonal
+        spectroParams = struct('yLims', [0 60],  'pre', 3, 'post', 3);
+    case 'abw_z'                % narrow tonal
+        spectroParams = struct('yLims', [0 80],  'pre', 3, 'post', 3);
+    case {'abw_d', 'bp_40'}     % short broadband
+        spectroParams = struct('yLims', [0 125], 'pre', 2, 'post', 2);
+    case 'bp_20'                % very low frequency
+        spectroParams = struct('yLims', [0 80],  'pre', 3, 'post', 3);
     otherwise
-        spectroParams = struct('win', 256, 'overlap', 230, 'yLims', [0 100], ...
-            'freq', freqBand, 'pre', 2, 'post', 2);
+        spectroParams = struct('yLims', [0 100], 'pre', 2, 'post', 2);
 end
 end

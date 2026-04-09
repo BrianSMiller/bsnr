@@ -25,10 +25,19 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %              .parallelThreshold  Min annotations to trigger parfor.
 %                                  Default: 100. Set Inf to force serial,
 %                                  1 to force parallel.
+%              .nfft               FFT length in samples for spectrogram-based
+%                                  methods. When set, this is used directly
+%                                  and recorded in the output for
+%                                  reproducibility. Default: [] (derive from
+%                                  nSlices).
+%              .nOverlap           FFT overlap in samples. Default: [] (set
+%                                  to floor(nfft * 0.75) automatically).
 %              .nSlices            Target number of STFT windows across the
-%                                  detection for spectrogram-based methods.
-%                                  Default: 30. Also sets the display
-%                                  spectrogram window size.
+%                                  detection. Used to derive nfft when
+%                                  params.nfft is not set:
+%                                    nfft = 2^nextpow2(duration/nSlices/0.75
+%                                                      * sampleRate)
+%                                  Default: 30.
 %              .noiseDelay         Gap in seconds between signal and noise
 %                                  windows. Default: 0.5 s.
 %              .noiseDuration      Noise window placement strategy:
@@ -63,7 +72,12 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                  (with a warning) in parallel mode.
 %              .pauseAfterPlot     Pause after each plot. Default true.
 %                                  Set false for automated review.
-%              .spectroParams      Sub-struct for plot appearance.
+%              .spectroParams      Optional display overrides (display-only;
+%                                  win/overlap are always derived from nSlices
+%                                  to match the computation window):
+%                                    .yLims  [loHz hiHz] frequency axis range
+%                                    .pre    seconds before noise window
+%                                    .post   seconds after signal window
 %              .removeClicks       Click suppression parameters:
 %                                    .threshold  (default 3)
 %                                    .power      (default 1000)
@@ -261,12 +275,10 @@ else
     freq = annot.freq;
 end
 
-% Spectrogram shape: target ~nSlices windows across the detection.
-nSlices = 30;
+% Resolve nfft and nOverlap.
+% Use params.nfft/nOverlap if explicitly set (reproducibility: the exact
+% values used are recorded in the output).  Otherwise derive from nSlices.
 overlap = 0.75;
-if isfield(params, 'nSlices') && ~isempty(params.nSlices)
-    nSlices = params.nSlices;
-end
 
 %--------------------------------------------------------------------------
 % Load signal audio
@@ -306,8 +318,19 @@ sampleRate = annot.fileInfo(1).sampleRate;
 needsSpectrogram = ~any(strcmpi(params.snrType, {'timeDomain'}));
 % Note: 'ridge' uses spectrogram params (nfft, nOverlap) computed below
 if needsSpectrogram
-    nfft     = 2^nextpow2(floor(annot.duration / nSlices / overlap * sampleRate));
-    nOverlap = floor(nfft * overlap);
+    if ~isempty(params.nfft)
+        nfft = params.nfft;
+    else
+        nfft = 2^nextpow2(floor(annot.duration / params.nSlices / overlap * sampleRate));
+    end
+    if ~isempty(params.nOverlap)
+        nOverlap = params.nOverlap;
+    else
+        nOverlap = floor(nfft * overlap);
+    end
+    % Store resolved values back so they are available for output/logging.
+    params.nfft    = nfft;
+    params.nOverlap = nOverlap;
     if annot.duration * sampleRate < nfft
         [snr, rmsSignal, rmsNoise, noiseVar] = deal(nan, nan, nan, nan);
         return
@@ -543,6 +566,12 @@ end
 if ~isfield(params, 'resampleRate') || isempty(params.resampleRate)
     params.resampleRate = [];   % empty = use native rate
 end
+if ~isfield(params, 'nfft') || isempty(params.nfft)
+    params.nfft = [];       % empty = derive from nSlices
+end
+if ~isfield(params, 'nOverlap') || isempty(params.nOverlap)
+    params.nOverlap = [];   % empty = floor(nfft * 0.75)
+end
 if ~isfield(params, 'nSlices') || isempty(params.nSlices)
     params.nSlices = 30;
 end
@@ -589,17 +618,18 @@ end
 % -------------------------------------------------------------------------
 
 function spectroParams = buildSpectroParams(params, annot, sampleRate, freq, computedNfft)
+% Build display parameters for spectroAnnotationAndNoise.
+%
+% win and overlap are ALWAYS derived from computedNfft so the displayed
+% spectrogram uses the same window as the SNR computation.  Any win/overlap
+% in params.spectroParams are silently ignored — allowing them would produce
+% a display that misrepresents the measurement.
+%
+% The caller may supply params.spectroParams to control display-only fields:
+%   .yLims   [loHz hiHz]  frequency axis range
+%   .pre     seconds      clip buffer before noise window
+%   .post    seconds      clip buffer after signal window
 
-if isfield(params, 'spectroParams') && ~isempty(params.spectroParams)
-    spectroParams = params.spectroParams;
-    if ~isfield(spectroParams, 'freq')
-        spectroParams.freq = freq;
-    end
-    return
-end
-
-% Use the nfft computed from the 30-slices formula so the display
-% spectrogram uses the same window as the SNR computation.
 overlapPercent = 0.75;
 if nargin >= 5 && ~isempty(computedNfft)
     win = computedNfft;
@@ -607,20 +637,25 @@ else
     win = floor(sampleRate / 4);
 end
 
-spectroParams.pre         = 1;
-spectroParams.post        = 1;
-spectroParams.win         = win;
-spectroParams.overlap     = floor(win * overlapPercent);
-% Set display range to show the annotation band with comfortable margins.
-% Default [10 125] is appropriate for low-frequency cetacean calls but wrong
-% for arbitrary bands — e.g. a 150-250 Hz band at 2000 Hz sample rate would
-% be invisible. Derive from the annotation freq with 50% padding each side,
-% clamped to [0, Nyquist].
+% Start with defaults, then let caller override display-only fields.
 nyquist = sampleRate / 2;
 yLo = max(0,       freq(1) - 0.5 * diff(freq));
 yHi = min(nyquist, freq(2) + 0.5 * diff(freq));
-spectroParams.yLims       = [yLo yHi];
-spectroParams.freq        = annot.freq;
+
+spectroParams.pre    = 1;
+spectroParams.post   = 1;
+spectroParams.yLims  = [yLo yHi];
+spectroParams.win    = win;
+spectroParams.overlap = floor(win * overlapPercent);
+spectroParams.freq   = annot.freq;
+
+% Apply user display overrides (yLims, pre, post only).
+if isfield(params, 'spectroParams') && ~isempty(params.spectroParams)
+    sp = params.spectroParams;
+    if isfield(sp, 'yLims'), spectroParams.yLims = sp.yLims; end
+    if isfield(sp, 'pre'),   spectroParams.pre   = sp.pre;   end
+    if isfield(sp, 'post'),  spectroParams.post  = sp.post;  end
+end
 
 end
 

@@ -26,3 +26,4 @@ helpsearch/
 # OS specific
 .DS_Store
 desktop.ini
+/examples/gallery
