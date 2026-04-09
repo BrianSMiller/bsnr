@@ -30,6 +30,14 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                  and recorded in the output for
 %                                  reproducibility. Default: [] (derive from
 %                                  nSlices).
+%                                  IMPORTANT: for batch processing, nfft must
+%                                  be constant across all annotations for
+%                                  results to be comparable. When not set,
+%                                  nfft is derived from the median annotation
+%                                  duration and a warning is issued. The
+%                                  fraction of annotations too short for the
+%                                  chosen nfft is also reported; if >= 10%
+%                                  a stronger warning suggests reducing nfft.
 %              .nOverlap           FFT overlap in samples. Default: [] (set
 %                                  to floor(nfft * 0.75) automatically).
 %              .nSlices            Target number of STFT windows across the
@@ -140,6 +148,60 @@ function [resultTable, rmsSignal, rmsNoise, noiseVar, fileInfo] = ...
 
 nDet      = numel(annot);
 useParfor = nDet >= params.parallelThreshold;
+
+%--------------------------------------------------------------------------
+% Resolve nfft/nOverlap at the batch level before any processing begins.
+% A constant nfft across all annotations is essential for comparability:
+% per-annotation nfft produces SNR values at different frequency resolutions
+% that cannot be directly compared or reproduced without knowing each
+% annotation's exact duration.
+%--------------------------------------------------------------------------
+if isempty(params.nfft)
+    durations   = [annot.duration];
+    medianDur   = median(durations);
+    minDur      = min(durations);
+    maxDur      = max(durations);
+    sampleRate  = [];   % unknown until audio loaded; use a representative value
+    % Estimate sampleRate from the first annotation's folder if possible
+    try
+        sf = wavFolderInfo(annot(1).soundFolder, '', false, false);
+        if ~isempty(sf), sampleRate = sf(1).sampleRate; end
+    catch
+    end
+    if isempty(sampleRate)
+        sampleRate = 2000;   % safe fallback; warn below
+    end
+
+    overlap  = 0.75;
+    nfftBatch = 2^nextpow2(floor(medianDur / params.nSlices / overlap * sampleRate));
+    nOverlapBatch = floor(nfftBatch * overlap);
+
+    % Count how many annotations are too short for this nfft
+    nTooShort   = sum(durations * sampleRate < nfftBatch);
+    pctTooShort = 100 * nTooShort / nDet;
+
+    baseMsg = sprintf(['nfft not set for batch of %d annotations. ' ...
+        'Using median duration (%.2f s, range %.2f\x96%.2f s) ' ...
+        '\x2192 nfft=%d, nOverlap=%d at %d Hz. ' ...
+        '%d/%d annotations (%.0f%%) shorter than nfft will return NaN. ' ...
+        'Set params.nfft explicitly for reproducible results.'], ...
+        nDet, medianDur, minDur, maxDur, ...
+        nfftBatch, nOverlapBatch, sampleRate, ...
+        nTooShort, nDet, pctTooShort);
+
+    if pctTooShort >= 10
+        warning('snrEstimate:nfftHighTruncation', ...
+            '%s\nConsider reducing params.nSlices or setting params.nfft directly.', ...
+            baseMsg);
+    elseif nTooShort > 0
+        warning('snrEstimate:nfftTruncation', '%s', baseMsg);
+    else
+        warning('snrEstimate:nfftAutoSelected', '%s', baseMsg);
+    end
+
+    params.nfft    = nfftBatch;
+    params.nOverlap = nOverlapBatch;
+end
 
 if useParfor && params.showClips
     warning('snrEstimate:noParallelPlots', ...
