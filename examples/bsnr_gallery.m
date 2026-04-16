@@ -10,10 +10,10 @@
 % Annotated Library (Miller et al. 2021) as functional demos, with
 % spectrogram parameters matched to the published figures.
 %
-% Publish to PDF:
+% *Publish to HTML:*
 %
 %   cd C:\analysis\bsnr\examples
-%   publish('bsnr_gallery.m', 'format','pdf', 'outputDir','.\')
+%   publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '.\html')
 %
 % *Audio clips* (CC-BY 4.0): Miller et al. (2021)
 % doi:10.1038/s41598-020-78995-8 / doi:10.26179/5e6056035c01b
@@ -24,15 +24,12 @@
 close all;
 galleryDir = fileparts(mfilename('fullpath'));
 audioDir   = fullfile(galleryDir, 'audio');
-fprintf('\n=== bsnr gallery ===\n\n');
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Path setup
 % Add bsnr and its dependencies to the MATLAB path if not already present.
 % Edit |analysisRoot| to match your local installation.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-sourceDir = fileparts(galleryDir);          % bsnr root
+sourceDir = fileparts(galleryDir);
 addpath(sourceDir, '-begin');
 addpath(galleryDir, '-begin');
 
@@ -48,47 +45,32 @@ for d = 1:size(deps, 1)
     depDir = deps{d, 2};
     if exist(depDir, 'dir') && ~any(strcmp(existingPaths, depDir))
         addpath(depDir);
-        fprintf('Added: %s\n', deps{d, 1});
     end
 end
-% Re-assert bsnr at front so its versions take precedence over stale copies
 addpath(sourceDir, '-begin');
 addpath(galleryDir, '-begin');
-
-% Add tests/ so createTestFixture, makeSRWUpcall etc. are available standalone
 testsDir = fullfile(sourceDir, 'tests');
 if exist(testsDir, 'dir') && ~any(strcmp(existingPaths, testsDir))
     addpath(testsDir, '-begin');
-    fprintf('Added: tests/\n');
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PART 1 — Synthetic fixtures: concepts and comparisons
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Each section in Part 1 builds a minimal synthetic fixture, runs one or
+% more SNR methods, and displays the result. The fixtures are designed to
+% make a single conceptual point clearly; real calls are in Part 2.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% PART 1 — Synthetic fixtures: concepts and comparisons
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 1. Noise window strategies
 % The noise window placement affects how well the estimated noise level
 % represents the true background at the time of the detection.
 %
-%   'beforeAndAfter'  — symmetric, 0.5 s gap each side (default)
-%   'before'          — immediately before signal, no gap
-%   '25sBefore'       — 25 s window placed before the detection
+%   |'beforeAndAfter'|  — symmetric windows 0.5 s before and after signal (default)
+%   |'before'|          — single window immediately before signal, no gap
+%   |'25sBefore'|       — single 25 s window placed before the detection
 %
 % For a stationary synthetic signal all three give similar SNR (as expected).
 % The noise extent is shown in red on each spectrogram.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- 1. noise window strategies ---\n');
 
 noiseWinFreq    = [150 250];
-noiseWinSP      = fixtureSP(2000, noiseWinFreq);
 noiseWinSR      = 2000;
 noiseWinDetDur  = 4;    % s
 noiseWinPreBuf  = 32;   % s — needs 25+0.5+1+2 = 28.5 s before signal
@@ -96,8 +78,9 @@ noiseWinPostBuf = 5;    % s
 noiseWinWbRMS   = 0.1 * sqrt(noiseWinSR/2 / diff(noiseWinFreq));
 
 rng(71);
-noiseWinDetTime  = (0:round(noiseWinDetDur*noiseWinSR)-1)' / noiseWinSR;
-noiseWinDetAudio = 0.5*sin(2*pi*200*noiseWinDetTime) + noiseWinWbRMS*randn(round(noiseWinDetDur*noiseWinSR), 1);
+noiseWinDetTime   = (0:round(noiseWinDetDur*noiseWinSR)-1)' / noiseWinSR;
+noiseWinDetAudio  = 0.5*sin(2*pi*200*noiseWinDetTime) + ...
+    noiseWinWbRMS * randn(round(noiseWinDetDur*noiseWinSR), 1);
 noiseWinFullAudio = [noiseWinWbRMS * randn(round(noiseWinPreBuf  * noiseWinSR), 1); ...
                      noiseWinDetAudio; ...
                      noiseWinWbRMS * randn(round(noiseWinPostBuf * noiseWinSR), 1)];
@@ -105,98 +88,128 @@ noiseWinFullAudio = [noiseWinWbRMS * randn(round(noiseWinPreBuf  * noiseWinSR), 
 [annotNW, cleanupNW] = audioToFixture(noiseWinFullAudio, noiseWinSR, noiseWinFreq, ...
     noiseWinDetDur, 'Tone: noise window comparison', noiseWinPreBuf);
 
-fig7 = figure('Name', 'noise window strategies', 'Position', [50 900 1200 340]);
-tlo7 = tiledlayout(fig7, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tlo7, 'Noise window placement strategies', 'FontWeight', 'bold');
+figNW = figure('Name', 'noise window strategies', ...
+    'Units', 'pixels', 'Position', [50 50 900 260]);
+tloNW = tiledlayout(figNW, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tloNW, '1. Noise window placement strategies', 'FontWeight', 'bold');
 
 noiseStrategies = {'beforeAndAfter', 'before', '25sBefore'};
-preBuffers      = [1, 1, 2];     % display pre-buffer per strategy (s)
+preBuffers      = [1, 1, 2];
 for s = 1:3
-    nexttile(tlo7);
-    paramsNW               = makeParams('spectrogram', noiseWinSP);
+    nexttile(tloNW);
+    paramsNW               = makeParams('spectrogram', fixtureSP(noiseWinSR, noiseWinFreq));
     paramsNW.noiseDuration = noiseStrategies{s};
     paramsNW.noiseDelay    = 0.5;
-    % Cap pre-buffer for display so 25sBefore doesn't show a 28 s spectrogram
-    spNW      = noiseWinSP;
-    spNW.pre  = preBuffers(s);
-    paramsNW.spectroParams = spNW;
-    snrNW = runAndTitle(annotNW, paramsNW, noiseStrategies{s});
-    fprintf('  %-20s  SNR=%.1f dB\n', noiseStrategies{s}, snrNW);
+    sp      = fixtureSP(noiseWinSR, noiseWinFreq);
+    sp.pre  = preBuffers(s);
+    paramsNW.plotParams = sp;
+    runAndTitle(annotNW, paramsNW, noiseStrategies{s});
 end
 cleanupNW();
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 2. Lurton formula vs simple power ratio
-% The |useLurton| option uses Lurton (2010) eq. 6.26:
+% Both formulas compute SNR from the same mean signal (S) and noise (N)
+% band power, but differ in how they penalise an unreliable noise background.
 %
-%   SNR_Lurton = 10*log10( (rmsSignal - rmsNoise)^2 / noiseVar )
+%   |SNR_simple = 10*log10( S / N )|
 %
-% The default simple power ratio is:
+%   |SNR_Lurton = 10*log10( (S - N)^2 / noiseVar )|
 %
-%   SNR_simple = 10*log10( rmsSignal / rmsNoise )
+% The Lurton formula (Lurton 2010, eq. 6.26) has two key differences from
+% the simple power ratio:
 %
-% The Lurton formula emphasises the excess of signal above noise, normalised
-% by noise variance. It gives systematically higher values and was used in
-% Miller et al. (2021) for D-call detection probability estimation.
-% Top row: simple ratio. Bottom row: Lurton formula.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- 2. Lurton vs simple ---\n');
+% 1. It uses the *excess* signal above noise (S - N) rather than raw signal
+%    level S. This penalises cases where S is only slightly above N, even
+%    if the ratio S/N looks reasonable.
+%
+% 2. It normalises by |noiseVar| — the variance of per-slice noise band
+%    power. A wide noise distribution (intermittent background) reduces the
+%    Lurton SNR even when the noise *mean* is identical. This reflects the
+%    intuition that a reliable noise floor is more useful than an unreliable
+%    one of the same average level.
+%
+% *Columns:* low SNR and high SNR with stationary Gaussian noise (noiseVar
+% is small), and a case with the same mean noise RMS but bursty noise
+% (alternating quiet/loud periods, noiseVar is large). The simple SNR is
+% similar across columns 2 and 3; the Lurton SNR is lower for column 3.
+%
+% *Rows:*
+%
+% *Row 1 — Spectrogram:* visually similar across all columns since the noise
+% mean is the same; the 200 Hz tone is visible in all three.
+%
+% *Row 2 — Slice power distributions:* red histogram = per-slice noise band
+% power; green = signal. The horizontal error bar spans ±1 std of the noise
+% distribution, making noiseVar visually tangible. The wider bar in column 3
+% directly explains the suppressed Lurton SNR.
 
 lurtonFreq    = [150 250];
-lurtonSP      = fixtureSP(2000, lurtonFreq);
-lurtonConfigs = {'Low SNR (0.1/0.1)', 0.1, 0.1; ...
-                 'Moderate (0.5/0.1)', 0.5, 0.1; ...
-                 'High SNR (1.0/0.1)', 1.0, 0.1};
+lurtonSR      = 2000;
+lurtonDur     = 4;
+lurtonBuf     = 5;
+lurtonWbRMS   = 0.1 * sqrt(lurtonSR/2 / diff(lurtonFreq));
+lurtonNDet    = round(lurtonDur * lurtonSR);
+lurtonNBuf    = round(lurtonBuf * lurtonSR);
+lurtonTime    = (0:lurtonNDet-1)' / lurtonSR;
+lurtonTone    = 0.5 * sin(2*pi*200*lurtonTime);
+lurtonLowRMS  = lurtonWbRMS / sqrt(2.6);
+lurtonHighRMS = 3 * lurtonLowRMS;
 
-fig5 = figure('Name', 'Lurton vs simple', 'Position', [50 520 1200 680]);
-tlo5 = tiledlayout(fig5, 2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tlo5, 'Simple power ratio (top) vs Lurton formula (bottom)', 'FontWeight', 'bold');
+rng(22);
+stationaryBuf = lurtonWbRMS * randn(lurtonNBuf, 1);
 
-for k = 1:3
-    [annotL, cleanupL] = createTestFixture('sampleRate', 2000, 'durationSec', 4, ...
-        'toneFreqHz', 200, 'freq', lurtonFreq, ...
-        'signalRMS', lurtonConfigs{k,2}, 'noiseRMS', lurtonConfigs{k,3}, ...
-        'classification', lurtonConfigs{k,1});
+configs = {
+    'Low SNR  (sig=0.1)',  0.1 * sin(2*pi*200*lurtonTime), stationaryBuf
+    'High SNR (sig=0.5)',  lurtonTone,                     stationaryBuf
+    'Bursty noise',        lurtonTone, ...
+        makeBurstyNoise(lurtonNBuf, lurtonSR, lurtonLowRMS, lurtonHighRMS, 0.5)
+};
+nLurtonCols = size(configs, 1);
 
-    nexttile(tlo5, k);        % row 1: simple
-    snrSimple = runAndTitle(annotL, makeParams('spectrogram', lurtonSP), lurtonConfigs{k,1});
+figLurton = figure('Name', 'Lurton vs simple', ...
+    'Units', 'pixels', 'Position', [50 50 900 460]);
+tloLurton = tiledlayout(figLurton, 2, nLurtonCols, ...
+    'TileSpacing', 'tight', 'Padding', 'tight');
+title(tloLurton, '2. Lurton SNR: spectrogram (top) | slice distributions (bottom)', ...
+    'FontWeight', 'bold');
 
-    nexttile(tlo5, k+3);      % row 2: Lurton
-    paramsLurton           = makeParams('spectrogram', lurtonSP);
+for k = 1:nLurtonCols
+    sigAudio = configs{k,2} + lurtonWbRMS * randn(lurtonNDet, 1);
+    [annotL, cleanupL] = audioToFixture( ...
+        [configs{k,3}; sigAudio; stationaryBuf], lurtonSR, lurtonFreq, lurtonDur, ...
+        configs{k,1}, lurtonBuf);
+
+    paramsLurton           = makeParams('spectrogram', fixtureSP(lurtonSR, lurtonFreq));
     paramsLurton.useLurton = true;
-    snrLurton = runAndTitle(annotL, paramsLurton, [lurtonConfigs{k,1} ' | Lurton']);
+
+    nexttile(tloLurton, k);
+    runAndTitle(annotL, paramsLurton, configs{k,1});
+
+    nexttile(tloLurton, k + nLurtonCols);
+    paramsLurtonHist             = paramsLurton;
+    paramsLurtonHist.displayType = 'histogram';
+    runAndTitle(annotL, paramsLurtonHist, [configs{k,1} ' | distributions']);
 
     cleanupL();
-    fprintf('  %s:  simple=%.1f dB  Lurton=%.1f dB\n', lurtonConfigs{k,1}, snrSimple, snrLurton);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 3. Calibrated acoustic levels
 % When instrument metadata is provided, bsnr converts outputs to calibrated
 % dB re 1 µPa. SNR is dimensionless and unchanged by calibration; absolute
 % signal and noise levels shift by the calibration offset.
 %
-% The reference signal is a 122 dB re 1 µPa RMS tone at 100 Hz — the standard
-% DIFAR sonobuoy calibration reference — in noise at 90 dB re 1 µPa.
-% |createCalibratedTestFixture| models the AAD Kerguelen 2024 instrument:
-%   Sensitivity: -165.9 dB re V/µPa
-%   ADC peak: 1.5 V (3 V peak-to-peak, 16-bit)
-%   Gain: ~20 dB flat 20-2000 Hz, AC coupling below 5 Hz
+% The reference signal is a 122 dB re 1 µPa RMS tone at 100 Hz — the
+% standard DIFAR sonobuoy calibration reference — in a noise background of
+% 90 dB re 1 µPa. |createCalibratedTestFixture| models the AAD Kerguelen
+% 2024 hydrophone instrument chain:
+%
+%   Hydrophone sensitivity: -165.9 dB re V/µPa
+%   ADC peak voltage: 1.5 V (3 V peak-to-peak, 16-bit)
+%   Front-end gain: ~20 dB flat 20–2000 Hz, AC-coupled below 5 Hz
 %
 % The spectrogram colour axis shifts from dB re 1 V^2/Hz to dB re 1 µPa^2/Hz.
 % The SNR value is identical before and after calibration.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fprintf('--- 3. calibrated levels ---\n');
-
-% Reference tone: 122 dB re 1 µPa RMS at 100 Hz in 90 dB re 1 µPa noise.
-% 122 dB re 1 µPa is the standard DIFAR sonobuoy reference calibration level,
-% representing a moderately loud low-frequency cetacean call.
-% The instrument chain (sensitivity=-165.9 dB re V/µPa, gain=20 dB, ADC=1.5 V peak)
-% maps this to approximately -26.5 dBFS in the WAV file.
-% After calibration, the spectrogram colour axis shifts from dB re 1 V^2/Hz
-% to dB re 1 µPa^2/Hz; the SNR is identical in both cases.
 [annotCal, calMetadata, cleanupCal] = createCalibratedTestFixture( ...
     'signalLeveldB', 122, 'noiseLeveldB', 90, ...
     'toneFreqHz', 100, 'freq', [80 120], 'durationSec', 4, ...
@@ -204,406 +217,318 @@ fprintf('--- 3. calibrated levels ---\n');
 
 calSP = struct('yLims', [0 300], 'pre', 1, 'post', 1);
 
-figCal = figure('Name', 'calibration', 'Position', [50 520 800 340]);
+figCal = figure('Name', 'calibration', ...
+    'Units', 'pixels', 'Position', [50 50 600 260]);
 tloCal = tiledlayout(figCal, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tloCal, 'Uncalibrated (dB re 1 V^2/Hz) vs calibrated (dB re 1 µPa^2/Hz)', ...
+title(tloCal, '3. Calibration: dB re 1 V^2/Hz (left) vs dB re 1 µPa^2/Hz (right)', ...
     'FontWeight', 'bold');
 
 nexttile(tloCal);
-snrUncal = runAndTitle(annotCal, makeParams('spectrogram', calSP), 'Uncalibrated');
+runAndTitle(annotCal, makeParams('spectrogram', calSP), 'Uncalibrated');
 
 nexttile(tloCal);
 paramsCal          = makeParams('spectrogram', calSP);
 paramsCal.metadata = calMetadata;
-snrCal = runAndTitle(annotCal, paramsCal, 'Calibrated (dB re 1 µPa)');
+runAndTitle(annotCal, paramsCal, 'Calibrated (dB re 1 µPa)');
 
-fprintf('  SNR: uncalibrated=%.1f dB  calibrated=%.1f dB  (should match)\n', snrUncal, snrCal);
 cleanupCal();
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 4. Click removal
-% Impulsive noise inflates SNR estimates by raising the measured noise
-% or signal power. |removeClicks| applies a PAMGuard-style soft amplitude
-% gate: frames exceeding |threshold| x median RMS are attenuated by
-% raising the envelope to the power |power| (< 1).
+% Impulsive noise inflates SNR estimates by raising the measured noise or
+% signal band power. |removeClicks| applies a PAMGuard-style soft amplitude
+% gate: frames exceeding |threshold| × median RMS are attenuated by raising
+% the signal envelope to the power |power| (which should be < 1 to suppress
+% rather than amplify; 1000 gives near-complete suppression).
 %
-% Synthetic clicks are 5 ms in-band sine bursts at amplitude=30, spaced
+% Synthetic clicks are 5 ms in-band sine bursts at amplitude = 30, spaced
 % 0.5 s apart in the detection window — well above the removal threshold.
 %
-% Left: raw spectrogram and inflated SNR estimate.
-% Right: after click removal (threshold=3, power=1000) — spectrogram shows
-%        cleaned audio and SNR recovers toward the true value.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- 4. click removal ---\n');
+% *Left:* raw spectrogram and inflated SNR. *Right:* after click removal
+% (threshold = 3, power = 1000) — the spectrogram shows the cleaned audio
+% and SNR recovers toward the true value.
 
 clickFreq    = [150 250];
-clickSP      = fixtureSP(2000, clickFreq);
-clickBufDur  = 5;       % s
-clickDetDur  = 4;       % s
 clickSR      = 2000;
-
-clickWidebandRMS  = 0.1 * sqrt(clickSR/2 / diff(clickFreq));
-clickNBuf         = round(clickBufDur * clickSR);
-clickNDet         = round(clickDetDur * clickSR);
+clickBufDur  = 5;
+clickDetDur  = 4;
+clickWbRMS   = 0.1 * sqrt(clickSR/2 / diff(clickFreq));
+clickNBuf    = round(clickBufDur * clickSR);
+clickNDet    = round(clickDetDur * clickSR);
 
 rng(61);
 clickDetTime  = (0:clickNDet-1)' / clickSR;
-clickNoiseBuf2 = clickWidebandRMS * randn(clickNBuf, 1);
-% Signal with in-band click bursts every 0.5 s (5 ms, amplitude=30)
-clickDetAudio = 0.5*sin(2*pi*200*clickDetTime) + clickWidebandRMS*randn(clickNDet, 1);
-clickBurstDur  = round(0.005 * clickSR);   % 5 ms
-clickBurstTime = (0:clickBurstDur-1)' / clickSR;
-clickBurstAmp  = 30 * sin(2*pi*200*clickBurstTime);
+clickNoiseBuf = clickWbRMS * randn(clickNBuf, 1);
+clickDetAudio = 0.5*sin(2*pi*200*clickDetTime) + clickWbRMS*randn(clickNDet, 1);
+clickBurstLen = round(0.005 * clickSR);
+clickBurstAmp = 30 * sin(2*pi*200*(0:clickBurstLen-1)' / clickSR);
 for clickStart = round((0.5:0.5:clickDetDur-0.5) * clickSR)
-    clickRange = clickStart : clickStart + clickBurstDur - 1;
-    clickDetAudio(clickRange) = clickDetAudio(clickRange) + clickBurstAmp;
+    idx = clickStart : clickStart + clickBurstLen - 1;
+    clickDetAudio(idx) = clickDetAudio(idx) + clickBurstAmp;
 end
 
 [annotClicks, cleanupClicks] = audioToFixture( ...
-    [clickNoiseBuf2; clickDetAudio; clickNoiseBuf2], clickSR, clickFreq, clickDetDur, ...
+    [clickNoiseBuf; clickDetAudio; clickNoiseBuf], clickSR, clickFreq, clickDetDur, ...
     'Tone + in-band clicks every 0.5 s (amplitude=30)', clickBufDur);
 
-fig6 = figure('Name', 'click removal', 'Position', [50 140 800 340]);
-tlo6 = tiledlayout(fig6, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tlo6, 'Click removal (threshold=3, power=1000)', 'FontWeight', 'bold');
+figClick = figure('Name', 'click removal', ...
+    'Units', 'pixels', 'Position', [50 50 600 260]);
+tloClick = tiledlayout(figClick, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tloClick, '4. Click removal (threshold=3, power=1000)', 'FontWeight', 'bold');
 
-nexttile(tlo6);
-snrNoRemoval = runAndTitle(annotClicks, makeParams('spectrogram', clickSP), ...
+nexttile(tloClick);
+runAndTitle(annotClicks, makeParams('spectrogram', fixtureSP(clickSR, clickFreq)), ...
     'Without click removal');
 
-nexttile(tlo6);
-paramsWithRemoval               = makeParams('spectrogram', clickSP);
-paramsWithRemoval.removeClicks  = struct('threshold', 3, 'power', 1000);
-snrWithRemoval = runAndTitle(annotClicks, paramsWithRemoval, 'With click removal');
+nexttile(tloClick);
+paramsClick              = makeParams('spectrogram', fixtureSP(clickSR, clickFreq));
+paramsClick.removeClicks = struct('threshold', 3, 'power', 1000);
+runAndTitle(annotClicks, paramsClick, 'With click removal');
 
-fprintf('  Without: %.1f dB    With: %.1f dB\n', snrNoRemoval, snrWithRemoval);
 cleanupClicks();
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 5. Effect of nSlices on the spectrogram and SNR estimate
-% |params.nSlices| (default: 30) sets the STFT window width:
-%   nfft = 2^nextpow2(duration / nSlices / 0.75 * sampleRate)
+%% 5. Duty cycle and mean-power SNR
+% All mean-power methods (|spectrogram|, |spectrogramSlices|, |timeDomain|)
+% average signal power over the *entire* annotation window, including any
+% silent gaps. For a pulsed call like the Antarctic minke whale bio-duck,
+% the annotation covers the whole bout rather than individual pulses. The
+% mean power is therefore diluted by the inter-pulse gaps, giving a lower
+% SNR than would be measured on a single pulse.
 %
-% Fewer slices -> wider windows -> finer frequency resolution -> narrower
-% spectral peak for a tone -> smaller noiseVar per slice (variance of band
-% power scales with df = sampleRate/nfft, so wider windows give smaller
-% per-slice variance).  More slices -> shorter windows -> coarser frequency
-% resolution -> broader spectral peak -> larger noiseVar per slice.
-%
-% For the simple power ratio the SNR is stable across all nSlices values
-% because the mean band power (signal + noise) is nearly nfft-independent.
-% For the Lurton formula SNR = (S-N)^2/noiseVar, the decreasing noiseVar
-% with fewer slices drives the Lurton SNR upward.
-%
-% Critically, the displayed spectrogram now uses the SAME nfft as the
-% computation — so you can see the window becoming wider (coarser time,
-% finer frequency) as nSlices decreases.  This is the correct diagnostic
-% view: the plot always reflects what was actually measured.
-%
-% Four columns: nSlices = 5, 15, 30 (default), 60.
-% Top row: simple power ratio (stable).
-% Bottom row: Lurton formula (higher with fewer slices due to smaller noiseVar).
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- 5. nSlices effect on spectrogram and SNR ---\n');
-
-nSlicesValues = [5, 15, 30, 60];
-nSlicesLabels = {'nSlices=5', 'nSlices=15', 'nSlices=30 (default)', 'nSlices=60'};
-nSlicesFreq   = [150 250];
-
-[annotNSlices, cleanupNSlices] = createTestFixture('sampleRate', 2000, 'durationSec', 10, ...
-    'toneFreqHz', 200, 'freq', nSlicesFreq, 'signalRMS', 0.5, 'noiseRMS', 0.1, ...
-    'classification', 'Tone (10 s, signalRMS=0.5, noiseRMS=0.1)');
-
-figNSlices = figure('Name', 'nSlices', 'Position', [50 900 1200 680]);
-tloNSlices = tiledlayout(figNSlices, 2, 4, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tloNSlices, 'nSlices — spectrogram window matches computation; Lurton SNR reflects noiseVar', ...
-    'FontWeight', 'bold');
-
-fprintf('  %-24s  %8s  %8s\n', 'nSlices', 'simple', 'Lurton');
-for k = 1:4
-    % Do NOT pass spectroParams — let buildSpectroParams derive nfft from nSlices
-    % so the displayed spectrogram uses the same window as the SNR computation.
-    paramsSimple           = struct('snrType', 'spectrogram', 'showClips', true, ...
-        'pauseAfterPlot', false, 'noiseDuration', 'beforeAndAfter', 'noiseDelay', 0.5, ...
-        'nSlices', nSlicesValues(k));
-    paramsLurton           = paramsSimple;
-    paramsLurton.useLurton = true;
-
-    nexttile(tloNSlices, k);       % row 1: simple
-    snrSimple = runAndTitle(annotNSlices, paramsSimple, nSlicesLabels{k});
-
-    nexttile(tloNSlices, k+4);     % row 2: Lurton
-    snrLurton = runAndTitle(annotNSlices, paramsLurton, [nSlicesLabels{k} ' | Lurton']);
-
-    fprintf('  %-24s  %8.1f  %8.1f\n', nSlicesLabels{k}, snrSimple, snrLurton);
-end
-cleanupNSlices();
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 6. Stationary tone vs pulsed signal — duty cycle and mean-power SNR
-% All mean-power methods (spectrogram, spectrogramSlices, timeDomain) average
-% signal power over the entire annotation window, including any silent gaps.
-% For a pulsed call like the Antarctic minke whale bio-duck, the annotation
-% covers the whole bout rather than individual pulses.  The mean power is
-% therefore diluted by the inter-pulse gaps, giving a lower SNR than would
-% be measured on a single pulse.
-%
-% This is not a flaw — it accurately reflects the detection challenge:
-% a passive detector sees the mean energy in its integration window.
+% This is not a flaw — it accurately reflects the detection challenge: a
+% passive detector sees the mean energy in its integration window, and a
+% pulsed call is genuinely harder to detect than a continuous one of the
+% same peak level.
 %
 % Three panels at the same peak pulse RMS (0.5):
-%   Continuous tone — no gaps, full power throughout annotation
-%   Pulsed tone (50%% duty cycle) — same peak, half the mean power (~3 dB lower)
-%   Bio-duck bout — realistic A1 call structure (~9%% duty cycle, ~10 dB lower)
 %
-% The ridge method (Section 2) is not affected by duty cycle because it
-% measures power at the instantaneous ridge frequency, not the window mean.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- 6. duty cycle and mean-power SNR ---\n');
+% * *Continuous tone* — 100% duty cycle; full power throughout the window.
+% * *Pulsed tone, 50% duty cycle* — same peak, half the mean power (~3 dB lower).
+% * *Bio-duck bout* — realistic A1 call structure (Dominello & Sirovic 2016):
+%   4 pulses × 0.1 s, 0.3 s inter-pulse, 3.1 s inter-series;
+%   ~9% duty cycle, ~10 dB lower SNR than the continuous case.
+%
+% The |ridge| method (Section 7) is not affected by duty cycle because it
+% measures power at the instantaneous ridge frequency only in slices where
+% the ridge is present, not the window mean.
 
 dutyCycleFreq = [150 250];
 dutyCycleSP   = fixtureSP(2000, dutyCycleFreq);
 
-% 1. Continuous tone
 [annotCont, cleanupCont] = createTestFixture('sampleRate', 2000, 'durationSec', 10, ...
     'toneFreqHz', 200, 'freq', dutyCycleFreq, 'signalRMS', 0.5, 'noiseRMS', 0.1, ...
     'classification', 'Continuous tone (100% duty cycle)');
 
-% 2. Pulsed tone at 50% duty cycle — same peak amplitude, half the mean power
-% Built manually: tone alternates on/off in 0.5 s blocks
 rng(21);
-pulseSR      = 2000;
-pulseDur     = 10;
-pulseBufDur  = 7;    % s each side
-pulseWbRMS   = 0.1 * sqrt(pulseSR/2 / diff(dutyCycleFreq));
-nPulseDet    = round(pulseDur * pulseSR);
-pulseTime    = (0:nPulseDet-1)' / pulseSR;
-pulsedTone   = 0.5 * sin(2*pi*200*pulseTime);
-% Zero out every other 0.5 s block (50% duty cycle)
-blockSamples = round(0.5 * pulseSR);
-for b = 1:2:floor(nPulseDet/blockSamples)
-    offIdx = (b-1)*blockSamples+1 : min(b*blockSamples, nPulseDet);
+pulseSR    = 2000; pulseDur = 10; pulseBufDur = 7;
+pulseWbRMS = 0.1 * sqrt(pulseSR/2 / diff(dutyCycleFreq));
+nPulseDet  = round(pulseDur * pulseSR);
+pulseTime  = (0:nPulseDet-1)' / pulseSR;
+pulsedTone = 0.5 * sin(2*pi*200*pulseTime);
+blockSamps = round(0.5 * pulseSR);
+for b = 1:2:floor(nPulseDet/blockSamps)
+    offIdx = (b-1)*blockSamps+1 : min(b*blockSamps, nPulseDet);
     pulsedTone(offIdx) = 0;
 end
-pulseDetAudio = pulsedTone + pulseWbRMS * randn(nPulseDet, 1);
-pulseBuf      = pulseWbRMS * randn(round(pulseBufDur*pulseSR), 1);
+pulseBuf = pulseWbRMS * randn(round(pulseBufDur*pulseSR), 1);
 [annotPulsed, cleanupPulsed] = audioToFixture( ...
-    [pulseBuf; pulseDetAudio; pulseBuf], pulseSR, dutyCycleFreq, pulseDur, ...
+    [pulseBuf; pulsedTone + pulseWbRMS*randn(nPulseDet,1); pulseBuf], ...
+    pulseSR, dutyCycleFreq, pulseDur, ...
     'Pulsed tone 50% duty cycle (0.5 s on/off)', pulseBufDur);
 
-% 3. Bio-duck bout — A1 parameters (Dominello & Sirovic 2016)
 [annotBioduck, cleanupBioduck] = createTestFixture('sampleRate', 1000, 'durationSec', 20, ...
     'signalType', 'bioduck', 'freqHigh', 200, 'freqLow', 60, ...
     'pulseDuration', 0.10, 'pulseInterval', 0.30, ...
     'pulsesPerSeries', 4, 'seriesInterval', 3.10, ...
     'signalRMS', 0.5, 'noiseRMS', 0.1, ...
-    'freq', [30 250], ...
-    'classification', 'Bio-duck A1 bout (~9% duty cycle)');
+    'freq', [30 250], 'classification', 'Bio-duck A1 bout (~9% duty cycle)');
 bioduckSP = struct('yLims', [0 300], 'pre', 1, 'post', 1);
 
-figDuty = figure('Name', 'duty cycle', 'Position', [50 520 1200 340]);
+figDuty = figure('Name', 'duty cycle', ...
+    'Units', 'pixels', 'Position', [50 50 900 260]);
 tloDuty = tiledlayout(figDuty, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tloDuty, 'Duty cycle — mean-power SNR reflects window-averaged energy, not peak pulse SNR', ...
+title(tloDuty, '5. Duty cycle — mean-power SNR reflects window-averaged energy', ...
     'FontWeight', 'bold');
 
 nexttile(tloDuty);
-snrCont    = runAndTitle(annotCont,    makeParams('spectrogram', dutyCycleSP),  'Continuous tone');
+snrCont    = runAndTitle(annotCont,    makeParams('spectrogram', dutyCycleSP), 'Continuous tone');
 nexttile(tloDuty);
-snrPulsed  = runAndTitle(annotPulsed,  makeParams('spectrogram', dutyCycleSP),  'Pulsed 50% duty cycle');
+snrPulsed  = runAndTitle(annotPulsed,  makeParams('spectrogram', dutyCycleSP), 'Pulsed 50% duty cycle');
 nexttile(tloDuty);
-snrBioduck = runAndTitle(annotBioduck, makeParams('spectrogram', bioduckSP),    'Bio-duck A1 (~9% duty)');
+snrBioduck = runAndTitle(annotBioduck, makeParams('spectrogram', bioduckSP),   'Bio-duck A1 (~9% duty)');
 
-fprintf('  Continuous:    %.1f dB\n', snrCont);
-fprintf('  Pulsed 50%%:    %.1f dB  (expected ~%.1f dB, i.e. -3 dB)\n', snrPulsed, snrCont-3);
-fprintf('  Bio-duck  9%%:  %.1f dB  (expected ~%.1f dB, i.e. -10 dB)\n', snrBioduck, snrCont-10);
+fprintf('  Expected: continuous=%.1f dB, pulsed~%.1f dB (-3 dB), bio-duck~%.1f dB (-10 dB)\n', ...
+    snrCont, snrCont-3, snrCont-10);
 cleanupCont(); cleanupPulsed(); cleanupBioduck();
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 7. Distribution-based methods — quantiles and NIST histogram
-% Both methods estimate SNR from an energy distribution rather than comparing
-% separate signal and noise windows.
+%% 6. Distribution-based methods — quantiles and NIST
+% Both methods estimate SNR from an energy distribution rather than
+% comparing separate signal and noise windows.
 %
-% |quantiles| splits the 2D distribution of spectrogram TF cell PSD values
-% within the signal window: the top 15% of cells by power are 'signal';
-% the bottom 85% are 'noise'.  No separate noise window is needed.
+% *Quantiles* splits the 2D distribution of spectrogram TF cell PSD values
+% within the signal window: the top 15% of cells by power are treated as
+% signal; the bottom 85% as noise. No separate noise window is needed —
+% the within-window distribution itself provides the signal/noise separation.
 %
-% The NIST method computes a 1D histogram of wideband 20 ms frame energies
-% pooled from both noise and signal windows, then estimates noise from the
-% leftmost histogram peak (raised cosine fit) and signal from the 95th
-% percentile of the residual.
+% The *NIST method* (Ellis 2011) computes a 1D histogram of wideband 20 ms
+% frame energies pooled from both the noise and signal windows. It fits a
+% raised cosine to the leftmost histogram peak (the noise mode) and takes
+% the 95th percentile of the residual as the signal level.
 %
-% Both methods show two display views:
-%   Top row    — spectrogram with contour lines at the estimated noise and
-%                signal PSD thresholds (iso-power contours, like quantile contours)
-%   Bottom row — histogram of the underlying distribution with vertical lines
-%                at the estimated noise and signal levels
+% Each method is shown with two display types:
 %
-% The parallel display makes the conceptual relationship clear:
-% quantiles uses TF cells from the signal window only (2D distribution);
-% NIST uses time-domain frames from both windows (1D distribution).
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% * *Top row — spectrogram* with iso-power contour lines at the estimated
+%   noise and signal PSD thresholds. For |quantiles|, these contours are
+%   literal quantile boundaries of the TF cell distribution.
+%
+% * *Bottom row — histogram* of the underlying energy distribution, with
+%   vertical lines at the estimated noise (red) and signal (green) levels.
+%
+% The parallel display makes the conceptual relationship visible: |quantiles|
+% uses TF cells from the signal window only (2D distribution over the band);
+% NIST uses scalar frame energies from both windows (1D distribution).
+%
+% All three columns use a synthetic Southern Right Whale (SRW) upcall:
+% f(t) = 80 + 118t^2 Hz, 1 s at 1000 Hz. The diagonal TF streak is more
+% illustrative than a stationary tone because iso-power contours follow the
+% call energy regardless of instantaneous frequency.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 7a. Quantiles
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- 7a/7b. quantiles and NIST (SRW upcall) ---\n');
-
-% Both sections use makeSRWUpcall — the same helper and signal parameters
-% as section 8 (ridge/synchrosqueeze):
-%   f(t) = 80 + 118*t^2 Hz,  1 s,  1000 Hz,  band [75 210] Hz
-% The SRW upcall's diagonal TF streak is more illustrative than a tone:
-% iso-power contours track the streak by power level, not by frequency,
-% which is the key concept for both quantiles and NIST.
-% NIST pools noise + signal frames: 1 s signal + ~2 s noise window = ~300
-% frames, well above the 10-frame minimum for a smooth histogram.
 srwFreq   = [75 210];
-srwBufDur = 4;    % s each side
-srwSP = struct('yLims', [0 250], 'pre', 1, 'post', 1);
+srwBufDur = 4;
+srwSP     = struct('yLims', [0 250], 'pre', 1, 'post', 1);
 
 distConfigs = {'Noise only', 0.0, 0.1; 'Moderate SNR', 0.3, 0.1; 'High SNR', 1.0, 0.1};
 nDist       = size(distConfigs, 1);
 
-% Pre-build fixtures so 7a and 7b share exactly the same WAV files.
 srwAnnots   = cell(nDist, 1);
 srwCleanups = cell(nDist, 1);
 srwWbRMS    = 0.1 * sqrt(500 / diff(srwFreq));
-nBuf        = round(srwBufDur * 1000);
+nSrwBuf     = round(srwBufDur * 1000);
 rng(71);
 for k = 1:nDist
-    sigRMS       = distConfigs{k,2};
-    [sweep, ~]   = makeSRWUpcall(1000, 0.0);   % unit-amplitude sweep, no noise
-    detAudio     = sigRMS * sweep + srwWbRMS * randn(length(sweep), 1);
-    noiseBuf     = srwWbRMS * randn(nBuf, 1);
+    [sweep, ~] = makeSRWUpcall(1000, 0.0);
+    detAudio   = distConfigs{k,2} * sweep + srwWbRMS * randn(length(sweep), 1);
+    noiseBuf   = srwWbRMS * randn(nSrwBuf, 1);
     [srwAnnots{k}, srwCleanups{k}] = audioToFixture( ...
-        [noiseBuf; detAudio; noiseBuf], 1000, srwFreq, 1.0, ...
-        distConfigs{k,1}, srwBufDur);
+        [noiseBuf; detAudio; noiseBuf], 1000, srwFreq, 1.0, distConfigs{k,1}, srwBufDur);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 7a. Quantiles
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 6a. Quantiles
 
-figQ = figure('Name', 'quantiles', 'Position', [50 140 900 680]);
-tloQ = tiledlayout(figQ, 2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tloQ, '7a. Quantiles — spectrogram contours (top) and TF cell PSD histogram (bottom)', ...
+figQ = figure('Name', 'quantiles', ...
+    'Units', 'pixels', 'Position', [50 50 900 460]);
+tloQ = tiledlayout(figQ, 2, nDist, 'TileSpacing', 'tight', 'Padding', 'tight');
+title(tloQ, '6a. Quantiles: spectrogram contours (top) | TF cell histogram (bottom)', ...
     'FontWeight', 'bold');
 
 for k = 1:nDist
     nexttile(tloQ, k);
-    snrQ = runAndTitle(srwAnnots{k}, makeParams('quantiles', srwSP), distConfigs{k,1});
+    runAndTitle(srwAnnots{k}, makeParams('quantiles', srwSP), distConfigs{k,1});
 
-    nexttile(tloQ, k+nDist);
-    paramsQhist              = makeParams('quantiles', srwSP);
-    paramsQhist.quantDisplay = 'histogram';
-    runAndTitle(srwAnnots{k}, paramsQhist, [distConfigs{k,1} ' | histogram']);
-
-    fprintf('  %s: %.1f dB\n', distConfigs{k,1}, snrQ);
+    nexttile(tloQ, k + nDist);
+    pQ              = makeParams('quantiles', srwSP);
+    pQ.displayType  = 'histogram';
+    runAndTitle(srwAnnots{k}, pQ, [distConfigs{k,1} ' | histogram']);
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 7b. NIST histogram
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 6b. NIST histogram
 
-fprintf('--- 7b. NIST ---\n');
-
-figN = figure('Name', 'NIST histogram', 'Position', [50 900 900 680]);
-tloN = tiledlayout(figN, 2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tloN, '7b. NIST — spectrogram contours (top) and frame-energy histogram (bottom)', ...
+figN = figure('Name', 'NIST histogram', ...
+    'Units', 'pixels', 'Position', [50 50 900 460]);
+tloN = tiledlayout(figN, 2, nDist, 'TileSpacing', 'tight', 'Padding', 'tight');
+title(tloN, '6b. NIST: spectrogram contours (top) | frame-energy histogram (bottom)', ...
     'FontWeight', 'bold');
 
 for k = 1:nDist
     nexttile(tloN, k);
-    paramsNspec             = makeParams('nist', srwSP);
-    paramsNspec.nistDisplay = 'spectrogram';
-    snrN = runAndTitle(srwAnnots{k}, paramsNspec, distConfigs{k,1});
+    pNspec             = makeParams('nist', srwSP);
+    pNspec.displayType = 'spectrogram';
+    runAndTitle(srwAnnots{k}, pNspec, distConfigs{k,1});
 
-    nexttile(tloN, k+nDist);
+    nexttile(tloN, k + nDist);
     runAndTitle(srwAnnots{k}, makeParams('nist', []), [distConfigs{k,1} ' | histogram']);
-
-    fprintf('  %s: %.1f dB\n', distConfigs{k,1}, snrN);
 end
 
 for k = 1:nDist, srwCleanups{k}(); end
 
-%% 8. Ridge and synchrosqueeze — FM signal
+%% 7. Ridge and synchrosqueeze — FM signal
 % The |ridge| method tracks the dominant instantaneous frequency using
-% |tfridge|, taking power from the single FFT bin on the ridge at each
-% time step.  |synchrosqueeze| first sharpens the TF representation via
-% the Fourier synchrosqueezed transform (FSST) before tracking.
-%
-% Both are shown on a synthetic Southern Right Whale upcall:
-%   f(t) = 80 + 118*t^2  Hz  (0 to 1 s, reaching ~198 Hz)
+% |tfridge|, measuring signal power from the single FFT bin on the ridge at
+% each time step. |synchrosqueeze| first sharpens the TF representation via
+% the Fourier synchrosqueezed transform (FSST) before ridge tracking.
 %
 % Because signal power is concentrated at one bin and noise is averaged
 % across all other in-band bins, per-bin SNR exceeds band-average SNR by
-% ~10*log10(nBandBins).  The cyan overlay shows the tracked ridge.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% approximately 10·log10(nBandBins). This makes ridge/synchrosqueeze
+% systematically higher than the other methods — they measure a different
+% quantity, not a better one.
+%
+% Both are shown on the same SRW upcall used in Section 6. The cyan
+% overlay shows the tracked instantaneous frequency ridge.
 
-fprintf('--- 9. ridge and synchrosqueeze (SRW upcall) ---\n');
-
-srwSampleRate = 1000;
-srwFreqBand   = [75 210];
-srwDuration   = 1.0;    % s
-srwBufDur     = 3;      % s each side
-
-[srwSignal, ~] = makeSRWUpcall(srwSampleRate, 0.1);
-
+srwSR  = 1000;  srwFB = [75 210];  srwDur = 1.0;  srwBuf3 = 3;
+[srwSig, ~]    = makeSRWUpcall(srwSR, 0.1);
 rng(11);
-srwWidebandRMS = 0.1 * sqrt(srwSampleRate/2 / 135);   % 135 Hz bandwidth
-srwBufSamples  = round(srwBufDur * srwSampleRate);
-srwNoiseBuf    = srwWidebandRMS * randn(srwBufSamples, 1);
-srwFullAudio   = [srwNoiseBuf; srwSignal; srwNoiseBuf];
+srwWbRMS3      = 0.1 * sqrt(srwSR/2 / 135);
+srwNoiseBuf3   = srwWbRMS3 * randn(round(srwBuf3 * srwSR), 1);
+srwFullAudio   = [srwNoiseBuf3; srwSig; srwNoiseBuf3];
 srwFullAudio   = srwFullAudio * (0.9 / max(abs(srwFullAudio)));
+[annotSRW, cleanupSRW] = audioToFixture(srwFullAudio, srwSR, srwFB, srwDur, ...
+    'SRW upcall f(t)=80+118t^2 Hz', srwBuf3);
 
-[annotSRW, cleanupSRW] = audioToFixture(srwFullAudio, srwSampleRate, srwFreqBand, ...
-    srwDuration, 'SRW upcall  f(t)=80+118t^2 Hz', srwBufDur);
+figRidge = figure('Name', 'ridge + synchrosqueeze', ...
+    'Units', 'pixels', 'Position', [50 50 600 260]);
+tloRidge = tiledlayout(figRidge, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tloRidge, '7. Ridge and synchrosqueeze on SRW upcall f(t) = 80+118t^2 Hz', ...
+    'FontWeight', 'bold');
 
-srwSpectroDisp = struct('yLims', [0 250], 'pre', 1, 'post', 1);
-
-fig2 = figure('Name', 'ridge + synchrosqueeze', 'Position', [50 520 800 340]);
-tlo2 = tiledlayout(fig2, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tlo2, 'Ridge and synchrosqueeze on SRW upcall  f(t) = 80+118t^2 Hz', 'FontWeight', 'bold');
-
-nexttile(tlo2);
-snrRidge = runAndTitle(annotSRW, makeParams('ridge', srwSpectroDisp), 'ridge (per-bin SNR)');
-nexttile(tlo2);
-snrSSQ   = runAndTitle(annotSRW, makeParams('synchrosqueeze', srwSpectroDisp), 'synchrosqueeze (FSST ridge)');
-fprintf('  ridge=%.1f dB  synchrosqueeze=%.1f dB\n', snrRidge, snrSSQ);
-fprintf('  (Per-bin SNR ~ band-average + 10*log10(nBandBins))\n');
+srwDisp = struct('yLims', [0 250], 'pre', 1, 'post', 1);
+nexttile(tloRidge);
+snrRidgeVal = runAndTitle(annotSRW, makeParams('ridge', srwDisp), 'ridge (per-bin SNR)');
+nexttile(tloRidge);
+snrSSQVal   = runAndTitle(annotSRW, makeParams('synchrosqueeze', srwDisp), ...
+    'synchrosqueeze (FSST ridge)');
+fprintf('  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin; ~10*log10(nBins) above band average)\n', ...
+    snrRidgeVal, snrSSQVal);
 cleanupSRW();
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% PART 2 — Real recordings: functional demos
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Call type definitions.
-% t0InClip_s: annotation start time within the pre-extracted clip (s).
-% Adjusted from the original 10 s default to centre the call in the window.
+% Part 2 applies all seven methods to real Antarctic baleen whale recordings
+% from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips
+% were extracted from DIFAR sonobuoy recordings made near Kerguelen Island
+% by the Australian Antarctic Division.
 %
-%   label | subdir | t0InClip_s | duration_s | freq_Hz
+% Spectrogram parameters are matched to the published figures in Miller et
+% al. (2021) for each call type. The ABW A call band [24–28 Hz] is too
+% narrow for reliable ridge tracking, so those methods return NaN for that
+% call type and the cells are blank in the comparison heatmap.
+%
+% Call types covered:
+%
+% * *ABW A* — Antarctic blue whale (Bm) A-call: 10 s tonal, [24–28 Hz]
+% * *ABW B* — Bm B-call: 12 s tonal, [20–28 Hz]
+% * *ABW Z* — Bm Z-call: 21 s tonal, [17–28 Hz]
+% * *ABW D* — Bm D-call: 4 s FM downsweep, [44–72 Hz]
+% * *Fin 40Hz* — Fin whale 40 Hz call: 2 s pulsed, [32–61 Hz]
+% * *Fin 20Hz* — Fin whale 20 Hz call: 4 s tonal, [15–35 Hz]
+
 callTypes = {
-  'ABW A'    'abw_a'  10   10   [24  28]    % no shift
-  'ABW B'    'abw_b'  13   12   [20  28]    % +3 s from original
-  'ABW Z'    'abw_z'  12   21   [17  28]    % +2 s from original
-  'ABW D'    'abw_d'  11    4   [44  72]    % +1 s
-  'Fin 40Hz' 'bp_40'   8    2   [32  61]    % -2 s
-  'Fin 20Hz' 'bp_20'   7    4   [15  35]    % -3 s; duration +2 s for FIR headroom
+  'ABW A'    'abw_a'  10   10   [24  28]
+  'ABW B'    'abw_b'  13   12   [20  28]
+  'ABW Z'    'abw_z'  12   21   [17  28]
+  'ABW D'    'abw_d'  11    4   [44  72]
+  'Fin 40Hz' 'bp_40'   8    2   [32  61]
+  'Fin 20Hz' 'bp_20'   7    4   [15  35]
 };
 nCallTypes = size(callTypes, 1);
 
 callAnnots    = cell(nCallTypes, 1);
-callSpectroP  = cell(nCallTypes, 1);
+callSP        = cell(nCallTypes, 1);
 callAvailable = false(nCallTypes, 1);
 
 for ct = 1:nCallTypes
     wavDir = fullfile(audioDir, callTypes{ct,2});
     if ~exist(wavDir, 'dir'), continue; end
-    sf = wavFolderInfo(wavDir, '', false, false);   % verbose=false: no output
+    sf = wavFolderInfo(wavDir, '', false, false);
     callAnnot.soundFolder    = wavDir;
     callAnnot.t0             = sf(1).startDate + callTypes{ct,3}/86400;
     callAnnot.tEnd           = callAnnot.t0 + callTypes{ct,4}/86400;
@@ -612,118 +537,71 @@ for ct = 1:nCallTypes
     callAnnot.channel        = 1;
     callAnnot.classification = callTypes{ct,1};
     callAnnots{ct}    = callAnnot;
-    callSpectroP{ct}  = realCallSP(callTypes{ct,2}, callTypes{ct,5});
+    callSP{ct}        = realCallSP(callTypes{ct,2});
     callAvailable(ct) = true;
 end
 
 if ~any(callAvailable)
-    fprintf('\nNo real audio found — skipping Part 2.\n');
-    fprintf('Run prepareGalleryAudio.m first.\n');
+    fprintf('\nNo real audio found in %s — skipping Part 2.\n', audioDir);
+    fprintf('Run prepareGalleryAudio.m or place clips in examples/audio/.\n');
     return;
 end
 
 availableIdx = find(callAvailable);
 nAvailable   = numel(availableIdx);
-fprintf('\n--- Part 2: real recordings (%d/%d call types available) ---\n', ...
-    nAvailable, nCallTypes);
+fprintf('\n%d/%d call types available.\n', nAvailable, nCallTypes);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 9. Real calls — all methods per call type
-% One figure per call type, showing all seven methods as rows.
-% This layout answers the practical question: given this specific call,
-% what does each method estimate?
-%
-% Methods (rows):
-%   spectrogram | spectrogramSlices | timeDomain | ridge |
-%   synchrosqueeze | quantiles | nist
-%
-% All rows share a time axis. NIST is shown with spectrogram contours
-% at the estimated noise and signal PSD levels (params.nistDisplay='spectrogram').
-%
-% Spectrogram display parameters are matched to Miller et al. (2021)
-% published figures for each call type.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('--- 10. real calls — all methods ---\n');
-
-methodNames = {'spectrogram', 'spectrogramSlices', 'timeDomain', ...
-               'ridge', 'synchrosqueeze', 'quantiles', 'nist'};
-nMethods   = numel(methodNames);
+methodNames = {'spectrogram', 'spectrogramSlices', 'ridge', ...
+               'synchrosqueeze', 'quantiles', 'nist', 'timeDomain'};
+nMethods    = numel(methodNames);
 snrByMethod = nan(nMethods, nCallTypes);
 
-for ct = availableIdx'
-    callLabel = callTypes{ct, 1};
-    fprintf('  %s\n', callLabel);
+%% 8a. Tonal calls — ABW A, B, Z
+% Three Antarctic blue whale tonal calls covering a range of bandwidths and
+% durations. The narrow [24–28 Hz] band of the A-call has fewer than 3 FFT
+% bins at the nSlices-derived nfft, so |ridge| and |synchrosqueeze| return
+% NaN for that call type.
 
-    figReal = figure('Name', sprintf('%s — all methods', callLabel), ...
-        'Position', [50 50 280 nMethods*160]);
-    tloReal = tiledlayout(figReal, nMethods, 1, ...
-        'TileSpacing', 'compact', 'Padding', 'compact');
-    title(tloReal, sprintf('%s — all methods', callLabel), 'FontWeight', 'bold');
-    xlabel(tloReal, 'Time (s)', 'FontSize', 8);   % shared x-label on tiledlayout
+tonalIdx = find(ismember(callTypes(:,1), {'ABW A', 'ABW B', 'ABW Z'}) & callAvailable);
+snrByMethod = drawRealCallFigure(tonalIdx, callTypes, callAnnots, callSP, ...
+    methodNames, snrByMethod, '8a. Tonal calls — ABW A, B, Z');
 
-    for mi = 1:nMethods
-        nexttile(tloReal);
-        if strcmp(methodNames{mi}, 'nist')
-            % Use spectrogram display for NIST so all rows share a time axis.
-            % The NIST noise-peak and signal-level contours are drawn on the
-            % spectrogram, consistent with the quantiles contour display.
-            paramsNist              = makeParams('nist', callSpectroP{ct});
-            paramsNist.nistDisplay  = 'spectrogram';
-            snrByMethod(mi, ct) = runAndTitle(callAnnots{ct}, paramsNist, methodNames{mi});
-        else
-            snrByMethod(mi, ct) = runAndTitle(callAnnots{ct}, ...
-                makeParams(methodNames{mi}, callSpectroP{ct}), methodNames{mi});
-        end
-        % Remove per-axis xlabel (pushed to tiledlayout) and the
-        % auto-generated classification+datestr title from spectroAnnotationAndNoise
-        % (the tiledlayout title carries the call name already).
-        xlabel(gca, '');
-        if mi > 1
-            % Only keep the classification title on the first row to save space;
-            % subsequent rows just show the method name from runAndTitle.
-            % spectroAnnotationAndNoise sets its own title — overwrite it.
-            title(gca, methodNames{mi}, 'interpreter', 'none', 'FontSize', 7);
-        end
-    end
-end
+%% 8b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz
+% A frequency-modulated downsweep (ABW D) and two call types from fin
+% whales. These have wider bands, shorter durations, or pulsed structure,
+% providing a contrast with the narrow tonal calls in 8a.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 10. Method comparison — real calls
+fmIdx = find(ismember(callTypes(:,1), {'ABW D', 'Fin 40Hz', 'Fin 20Hz'}) & callAvailable);
+snrByMethod = drawRealCallFigure(fmIdx, callTypes, callAnnots, callSP, ...
+    methodNames, snrByMethod, '8b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz');
+
+%% 9. Method comparison — SNR heatmap
 % SNR estimates (dB, simple power ratio) for all seven methods across all
-% available call types, shown as a printed table and a colour-coded heatmap.
-%
-% Ridge and synchrosqueeze report per-bin SNR, which exceeds band-average
-% SNR by ~10*log10(nBandBins) and is not directly comparable to the other
-% methods.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-fprintf('\n--- 11. method comparison ---\n');
+% available call types. Ridge and synchrosqueeze report per-bin SNR and are
+% not directly comparable to the band-average methods; they are included for
+% completeness and shown in the same colour scale.
 
 colLabels = strrep(callTypes(availableIdx, 1)', ' ', '_');
 snrTable  = array2table(snrByMethod(:, availableIdx), ...
     'RowNames', methodNames, 'VariableNames', colLabels);
-fprintf('\nSNR (dB, simple power ratio):\n');
 disp(snrTable);
 
-fig11real = figure('Name', 'comparison heatmap', ...
-    'Position', [50 50 max(500, 120*nAvailable+200) 300]);
-axHeatmap = axes(fig11real);
-imagesc(axHeatmap, snrByMethod(:, availableIdx));
-colormap(axHeatmap, 'parula');
-heatmapCB = colorbar(axHeatmap);
-heatmapCB.Label.String = 'SNR (dB)';
-set(axHeatmap, 'XTick', 1:nAvailable, 'XTickLabel', colLabels, ...
-               'YTick', 1:nMethods,   'YTickLabel', methodNames, ...
-               'TickLabelInterpreter', 'none', 'FontSize', 8);
-xtickangle(axHeatmap, 30);
-title(axHeatmap, 'SNR by method and call type (dB)', 'FontWeight', 'bold');
+figHeat = figure('Name', 'comparison heatmap', ...
+    'Units', 'pixels', 'Position', [50 50 max(400, 120*nAvailable+200) 320]);
+axH = axes(figHeat);
+imagesc(axH, snrByMethod(:, availableIdx));
+colormap(axH, 'parula');
+cb = colorbar(axH);  cb.Label.String = 'SNR (dB)';
+set(axH, 'XTick', 1:nAvailable, 'XTickLabel', colLabels, ...
+         'YTick', 1:nMethods,   'YTickLabel', methodNames, ...
+         'TickLabelInterpreter', 'none', 'FontSize', 8);
+xtickangle(axH, 30);
+title(axH, '9. SNR by method and call type (dB)', 'FontWeight', 'bold');
 for row = 1:nMethods
     for col = 1:nAvailable
-        cellValue = snrByMethod(row, availableIdx(col));
-        if isfinite(cellValue)
-            text(axHeatmap, col, row, sprintf('%.1f', cellValue), ...
+        v = snrByMethod(row, availableIdx(col));
+        if isfinite(v)
+            text(axH, col, row, sprintf('%.1f', v), ...
                 'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', ...
                 'FontSize', 7, 'Color', 'w', 'FontWeight', 'bold');
         end
@@ -732,47 +610,69 @@ end
 
 fprintf('\n=== gallery complete ===\n');
 fprintf('Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b\n');
-fprintf('%d/%d real call types available.\n', sum(callAvailable), nCallTypes);
 
 %% Local helpers
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function snrValue = runAndTitle(annot, params, titleStr)
-% Run snrEstimate, annotate the current axis with the method name, return SNR.
 snrValue = snrEstimate(annot, params);
 if istable(snrValue), snrValue = snrValue.snr; end
-title(gca, titleStr, 'interpreter', 'none', 'FontSize', 7);
-fprintf('    %-32s  SNR = %.1f dB\n', titleStr, snrValue);
+title(gca, titleStr, 'interpreter', 'none', 'FontSize', 8);
 end
 
-function params = makeParams(snrType, spectroDisp)
-% Build a standard snrEstimate params struct.
-% Pass spectroDisp=[] for methods that draw their own plot (e.g. nist).
+function params = makeParams(snrType, plotDisp)
 params = struct('snrType', snrType, 'showClips', true, 'pauseAfterPlot', false, ...
     'noiseDuration', 'beforeAndAfter', 'noiseDelay', 0.5);
-if ~isempty(spectroDisp)
-    params.spectroParams = spectroDisp;
+if ~isempty(plotDisp)
+    params.plotParams = plotDisp;
+end
+end
+
+function snrByMethod = drawRealCallFigure(ctIdx, callTypes, callAnnots, callSP, ...
+        methodNames, snrByMethod, figTitle)
+nMethods = numel(methodNames);
+nCols    = numel(ctIdx);
+figW     = max(300, 300 * nCols);
+figH     = 160 * nMethods;
+fig = figure('Name', figTitle, 'Units', 'pixels', 'Position', [50 50 figW figH]);
+tlo = tiledlayout(fig, nMethods, nCols, 'TileSpacing', 'tight', 'Padding', 'tight');
+title(tlo, figTitle, 'FontWeight', 'bold');
+xlabel(tlo, 'Time (s)', 'FontSize', 8);
+
+for col = 1:nCols
+    ct        = ctIdx(col);
+    callLabel = callTypes{ct, 1};
+    for mi = 1:nMethods
+        nexttile(tlo, (mi-1)*nCols + col);
+        method = methodNames{mi};
+        p = makeParams(method, callSP{ct});
+        if strcmp(method, 'nist')
+            p.displayType = 'spectrogram';
+        end
+        snr = runAndTitle(callAnnots{ct}, p, method);
+        snrByMethod(mi, ct) = snr;
+        xlabel(gca, '');
+        if mi == 1
+            title(gca, sprintf('%s — %s', callLabel, method), ...
+                'interpreter', 'none', 'FontSize', 8);
+        end
+    end
 end
 end
 
 function [annot, cleanupFn] = audioToFixture(audioData, sampleRate, freqBand, ...
         detDurSec, label, detOffsetSec)
-% Write an audio array to a temp WAV and return a bsnr annotation struct.
-% detOffsetSec: seconds from file start to detection start.
 if nargin < 6 || isempty(detOffsetSec)
     detOffsetSec = (length(audioData)/sampleRate - detDurSec) / 2;
 end
 tmpDir = tempname();
 mkdir(tmpDir);
-fileStartDatenum = floor(now*86400) / 86400;
-wavFilename      = [datestr(fileStartDatenum, 'yyyy-mm-dd_HH-MM-SS') '.wav'];
+fileStart = floor(now*86400) / 86400;
 audioPeak = max(abs(audioData));
-if audioPeak > 0
-    audioData = audioData * (0.9 / audioPeak);
-end
-audiowrite(fullfile(tmpDir, wavFilename), audioData, sampleRate);
+if audioPeak > 0, audioData = audioData * (0.9 / audioPeak); end
+audiowrite(fullfile(tmpDir, [datestr(fileStart, 'yyyy-mm-dd_HH-MM-SS') '.wav']), ...
+    audioData, sampleRate);
 annot.soundFolder    = tmpDir;
-annot.t0             = fileStartDatenum + detOffsetSec / 86400;
+annot.t0             = fileStart + detOffsetSec / 86400;
 annot.tEnd           = annot.t0 + detDurSec / 86400;
 annot.duration       = detDurSec;
 annot.freq           = freqBand;
@@ -783,28 +683,32 @@ end
 cleanupFn = @() rmdir(tmpDir, 's');
 end
 
-function spectroParams = fixtureSP(sampleRate, freqBand)
-% Spectrogram display params for synthetic fixtures.
-% Only display-only fields: yLims, pre, post.
-% win/overlap are always derived from nSlices in snrEstimate.
-spectroParams = struct('yLims', [0 sampleRate/2*0.6], 'pre', 1, 'post', 1);
+function noise = makeBurstyNoise(nSamples, sampleRate, lowRMS, highRMS, blockDur)
+blockSamples = round(blockDur * sampleRate);
+noise = zeros(nSamples, 1);
+pos   = 1;
+while pos <= nSamples
+    blockEnd = min(pos + blockSamples - 1, nSamples);
+    n = blockEnd - pos + 1;
+    if rand() < 0.2
+        noise(pos:blockEnd) = highRMS * randn(n, 1);
+    else
+        noise(pos:blockEnd) = lowRMS  * randn(n, 1);
+    end
+    pos = pos + blockSamples;
+end
 end
 
-function spectroParams = realCallSP(subdir, freqBand)
-% Spectrogram display params for real calls at 250 Hz.
-% Only display-only fields: yLims, pre, post.
-% win/overlap are always derived from nSlices in snrEstimate, ensuring the
-% displayed spectrogram matches the SNR computation window.
+function sp = fixtureSP(sampleRate, ~)
+sp = struct('yLims', [0 sampleRate/2*0.6], 'pre', 1, 'post', 1);
+end
+
+function sp = realCallSP(subdir)
 switch subdir
-    case {'abw_a', 'abw_b'}     % very narrow tonal
-        spectroParams = struct('yLims', [0 60],  'pre', 3, 'post', 3);
-    case 'abw_z'                % narrow tonal
-        spectroParams = struct('yLims', [0 80],  'pre', 3, 'post', 3);
-    case {'abw_d', 'bp_40'}     % short broadband
-        spectroParams = struct('yLims', [0 125], 'pre', 2, 'post', 2);
-    case 'bp_20'                % very low frequency
-        spectroParams = struct('yLims', [0 80],  'pre', 3, 'post', 3);
-    otherwise
-        spectroParams = struct('yLims', [0 100], 'pre', 2, 'post', 2);
+    case {'abw_a', 'abw_b'},  sp = struct('yLims', [0 60],  'pre', 3, 'post', 3);
+    case 'abw_z',              sp = struct('yLims', [0 80],  'pre', 3, 'post', 3);
+    case {'abw_d', 'bp_40'},   sp = struct('yLims', [0 125], 'pre', 2, 'post', 2);
+    case 'bp_20',              sp = struct('yLims', [0 80],  'pre', 3, 'post', 3);
+    otherwise,                 sp = struct('yLims', [0 100], 'pre', 2, 'post', 2);
 end
 end
