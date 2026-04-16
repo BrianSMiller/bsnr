@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB] = snrSynchrosqueeze( ...
+function [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = snrSynchrosqueeze( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata, params)
 % Estimate signal and noise power using the Fourier synchrosqueezed transform.
 %
@@ -77,8 +77,8 @@ try
     [noiseSst, ~,  ~] = fsst(noiseAudio, sampleRate, win);
 catch me
     warning('snrSynchrosqueeze:fsstFailed', 'fsst failed: %s', me.message);
-    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB] = ...
-        deal(nan, nan, nan, nan(1), nan(1));
+    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = ...
+        deal(nan, nan, nan, nan(1), nan(1), []);
     return
 end
 
@@ -105,8 +105,8 @@ fBand    = sF(fIx);
 if isempty(fBand) || size(sigBand, 1) < 3
     warning('snrSynchrosqueeze:bandTooNarrow', ...
         'Fewer than 3 frequency bins in [%.1f %.1f] Hz.', freq(1), freq(2));
-    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB] = ...
-        deal(nan, nan, nan, nan(size(sT)), nan(size(sT)));
+    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = ...
+        deal(nan, nan, nan, nan(size(sT)), nan(size(sT)), []);
     return
 end
 
@@ -169,6 +169,8 @@ rmsSignal  = mean(sigSlice,      'omitnan');
 rmsNoise   = mean(noiseSlice,    'omitnan');
 noiseVar   = mean(noiseVarSlice, 'omitnan');
 sliceSnrdB = 10 * log10(sigSlice ./ noiseSlice);
+ridgeData.sigSlicePowers   = sigSlice;
+ridgeData.noiseSlicePowers = noiseSlice;
 
 end
 

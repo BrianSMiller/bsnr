@@ -80,7 +80,16 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                  (with a warning) in parallel mode.
 %              .pauseAfterPlot     Pause after each plot. Default true.
 %                                  Set false for automated review.
-%              .spectroParams      Optional display overrides (display-only;
+%              .displayType        Display type when showClips=true:
+%                                    'spectrogram'  (default for most methods)
+%                                    'timeSeries'   per-slice band power vs time
+%                                                   (per-sample for timeDomain)
+%                                    'histogram'    slice power distributions
+%                                  Per-method defaults:
+%                                    nist      -> 'histogram'
+%                                    timeDomain -> 'timeSeries'
+%                                    others    -> 'spectrogram'
+%              .plotParams      Optional display overrides (display-only;
 %                                  win/overlap are always derived from nSlices
 %                                  to match the computation window):
 %                                    .yLims  [loHz hiHz] frequency axis range
@@ -432,22 +441,24 @@ end
 % Estimate signal and noise power
 %--------------------------------------------------------------------------
 
-sigFilt        = [];
-noiseFilt      = [];
-ridgeFreq      = [];
-quantileThresh = [];
-psdCells       = [];
-histogramData  = [];
-nistDisplay    = 'histogram';   % default; overridden by params.nistDisplay if set
+sigFilt         = [];
+noiseFilt       = [];
+ridgeFreq       = [];
+quantileThresh  = [];
+psdCells        = [];
+histogramData   = [];
+spectrogramData = [];
+slicesData      = [];
+ridgeData       = [];
 
 switch params.snrType
     case 'spectrogram'
-        [rmsSignal, rmsNoise, noiseVar] = snrSpectrogram( ...
+        [rmsSignal, rmsNoise, noiseVar, spectrogramData] = snrSpectrogram( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.metadata);
 
     case 'spectrogramSlices'
-        [rmsSignal, rmsNoise, noiseVar] = snrSpectrogramSlices( ...
+        [rmsSignal, rmsNoise, noiseVar, slicesData] = snrSpectrogramSlices( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.metadata);
 
@@ -464,12 +475,12 @@ switch params.snrType
             snrTimeDomain(annot.audio, noise.audio, freq, sampleRate, params.metadata);
 
     case 'ridge'
-        [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~] = snrRidge( ...
+        [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~, ridgeData] = snrRidge( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.metadata, params.ridgeParams);
 
     case 'synchrosqueeze'
-        [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~] = snrSynchrosqueeze( ...
+        [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~, ridgeData] = snrSynchrosqueeze( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.metadata, params.ridgeParams);
 
@@ -500,76 +511,69 @@ noise.rmsLevel = 10 * log10(rmsNoise);
 %--------------------------------------------------------------------------
 
 if params.showClips
-    spectroParams = buildSpectroParams(params, annot, sampleRate, freq, nfft);
-    spectroParams.snrType = params.snrType;   % for fsst vs spectrogram display routing
-    if ~isempty(ridgeFreq)
-        spectroParams.ridgeFreq = ridgeFreq;
-    end
-    if params.useLurton
-        spectroParams.noiseVar = noiseVar;
-    end
-    if ~isempty(quantileThresh)
-        spectroParams.quantileThresh = quantileThresh;
-    end
-    if ~isempty(psdCells)
-        spectroParams.psdCells = psdCells;   % for histogram display
-    end
-    if ~isempty(excludeTimes)
-        spectroParams.excludeTimes = excludeTimes;
-    end
-    if ~isempty(params.removeClicks)
-        spectroParams.removeClicks = params.removeClicks;
-    end
-    if strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres')
-        % Resolve display mode; used for both the spectroParams path and
-        % the post-spectro histogram path below.
-        if isfield(params, 'nistDisplay') && ~isempty(params.nistDisplay)
-            nistDisplay = params.nistDisplay;
-        end
-        if strcmpi(nistDisplay, 'spectrogram')
-            bw = diff(freq);
-            spectroParams.nistThresh = [rmsNoise / bw, rmsSignal / bw];
-        end
-    end
+    levelUnit = 'dBFS';
+    if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
 
-    % Methods that draw their own plot (not via spectroAnnotationAndNoise).
-    drawsOwnPlot = (strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt)) || ...
-                   (strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres') && ...
-                    ~strcmpi(nistDisplay, 'spectrogram'));
+    % Gather all method data into one struct for resolveDisplayType
+    methodData.spectrogramData  = spectrogramData;
+    methodData.sigSlicePowers   = sliceDataSig(spectrogramData, slicesData, ridgeData);
+    methodData.noiseSlicePowers = sliceDataNoise(spectrogramData, slicesData, ridgeData);
+    methodData.sigFilt          = sigFilt;
+    methodData.histogramData    = histogramData;
+    methodData.psdCells         = psdCells;
 
-    if ~drawsOwnPlot
-        spectroAnnotationAndNoise(annot, noise, soundFolder, spectroParams, snr, ...
-            params.metadata);
-    end
+    displayType = resolveDisplayType(params, params.snrType, methodData);
 
-    if strcmpi(params.snrType, 'timeDomain') && ~isempty(sigFilt)
-        clipT0    = noise.t0 - spectroParams.pre / 86400;
-        clipTEnd  = max([annot.tEnd, noise.tEnd]) + spectroParams.post / 86400;
-        clipAudio = getAudioFromFiles(soundFolder, clipT0, clipTEnd, ...
-            channel=annot.channel, newRate=sampleRate);
-        cla(gca); colorbar(gca,'off');
-        plotTimeDomainPower(clipAudio, clipT0, annot, noise, ...
-            freq, sampleRate, rmsSignal, rmsNoise, noiseVar);
-    end
+    % Build plotParams once — provides pre/post/yLims for all display types,
+    % not just the spectrogram case.
+    plotParams = buildPlotParams(params, annot, sampleRate, freq, nfft);
 
-    if strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres') && ...
-            strcmpi(nistDisplay, 'histogram')
-        levelUnit = 'dBFS';
-        if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
-        plotHistogramSNR(histogramData, snr, annot.rmsLevel, noise.rmsLevel, levelUnit);
-    end
+    switch displayType
+        case 'spectrogram'
+            plotParams.snrType = params.snrType;
+            if ~isempty(ridgeFreq),    plotParams.ridgeFreq      = ridgeFreq;       end
+            if params.useLurton,       plotParams.noiseVar        = noiseVar;        end
+            if ~isempty(quantileThresh), plotParams.quantileThresh = quantileThresh; end
+            if ~isempty(psdCells),     plotParams.psdCells        = psdCells;        end
+            if ~isempty(excludeTimes), plotParams.excludeTimes    = excludeTimes;    end
+            if ~isempty(params.removeClicks)
+                plotParams.removeClicks = params.removeClicks;
+            end
+            if strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres')
+                plotParams.nistThresh = [rmsNoise / diff(freq), rmsSignal / diff(freq)];
+            end
+            spectroAnnotationAndNoise(annot, noise, soundFolder, plotParams, snr, ...
+                params.metadata);
 
-    if strcmpi(params.snrType, 'quantiles') && ~isempty(psdCells)
-        quantDisplay = 'spectrogram';
-        if isfield(params, 'quantDisplay') && ~isempty(params.quantDisplay)
-            quantDisplay = params.quantDisplay;
-        end
-        if strcmpi(quantDisplay, 'histogram')
-            levelUnit = 'dBFS';
-            if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
-            plotQuantilesHistogram(psdCells, quantileThresh, snr, ...
-                annot.rmsLevel, noise.rmsLevel, levelUnit);
-        end
+        case 'timeSeries'
+            if ~isempty(sigFilt)
+                % timeDomain method: per-sample FIR-filtered power
+                clipT0    = noise.t0 - plotParams.pre  / 86400;
+                clipTEnd  = max([annot.tEnd, noise.tEnd]) + plotParams.post / 86400;
+                clipAudio = getAudioFromFiles(soundFolder, clipT0, clipTEnd, ...
+                    channel=annot.channel, newRate=sampleRate);
+                plotBandSamplePower(clipAudio, clipT0, annot, noise, ...
+                    freq, sampleRate, rmsSignal, rmsNoise, noiseVar);
+            else
+                % All other methods: per-slice band power time series
+                plotBandSlicePower(methodData.sigSlicePowers, ...
+                    methodData.noiseSlicePowers, annot, noise, snr, levelUnit);
+            end
+
+        case 'histogram'
+            switch lower(params.snrType)
+                case 'nist'
+                    plotHistogramSNR(histogramData, snr, ...
+                        annot.rmsLevel, noise.rmsLevel, levelUnit);
+                case 'quantiles'
+                    plotQuantilesHistogram(psdCells, quantileThresh, snr, ...
+                        annot.rmsLevel, noise.rmsLevel, levelUnit);
+                otherwise
+                    % All other methods: unified slice-power histogram
+                    plotBandHistogram(methodData.sigSlicePowers, ...
+                        methodData.noiseSlicePowers, snr, ...
+                        rmsSignal, rmsNoise, noiseVar, levelUnit, params.useLurton);
+            end
     end
 
     if params.pauseAfterPlot
@@ -582,6 +586,32 @@ end % processOne
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Local helpers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function v = sliceDataSig(spectrogramData, slicesData, ridgeData)
+% Extract signal slice powers from whichever method data struct is populated.
+if ~isempty(spectrogramData) && isstruct(spectrogramData) && isfield(spectrogramData, 'signalSlicePowers')
+    v = spectrogramData.signalSlicePowers;
+elseif ~isempty(slicesData) && isstruct(slicesData) && isfield(slicesData, 'sigSlicePowers')
+    v = slicesData.sigSlicePowers;
+elseif ~isempty(ridgeData) && isstruct(ridgeData) && isfield(ridgeData, 'sigSlicePowers')
+    v = ridgeData.sigSlicePowers;
+else
+    v = [];
+end
+end
+
+function v = sliceDataNoise(spectrogramData, slicesData, ridgeData)
+% Extract noise slice powers from whichever method data struct is populated.
+if ~isempty(spectrogramData) && isstruct(spectrogramData) && isfield(spectrogramData, 'noiseSlicePowers')
+    v = spectrogramData.noiseSlicePowers;
+elseif ~isempty(slicesData) && isstruct(slicesData) && isfield(slicesData, 'noiseSlicePowers')
+    v = slicesData.noiseSlicePowers;
+elseif ~isempty(ridgeData) && isstruct(ridgeData) && isfield(ridgeData, 'noiseSlicePowers')
+    v = ridgeData.noiseSlicePowers;
+else
+    v = [];
+end
+end
 
 function params = applyParamDefaults(params)
 
@@ -637,6 +667,9 @@ end
 if ~isfield(params, 'nSlices') || isempty(params.nSlices)
     params.nSlices = 30;
 end
+if ~isfield(params, 'displayType')
+    params.displayType = [];   % empty = use per-method default
+end
 
 end
 
@@ -679,15 +712,15 @@ end
 
 % -------------------------------------------------------------------------
 
-function spectroParams = buildSpectroParams(params, annot, sampleRate, freq, computedNfft)
+function plotParams = buildPlotParams(params, annot, sampleRate, freq, computedNfft)
 % Build display parameters for spectroAnnotationAndNoise.
 %
 % win and overlap are ALWAYS derived from computedNfft so the displayed
 % spectrogram uses the same window as the SNR computation.  Any win/overlap
-% in params.spectroParams are silently ignored — allowing them would produce
+% in params.plotParams are silently ignored — allowing them would produce
 % a display that misrepresents the measurement.
 %
-% The caller may supply params.spectroParams to control display-only fields:
+% The caller may supply params.plotParams to control display-only fields:
 %   .yLims   [loHz hiHz]  frequency axis range
 %   .pre     seconds      clip buffer before noise window
 %   .post    seconds      clip buffer after signal window
@@ -704,19 +737,19 @@ nyquist = sampleRate / 2;
 yLo = max(0,       freq(1) - 0.5 * diff(freq));
 yHi = min(nyquist, freq(2) + 0.5 * diff(freq));
 
-spectroParams.pre    = 1;
-spectroParams.post   = 1;
-spectroParams.yLims  = [yLo yHi];
-spectroParams.win    = win;
-spectroParams.overlap = floor(win * overlapPercent);
-spectroParams.freq   = annot.freq;
+plotParams.pre    = 1;
+plotParams.post   = 1;
+plotParams.yLims  = [yLo yHi];
+plotParams.win    = win;
+plotParams.overlap = floor(win * overlapPercent);
+plotParams.freq   = annot.freq;
 
 % Apply user display overrides (yLims, pre, post only).
-if isfield(params, 'spectroParams') && ~isempty(params.spectroParams)
-    sp = params.spectroParams;
-    if isfield(sp, 'yLims'), spectroParams.yLims = sp.yLims; end
-    if isfield(sp, 'pre'),   spectroParams.pre   = sp.pre;   end
-    if isfield(sp, 'post'),  spectroParams.post  = sp.post;  end
+if isfield(params, 'plotParams') && ~isempty(params.plotParams)
+    sp = params.plotParams;
+    if isfield(sp, 'yLims'), plotParams.yLims = sp.yLims; end
+    if isfield(sp, 'pre'),   plotParams.pre   = sp.pre;   end
+    if isfield(sp, 'post'),  plotParams.post  = sp.post;  end
 end
 
 end

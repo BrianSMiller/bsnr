@@ -1,5 +1,5 @@
 function spectroAnnotationAndNoise( ...
-    detection, noise, soundFolder, spectroParams, snr, metadata)
+    detection, noise, soundFolder, plotParams, snr, metadata)
 % Plot a spectrogram with signal/noise window overlays into the current axes.
 %
 % Draws into gca — the caller is responsible for creating and positioning
@@ -21,7 +21,7 @@ function spectroAnnotationAndNoise( ...
 %
 %   soundFolder   wavFolderInfo struct array for the recording folder.
 %
-%   spectroParams Display parameter struct:
+%   plotParams Display parameter struct:
 %                   .freq        [lowHz highHz] band for colour scaling
 %                   .yLims       [minHz maxHz] y-axis limits
 %                   .win         FFT window length (samples)
@@ -46,27 +46,27 @@ function spectroAnnotationAndNoise( ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 sampleRate    = detection.fileInfo(1).sampleRate;
-freq          = spectroParams.freq;
+freq          = plotParams.freq;
 
 clip          = detection;
-clip.t0       = noise.t0 - spectroParams.pre / 86400;
-clip.tEnd     = max([detection.tEnd, noise.tEnd]) + spectroParams.post / 86400;
+clip.t0       = noise.t0 - plotParams.pre / 86400;
+clip.tEnd     = max([detection.tEnd, noise.tEnd]) + plotParams.post / 86400;
 clip.duration = (clip.tEnd - clip.t0) * 86400;
 
 clip.audio = getAudioFromFiles(soundFolder, clip.t0, clip.tEnd, ...
     channel=clip.channel, newRate=sampleRate);
 
-if isempty(clip.audio) || clip.duration * sampleRate < spectroParams.win
+if isempty(clip.audio) || clip.duration * sampleRate < plotParams.win
     warning('spectroAnnotationAndNoise:clipTooShort', ...
         'Clip too short for one FFT window — skipping plot.');
     return
 end
 
 % Apply click removal to the display clip if requested.
-% When snrEstimate threads params.removeClicks through to spectroParams,
+% When snrEstimate threads params.removeClicks through to plotParams,
 % the displayed spectrogram uses the same cleaned audio as the SNR computation.
-if isfield(spectroParams, 'removeClicks') && ~isempty(spectroParams.removeClicks)
-    rc = spectroParams.removeClicks;
+if isfield(plotParams, 'removeClicks') && ~isempty(plotParams.removeClicks)
+    rc = plotParams.removeClicks;
     if isstruct(rc)
         rcThresh = rc.threshold;
         rcPower  = rc.power;
@@ -85,11 +85,11 @@ end
 
 % Use fsst for synchrosqueeze method (sharper TF localisation),
 % standard spectrogram for all other methods.
-useFsst = isfield(spectroParams, 'snrType') && ...
-    strcmpi(spectroParams.snrType, 'synchrosqueeze');
+useFsst = isfield(plotParams, 'snrType') && ...
+    strcmpi(plotParams.snrType, 'synchrosqueeze');
 
 if useFsst
-    win = hann(spectroParams.win);
+    win = hann(plotParams.win);
     [sst, f, t] = fsst(clip.audio, sampleRate, win);
     winNorm = sampleRate * sum(win.^2);
     p = abs(sst).^2 / winNorm;
@@ -98,7 +98,7 @@ if useFsst
     end
 else
     [~, f, t, p] = spectrogram(clip.audio, ...
-        spectroParams.win, spectroParams.overlap, spectroParams.win, ...
+        plotParams.win, plotParams.overlap, plotParams.win, ...
         sampleRate, 'yaxis');
     if ~isempty(metadata)
         p = applyCalibration(p, f, t, metadata);
@@ -118,7 +118,7 @@ end
 pToDb = @(x) 10 * log10(x);
 
 fIx      = f >= freq(1) & f <= freq(2);            % annotation band (for overlays)
-fDispIx  = f >= spectroParams.yLims(1) & f <= spectroParams.yLims(2);
+fDispIx  = f >= plotParams.yLims(1) & f <= plotParams.yLims(2);
 fNoiseIx = fDispIx & ~fIx;                         % display range minus annotation band
 if sum(fNoiseIx) < 3
     fNoiseIx = fDispIx;                            % fallback if band covers most of display
@@ -144,9 +144,10 @@ if ~isempty(metadata)
 else
     ylabel(cb, 'dB re 1 V^2/Hz');
 end
+colorbarFixTickLabel(cb, 'auto');
 xlabel('Time (s)');
 ylabel('Frequency (Hz)');
-ylim(spectroParams.yLims);
+ylim(plotParams.yLims);
 
 cl = '';
 if isfield(clip, 'classification')
@@ -169,14 +170,14 @@ tSigMid = (tOffset(detection.t0) + tOffset(detection.tEnd)) / 2;
 levelUnit = 'dBFS';
 if ~isempty(metadata), levelUnit = 'dBuPa'; end
 
-if isfield(spectroParams, 'quantileThresh') && ~isempty(spectroParams.quantileThresh)
+if isfield(plotParams, 'quantileThresh') && ~isempty(plotParams.quantileThresh)
     % Quantiles method: no separate noise window, so only the signal window
     % boundary is drawn — as a dark green horizontal line at freq, matching
     % the standard overlay. The 85th/15th percentile contours show where the
     % signal/noise threshold sits within the TF plane.
     tSig0 = tOffset(detection.t0);
     tSig1 = tOffset(detection.tEnd);
-    thresh85 = spectroParams.quantileThresh;   % linear PSD, 85th percentile
+    thresh85 = plotParams.quantileThresh;   % linear PSD, 85th percentile
     thresh15 = thresh85 * (0.665214 / 2.897120);   % 15th percentile (exponential theory)
     thresh85dB = pToDb(thresh85);
     thresh15dB = pToDb(thresh15);
@@ -202,10 +203,10 @@ else
     % Standard: noise window (dark red) and signal window (dark green) lines.
     % When excludeTimes is present (gap between noise and signal), draw
     % the noise lines only at the actual measured noise bounds.
-    hasGap = isfield(spectroParams, 'excludeTimes') && ...
-             ~isempty(spectroParams.excludeTimes);
+    hasGap = isfield(plotParams, 'excludeTimes') && ...
+             ~isempty(plotParams.excludeTimes);
     if hasGap
-        exT = spectroParams.excludeTimes;   % [gapStart, gapEnd] in datenums
+        exT = plotParams.excludeTimes;   % [gapStart, gapEnd] in datenums
         line(tOffset([noise.t0, exT(1)]), [1 1]' * freq, ...
             'color', [0.5 0 0], 'linewidth', 2);
         line(tOffset([exT(2), noise.tEnd]), [1 1]' * freq, ...
@@ -236,8 +237,8 @@ text(tOffset(detection.tEnd), yMax, sigStr, ...
 
 % Bottom-left: noise level + noiseVar (dark red)
 noiseVarStr = '';
-if isfield(spectroParams, 'noiseVar') && ~isempty(spectroParams.noiseVar)
-    noiseVarStr = sprintf('\nnVar = %.2g', spectroParams.noiseVar);
+if isfield(plotParams, 'noiseVar') && ~isempty(plotParams.noiseVar)
+    noiseVarStr = sprintf('\nnVar = %.2g', plotParams.noiseVar);
 end
 if isfield(noise, 'rmsLevel') && isfinite(noise.rmsLevel)
     noiseStr = sprintf('Noise = %4.1f %s%s', noise.rmsLevel, levelUnit, noiseVarStr);
@@ -249,10 +250,10 @@ text(tOffset(noise.t0), yMin, noiseStr, ...
     'horizontalAlignment', 'left', 'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 
 % Ridge overlay (cyan) — only present for snrType='ridge' or 'synchrosqueeze'
-if isfield(spectroParams, 'ridgeFreq') && ~isempty(spectroParams.ridgeFreq)
-    nRidge = length(spectroParams.ridgeFreq);
+if isfield(plotParams, 'ridgeFreq') && ~isempty(plotParams.ridgeFreq)
+    nRidge = length(plotParams.ridgeFreq);
     tRidge = linspace(tOffset(detection.t0), tOffset(detection.tEnd), nRidge);
-    line(tRidge, spectroParams.ridgeFreq(:)', 'color', 'c', 'linewidth', 1.5);
+    line(tRidge, plotParams.ridgeFreq(:)', 'color', 'c', 'linewidth', 1.5);
     % Place label just below the annotation band (below freq(1)) so it does
     % not overlap the green/red signal-window boundary lines.
     labelOffset = (freq(2) - freq(1)) * 0.15;   % 15% of band width below band
@@ -267,13 +268,13 @@ end
 % These are the same two levels shown as vertical lines on the histogram,
 % but expressed as contours on the time-frequency plane — directly
 % analogous to the quantile contours.
-if isfield(spectroParams, 'nistThresh') && ~isempty(spectroParams.nistThresh)
+if isfield(plotParams, 'nistThresh') && ~isempty(plotParams.nistThresh)
     fMask = f >= freq(1) & f <= freq(2);
     if sum(fMask) > 1 && length(t) > 1
         pBanddB     = pToDb(p(fMask, :));
         fBand       = f(fMask);
-        noiseThrdB  = pToDb(spectroParams.nistThresh(1));
-        signalThrdB = pToDb(spectroParams.nistThresh(2));
+        noiseThrdB  = pToDb(plotParams.nistThresh(1));
+        signalThrdB = pToDb(plotParams.nistThresh(2));
         holdState   = ishold;
         hold on;
         contour(t, fBand, pBanddB, [noiseThrdB  noiseThrdB],  'color', [0.5 0 0], 'linewidth', 1.5);

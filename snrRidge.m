@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB] = snrRidge( ...
+function [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = snrRidge( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata, params)
 % Estimate signal and noise power by tracking the spectral ridge of a tonal call.
 %
@@ -86,8 +86,8 @@ if isempty(fBand) || size(sigBand, 1) < 3
     warning('snrRidge:bandTooNarrow', ...
         'Fewer than 3 FFT bins in [%.1f %.1f] Hz — cannot track ridge.', ...
         freq(1), freq(2));
-    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB] = ...
-        deal(nan, nan, nan, nan(size(sT)), nan(size(sT)));
+    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = ...
+        deal(nan, nan, nan, nan(size(sT)), nan(size(sT)), []);
     return
 end
 
@@ -169,6 +169,8 @@ noiseVar   = var(noiseSliceN(~isnan(noiseSliceN)));
 
 % Per-slice SNR for diagnostics
 sliceSnrdB = 10 * log10(sigSlice ./ noiseSlice);
+ridgeData.sigSlicePowers   = sigSlice;
+ridgeData.noiseSlicePowers = noiseSlice;
 
 end
 

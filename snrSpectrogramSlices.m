@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar] = snrSpectrogramSlices( ...
+function [rmsSignal, rmsNoise, noiseVar, slicesData] = snrSpectrogramSlices( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate signal and noise power from per-slice spectrogram band power.
 %
@@ -25,17 +25,20 @@ function [rmsSignal, rmsNoise, noiseVar] = snrSpectrogramSlices( ...
 %   rmsSignal  Mean signal power across slices (linear)
 %   rmsNoise   Mean noise power across slices (linear)
 %   noiseVar   Variance of noise power across slices
+%   slicesData Struct with per-slice powers for display:
+%                .sigSlicePowers   per-slice signal band power
+%                .noiseSlicePowers per-slice noise band power
 
-[rmsSignal, ~]        = slicePowerAndVariance( ...
+[rmsSignal, ~, slicesData.sigSlicePowers]    = slicePowerAndVariance( ...
     sigAudio,   nfft, nOverlap, nfft, sampleRate, freq, metadata);
-[rmsNoise,  noiseVar] = slicePowerAndVariance( ...
+[rmsNoise,  noiseVar, slicesData.noiseSlicePowers] = slicePowerAndVariance( ...
     noiseAudio, nfft, nOverlap, nfft, sampleRate, freq, metadata);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [power, variance] = slicePowerAndVariance( ...
+function [power, variance, slicePowers] = slicePowerAndVariance( ...
     x, window, nOverlap, nfft, sampleRate, freqRange, metadata)
 
 if length(x) < window
@@ -55,8 +58,9 @@ slicePower = nan(size(sT));
 for i = 1:length(sT)
     slicePower(i) = bandpower(specPsd(:,i), sF, freqRange, 'psd');
 end
-power    = mean(slicePower);
-variance = var(slicePower);
+slicePowers = slicePower;
+power       = mean(slicePower);
+variance    = var(slicePower);
 
 end
 

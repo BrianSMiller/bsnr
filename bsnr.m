@@ -25,7 +25,7 @@
 % DISPLAY
 %   spectroAnnotationAndNoise  - Spectrogram with signal/noise overlays;
 %                                contour overlay for quantiles method
-%   plotTimeDomainPower        - Time-domain bandpass power time series
+%   plotBandSamplePower        - Per-sample bandpass power time series (timeDomain method)
 %
 %   plotHistogramSNR           - (private) NIST histogram diagnostic plot;
 %                                called automatically by snrEstimate when

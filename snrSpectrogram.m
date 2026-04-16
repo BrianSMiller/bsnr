@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar] = snrSpectrogram( ...
+function [rmsSignal, rmsNoise, noiseVar, spectrogramData] = snrSpectrogram( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate signal and noise power from spectrogram cells within a frequency band.
 %
@@ -16,20 +16,24 @@ function [rmsSignal, rmsNoise, noiseVar] = snrSpectrogram( ...
 %   metadata    Calibration metadata struct, or [] for no calibration
 %
 % OUTPUTS
-%   rmsSignal  Mean signal PSD in band (linear)
-%   rmsNoise   Mean noise PSD in band (linear)
-%   noiseVar   Variance of noise PSD across all cells in band
+%   rmsSignal       Mean signal PSD in band (linear)
+%   rmsNoise        Mean noise PSD in band (linear)
+%   noiseVar        Variance of noise PSD across all cells in band
+%   spectrogramData Struct with per-slice band powers for Lurton display:
+%                     .signalSlicePowers  per-slice total band power, signal window
+%                     .noiseSlicePowers   per-slice total band power, noise window
+%                     .df                 Hz per FFT bin
 
-[rmsSignal, ~]        = spectrogramPowerAndVariance( ...
-    sigAudio,   nfft, nOverlap, nfft, sampleRate, freq, metadata);
-[rmsNoise,  noiseVar] = spectrogramPowerAndVariance( ...
-    noiseAudio, nfft, nOverlap, nfft, sampleRate, freq, metadata);
+[rmsSignal, ~, spectrogramData.signalSlicePowers, spectrogramData.df] = ...
+    spectrogramPowerAndVariance(sigAudio,   nfft, nOverlap, nfft, sampleRate, freq, metadata);
+[rmsNoise,  noiseVar, spectrogramData.noiseSlicePowers, ~] = ...
+    spectrogramPowerAndVariance(noiseAudio, nfft, nOverlap, nfft, sampleRate, freq, metadata);
 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [power, variance] = spectrogramPowerAndVariance( ...
+function [power, variance, slicePowers, df] = spectrogramPowerAndVariance( ...
     x, window, nOverlap, nfft, sampleRate, freqRange, metadata)
 
 if length(x) < window
@@ -42,7 +46,7 @@ x = x - mean(x);
 try
     [~, sF, sT, specPsd] = spectrogram(x, window, nOverlap, nfft, sampleRate);
 catch
-    [power, variance] = deal(nan, nan);
+    [power, variance, slicePowers, df] = deal(nan, nan, nan, nan);
     return
 end
 
@@ -55,14 +59,9 @@ specPsd  = specPsd(fIx, :);
 df       = sF(2) - sF(1);   % Hz per bin
 
 % Integrate power spectrally: sum(PSD)*df gives total band power per time slice.
-% This correctly recovers both tonal and broadband signal levels:
-% - For broadband noise: sum(PSD)*df = mean(PSD)*bandwidth
-% - For a tone: sum(PSD)*df captures all energy regardless of nBins
-% power = mean band power in uPa^2 (or WAV^2 without calibration).
-% SNR = signal_power / noise_power is still correct since bandwidth cancels.
-% Absolute level: 10*log10(power) = dB re 1 uPa (with calibration).
-power    = mean(sum(specPsd, 1) * df);   % mean total band power
-variance = var(  sum(specPsd, 1) * df);  % variance of per-slice band power
+slicePowers = sum(specPsd, 1) * df;   % row vector, one value per time slice
+power       = mean(slicePowers);       % mean total band power
+variance    = var(slicePowers);        % variance of per-slice band power
 
 end
 

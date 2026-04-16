@@ -1,4 +1,4 @@
-function plotTimeDomainPower(clipAudio, clipT0, detection, noise, ...
+function plotBandSamplePower(clipAudio, clipT0, detection, noise, ...
     freq, sampleRate, rmsSignal, rmsNoise, noiseVar)
 % Plot bandpass-filtered instantaneous power for a detection clip.
 %
@@ -39,7 +39,7 @@ try
         'SampleRate', sampleRate);
     clipFilt = filtfilt(d, clipAudio);
 catch
-    warning('plotTimeDomainPower:filterFailed', 'Bandpass filter failed.');
+    warning('plotBandSamplePower:filterFailed', 'Bandpass filter failed.');
     return
 end
 
@@ -101,7 +101,7 @@ yMin     = yLim(1);
 tSigMid  = (tSigStart + tSigEnd) / 2;
 tNoiseR  = max(tNoiseStart, tSigStart - 0.01*(tClip(end)-tClip(1)));   % rightmost noise edge
 
-levelUnit = 'dBFS';   % plotTimeDomainPower has no metadata access; always dBFS
+levelUnit = 'dBFS';   % plotBandSamplePower has no metadata access; always dBFS
 
 if isfield(detection, 'rmsLevel') && isfinite(detection.rmsLevel)
     sigStr = sprintf('SNR = %4.1f dB\nSig = %4.1f %s', ...
