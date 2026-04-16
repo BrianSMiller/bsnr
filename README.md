@@ -132,7 +132,8 @@ See `examples/bsnr_gallery.m` for illustrated examples covering all methods, dis
 
 ```matlab
 cd C:\analysis\bsnr\examples
-publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '.\html')
+publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '..\docs')
+movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
 ```
 
 ## Running Tests
