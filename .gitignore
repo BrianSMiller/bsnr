@@ -26,5 +26,5 @@ helpsearch/
 # OS specific
 .DS_Store
 desktop.ini
-/examples/gallery
-/examples
+/examples/html
+/examples/*_results.csv

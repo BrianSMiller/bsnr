@@ -174,7 +174,10 @@ bsnr/
 │   ├── plotQuantilesHistogram.m Quantiles TF cell histogram
 │   └── resolveDisplayType.m    Display type selection logic
 ├── experimental/
-│   └── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
+│   ├── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
+│   ├── snr_dcalls_casey2019.m   D-call SNR comparison — Casey 2019 test dataset
+│   ├── validate_dcalls_miller2022.m  Validation against Miller et al. (2022)
+│   └── S4-captureHistory_casey2019MGA_vs_denseNetBmD24_judgedBSM_cut.csv
 ├── examples/
 │   ├── bsnr_gallery.m           Gallery of examples (publish to HTML)
 │   ├── simpleFlatMetadata.m     Flat-response instrument metadata example
