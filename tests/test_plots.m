@@ -102,7 +102,7 @@ srwSP.overlap   = floor(srwSP.win * 0.9);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 fprintf('Building bioduck fixture...\n');
-% Bioduck spectro params from spectroParams('bioduck'):
+% Bioduck spectro params from plotParams('bioduck'):
 % sampleRate=1000, nfft=256, noverlap=224 (87.5%%), freq=30-500 Hz, pre/post=1s
 bdRate  = 1000;
 bdFreq  = [30 500];
@@ -155,7 +155,7 @@ title(tlo1,'spectrogram','interpreter','none');
 for s = 1:nCols
     nexttile(tlo1);
     p = struct('snrType','spectrogram','showClips',true,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
+        'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(1,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
@@ -174,7 +174,7 @@ title(tlo2,'spectrogramSlices','interpreter','none');
 for s = 1:nCols
     nexttile(tlo2);
     p = struct('snrType','spectrogramSlices','showClips',true,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
+        'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(2,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
@@ -193,7 +193,7 @@ title(tlo3,'timeDomain','interpreter','none');
 for s = 1:nCols
     nexttile(tlo3);
     p = struct('snrType','timeDomain','showClips',true,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
+        'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(3,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
@@ -212,7 +212,7 @@ title(tlo4,'ridge','interpreter','none');
 for s = 1:nCols
     nexttile(tlo4);
     p = struct('snrType','ridge','showClips',true,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
+        'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(4,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
@@ -231,7 +231,7 @@ title(tlo5,'synchrosqueeze','interpreter','none');
 for s = 1:nCols
     nexttile(tlo5);
     p = struct('snrType','synchrosqueeze','showClips',true,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
+        'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(5,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
@@ -250,7 +250,7 @@ title(tlo6,'quantiles (p=0.85/0.15 contours)','interpreter','none');
 for s = 1:nCols
     nexttile(tlo6);
     p = struct('snrType','quantiles','showClips',true,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
+        'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(6,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
@@ -269,7 +269,7 @@ title(tlo7,'spectrogram (Lurton formula)','interpreter','none');
 for s = 1:nCols
     nexttile(tlo7);
     p = struct('snrType','spectrogram','useLurton',true,'showClips',true,...
-        'pauseAfterPlot',false,'spectroParams',allSP{s});
+        'pauseAfterPlot',false,'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(7,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
@@ -288,7 +288,7 @@ title(tlo8,'nist (frame energy histogram)','interpreter','none');
 for s = 1:nCols
     nexttile(tlo8);
     p = struct('snrType','nist','showClips',true,'pauseAfterPlot',false,...
-        'spectroParams',allSP{s});
+        'plotParams',allSP{s});
     snr = snrEstimate(allAnnots{s}, p);
     snrTable(8,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);

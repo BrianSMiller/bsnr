@@ -8,7 +8,8 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 - **Calibrated acoustic levels** (dB re 1 µPa) from instrument metadata
 - **Spectrogram visualisation** with signal/noise window overlays and quantile contours
 - **Click removal** for recordings with impulsive interference
-- **Batch processing** with optional parallel execution
+- **Three display types** per method — spectrogram, time series, or histogram
+- **Batch processing** with optional parallel execution, with warnings when STFT parameters would produce non-comparable results across annotations
 - **Comprehensive test suite** with synthetic fixtures
 
 ## SNR Methods
@@ -16,23 +17,22 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 | Method | `snrType` | Best for | Notes |
 |--------|-----------|----------|-------|
 | Spectrogram | `'spectrogram'` | Broadband tonal | Mean band PSD; simple or Lurton formula |
-| Spectrogram slices | `'spectrogramSlices'` | Broadband tonal | Per-slice band power median |
+| Spectrogram slices | `'spectrogramSlices'` | Broadband tonal | Per-slice band power |
 | Time domain | `'timeDomain'` | Any bandwidth | Bandpass FIR, mean instantaneous power |
-| Ridge | `'ridge'` | FM tonal | tfridge dominant ridge |
-| Synchrosqueeze | `'synchrosqueeze'` | FM tonal | FSST ridge, sharper TF localisation |
-| Quantiles | `'quantiles'` | Tonal (no noise window) | Within-window 85th/15th percentile |
+| Ridge | `'ridge'` | FM tonal | `tfridge` dominant ridge; per-bin SNR |
+| Synchrosqueeze | `'synchrosqueeze'` | FM tonal | FSST ridge, sharper TF localisation; per-bin SNR |
+| Quantiles | `'quantiles'` | Tonal (no noise window needed) | Within-window 85th/15th percentile split |
 | NIST histogram | `'nist'` | Any | Frame energy histogram; Ellis (2011); bandpass-filtered to annotation band |
 
-The simple power ratio and Lurton formula are both available for spectrogram, spectrogramSlices, timeDomain, ridge, and synchrosqueeze methods via `params.useLurton`.
+The simple power ratio and Lurton formula are both available for all methods via `params.useLurton`. Ridge and synchrosqueeze report per-bin SNR, which exceeds band-average SNR by ~10·log10(nBandBins) and is not directly comparable to the other methods.
 
 ## Quick Start
 
 ```matlab
 % Add bsnr and dependencies to path
 addpath('C:\analysis\bsnr', '-begin');
-addpath('C:\analysis\longTermRecorders');   % wavFolderInfo, getAudioFromFiles
-addpath('C:\analysis\annotatedLibrary');    % doTimespansOverlap
-addpath('C:\analysis\bsmTools');            % miscellaneous tools
+addpath('C:\analysis\soundFolder');        % wavFolderInfo, getAudioFromFiles
+addpath('C:\analysis\annotatedLibrary');   % annotation utilities
 addpath('C:\analysis\soundFolder');         % sound folder utilities
 
 % Define a detection annotation
@@ -43,14 +43,43 @@ annot.duration       = 2;
 annot.freq           = [80 120];   % Hz
 annot.channel        = 1;
 
-% Estimate SNR (spectrogram method, 0.5 s gap between signal and noise)
-[snr, rmsSignal, rmsNoise] = snrEstimate(annot);
+% Estimate SNR (spectrogram method, default beforeAndAfter noise window)
+snr = snrEstimate(annot);
 fprintf('SNR = %.1f dB\n', snr);
 
-% Lurton formula
-params.useLurton = true;
-[snrL] = snrEstimate(annot, params);
+% Show spectrogram with signal/noise overlays
+params.showClips      = true;
+params.pauseAfterPlot = false;
+snr = snrEstimate(annot, params);
+
+% Lurton formula with histogram display
+params.useLurton   = true;
+params.displayType = 'histogram';
+snr = snrEstimate(annot, params);
 ```
+
+## STFT Parameters
+
+`params.nfft` and `params.nOverlap` are the primary parameters for all spectrogram-based methods. When not set, they are derived from `params.nSlices` (default 30) and the annotation duration.
+
+**For batch processing, always set `params.nfft` explicitly.** A constant `nfft` across all annotations is required for SNR values to be comparable. When `nfft` is not set in batch mode, bsnr derives it from the median annotation duration and issues a warning.
+
+```matlab
+params.nfft     = 512;   % FFT length (samples)
+params.nOverlap = 384;   % overlap (samples); default floor(nfft * 0.75)
+```
+
+## Display Types
+
+Each method supports up to three display types, selected via `params.displayType`:
+
+```matlab
+params.displayType = 'spectrogram';  % TF spectrogram with signal/noise overlays (default)
+params.displayType = 'timeSeries';   % per-slice band power vs time
+params.displayType = 'histogram';    % signal and noise slice power distributions
+```
+
+The `timeDomain` method uses `plotBandSamplePower` (per-sample FIR-filtered power) for `'timeSeries'`; all other methods use per-STFT-slice band power.
 
 ## Calibrated Levels
 
@@ -66,7 +95,6 @@ metadata.hydroSensitivity_dB   % dB re V/µPa
 metadata.adPeakVolt            % ADC peak voltage (V)
 metadata.frontEndFreq_Hz       % frequency axis for gain curve
 metadata.frontEndGain_dB       % frontend gain at each frequency (dB)
-metadata.sampleRate            % sample rate (Hz)
 ```
 
 ## Noise Window
@@ -100,11 +128,11 @@ NIST STNR histogram method (`snrType='nist'`):
 
 ## Examples
 
-See `examples/bsnr_gallery.m` for illustrated examples covering all methods, FM calls, calibrated levels, and click removal.
+See `examples/bsnr_gallery.m` for illustrated examples covering all methods, display types, calibrated levels, click removal, and real Antarctic baleen whale recordings.
 
 ```matlab
 cd C:\analysis\bsnr\examples
-publish('bsnr_gallery.m', 'format', 'pdf', 'outputDir', '.\')
+publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '.\html')
 ```
 
 ## Running Tests
@@ -120,9 +148,8 @@ The test suite covers unit tests for each SNR method, full-pipeline integration 
 - MATLAB R2021b or later
 - Signal Processing Toolbox (`designfilt`, `filtfilt`, `tfridge`, `fsst`)
 - [longTermRecorders](https://github.com/aaad) — `wavFolderInfo`, `getAudioFromFiles`
-- [annotatedLibrary](https://github.com/aaad) — `doTimespansOverlap`
-- bsmTools — miscellaneous signal processing utilities
-- soundFolder — sound folder management
+- [soundFolder](https://github.com/BrianSMiller/soundFolder) — `wavFolderInfo`, `getAudioFromFiles`
+- [annotatedLibrary](https://github.com/BrianSMiller/annotatedLibrary) — annotation utilities
 
 ## File Structure
 
@@ -139,11 +166,17 @@ bsnr/
 ├── snrQuantiles.m               Within-window quantile method
 ├── snrHistogram.m               Frame energy histogram (NIST STNR)
 ├── spectroAnnotationAndNoise.m  Spectrogram display with overlays
-├── plotTimeDomainPower.m        Time-domain power display
+├── plotBandSamplePower.m        Per-sample bandpass power display (timeDomain)
 ├── removeClicks.m               Impulsive noise suppression
 ├── validate_dcalls_miller2022.m Validation script (Miller et al. 2022)
 ├── private/
-│   └── plotHistogramSNR.m       NIST histogram diagnostic plot (internal)
+│   ├── colorbarFixTickLabel.m   Colorbar tick label decorator (≤/≥ for clipped ranges)
+│   ├── plotBandHistogram.m      Unified signal/noise slice power histogram
+│   ├── plotBandSlicePower.m     Per-slice band power time series
+│   ├── plotHistogramSNR.m       NIST frame energy histogram
+│   ├── plotLurtonHistogram.m    Lurton histogram wrapper
+│   ├── plotQuantilesHistogram.m Quantiles TF cell histogram
+│   └── resolveDisplayType.m     Display type selection logic
 ├── experimental/
 │   └── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
 ├── examples/

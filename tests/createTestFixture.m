@@ -88,7 +88,7 @@ o = p.Results;
 % Auto-set freq band if not specified
 if isempty(o.freq)
     if strcmpi(o.signalType, 'bioduck')
-        o.freq = [30 500];   % matches spectroParams('bioduck')
+        o.freq = [30 500];   % matches plotParams('bioduck')
     else
         o.freq = [150 250];
     end

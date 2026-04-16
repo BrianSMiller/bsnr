@@ -45,12 +45,12 @@ tolerance     = 3;    % dB
 % timeDomain does not apply calibration so only its SNR is checked.
 freq      = [80 120];
 
-spectroParams.pre        = 1;
-spectroParams.post       = 1;
-spectroParams.yLims      = [0 500];
-spectroParams.freq       = freq;
-spectroParams.win        = floor(metadata.sampleRate / 4);
-spectroParams.overlap    = floor(spectroParams.win * 0.75);
+plotParams.pre        = 1;
+plotParams.post       = 1;
+plotParams.yLims      = [0 500];
+plotParams.freq       = freq;
+plotParams.win        = floor(metadata.sampleRate / 4);
+plotParams.overlap    = floor(plotParams.win * 0.75);
 
 % timeDomain: absolute levels are reliable (total power in uPa^2).
 % spectrogram/spectrogramSlices: absolute signal level is unreliable for
@@ -64,7 +64,7 @@ for k = 1:numel(allMethods)
         'showClips',     false, ...
         'metadata',      metadata, ...
         'freq',          freq, ...
-        'spectroParams', spectroParams);
+        'plotParams', plotParams);
     try
         % Use vector input to get result table with acoustic level columns
         [result, ~, ~, ~, ~] = snrEstimate([annot; annot], params);
@@ -107,7 +107,7 @@ fprintf('--- Sanity check: uncalibrated should NOT recover correct levels ---\n'
 params_nocal = struct( ...
     'snrType',       'spectrogram', ...
     'showClips',     false, ...
-    'spectroParams', spectroParams);
+    'plotParams', plotParams);
 [snr_nocal, rmsS_nocal, ~, ~, ~] = snrEstimate(annot, params_nocal);
 
 % Without calibration, signal level in dBFS should be far from 122 dB re 1 µPa
