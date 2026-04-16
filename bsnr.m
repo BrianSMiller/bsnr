@@ -13,23 +13,23 @@
 % SNR METHODS (bioacoustic)
 %   snrSpectrogram        - Mean band PSD; simple power ratio or Lurton formula
 %                           Miller et al. (2021, 2022, 2024)
-%   snrSpectrogramSlices  - Per-slice band power median (robust to transients)
+%   snrSpectrogramSlices  - Per-slice band power (robust to transients)
 %   snrTimeDomain         - Bandpass FIR, mean instantaneous power
-%   snrRidge              - Dominant ridge tracking for FM calls
-%   snrSynchrosqueeze     - Synchrosqueezed STFT ridge (sharper FM tracking)
-%   snrQuantiles          - Within-window percentile estimator (no noise window)
+%   snrRidge              - Dominant ridge tracking for FM calls (per-bin SNR)
+%   snrSynchrosqueeze     - Synchrosqueezed STFT ridge, sharper FM tracking (per-bin SNR)
+%   snrQuantiles          - Within-window percentile estimator (no noise window needed)
 %
 % SNR METHODS (speech/engineering, adapted for bioacoustics)
 %   snrHistogram          - Frame energy histogram; Ellis (2011) / NIST STNR
 %
 % DISPLAY
-%   spectroAnnotationAndNoise  - Spectrogram with signal/noise overlays;
-%                                contour overlay for quantiles method
-%   plotBandSamplePower        - Per-sample bandpass power time series (timeDomain method)
+%   spectroAnnotationAndNoise  - Spectrogram with signal/noise overlays
+%   plotBandSamplePower        - Per-sample bandpass power trace (timeDomain method)
 %
-%   plotHistogramSNR           - (private) NIST histogram diagnostic plot;
-%                                called automatically by snrEstimate when
-%                                snrType='nist' and showClips=true
+%   Display type is controlled via params.displayType:
+%     'spectrogram'  — TF spectrogram with overlays (default for most methods)
+%     'timeSeries'   — per-slice band power vs time
+%     'histogram'    — signal and noise slice power distributions
 %
 % UTILITIES
 %   removeClicks          - Suppress impulsive noise (PAMGuard soft amplitude gate)
@@ -48,8 +48,30 @@
 %   annot.freq        = [80 120];   % Hz
 %   annot.channel     = 1;
 %
-%   [snr, rmsSignal, rmsNoise] = snrEstimate(annot);
+%   snr = snrEstimate(annot);
 %   fprintf('SNR = %.1f dB\n', snr);
+%
+%   % Show spectrogram with signal/noise overlays
+%   params.showClips      = true;
+%   params.pauseAfterPlot = false;
+%   snr = snrEstimate(annot, params);
+%
+%   % Lurton formula with histogram display
+%   params.useLurton   = true;
+%   params.displayType = 'histogram';
+%   snr = snrEstimate(annot, params);
+%
+% STFT PARAMETERS
+%
+%   params.nfft and params.nOverlap are the primary STFT parameters.
+%   For batch processing, always set params.nfft explicitly — a constant
+%   nfft is required for SNR values to be comparable across annotations.
+%
+%   params.nfft    = 512;   % FFT length (samples)
+%   params.nOverlap = 384;  % overlap (default: floor(nfft * 0.75))
+%
+%   When not set, nfft is derived from params.nSlices (default 30) and
+%   the median annotation duration, with a warning.
 %
 % CALIBRATED LEVELS
 %
@@ -60,15 +82,15 @@
 % NOISE WINDOW
 %
 %   By default, the noise window is placed symmetrically before and after
-%   the detection with a 0.5 s gap (params.noiseDelay = 0.5). To place
-%   noise only before the detection:
+%   the detection with a 0.5 s gap (params.noiseDelay = 0.5). Alternatives:
 %
-%   params.noiseDuration = 'before';
-%   params.noiseDelay    = 1.0;   % 1 s gap
+%   params.noiseDuration = 'before';      % single window before signal
+%   params.noiseDuration = '25sBefore';   % 25 s window before detection
+%   params.noiseDelay    = 1.0;           % gap in seconds
 %
 % BATCH PROCESSING
 %
-%   result = snrEstimate(annotTable, params);   % annotTable is a table
+%   result = snrEstimate(annotTable, params);   % annotTable is a table or struct array
 %   disp(result);                               % returns a result table
 %
 % REFERENCES
@@ -93,10 +115,12 @@
 %
 % EXAMPLES
 %   See examples/bsnr_gallery.m for illustrated examples covering all
-%   methods, FM calls, calibrated levels, and click removal. Publish to
-%   PDF with:
+%   methods, display types, calibrated levels, click removal, and real
+%   Antarctic baleen whale recordings. Publish to HTML with:
 %
-%     publish('examples/bsnr_gallery.m', 'format', 'pdf', 'outputDir', '.\')
+%     cd examples
+%     publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '..\docs')
+%     movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
 %
 % TEST SUITE
 %   run('tests/run_tests.m')
@@ -105,7 +129,7 @@
 %          snrSynchrosqueeze, snrQuantiles, snrHistogram, removeClicks.
 
 % Brian Miller, Australian Antarctic Division.
-% https://github.com/aaad/bsnr
+% https://github.com/BrianSMiller/bsnr
 
 function bsnr()
 % Calling bsnr() displays this help text.

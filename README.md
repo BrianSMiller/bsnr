@@ -33,7 +33,6 @@ The simple power ratio and Lurton formula are both available for all methods via
 addpath('C:\analysis\bsnr', '-begin');
 addpath('C:\analysis\soundFolder');        % wavFolderInfo, getAudioFromFiles
 addpath('C:\analysis\annotatedLibrary');   % annotation utilities
-addpath('C:\analysis\soundFolder');         % sound folder utilities
 
 % Define a detection annotation
 annot.soundFolder    = 'D:\recordings\site1';
@@ -148,7 +147,6 @@ The test suite covers unit tests for each SNR method, full-pipeline integration 
 
 - MATLAB R2021b or later
 - Signal Processing Toolbox (`designfilt`, `filtfilt`, `tfridge`, `fsst`)
-- [longTermRecorders](https://github.com/aaad) — `wavFolderInfo`, `getAudioFromFiles`
 - [soundFolder](https://github.com/BrianSMiller/soundFolder) — `wavFolderInfo`, `getAudioFromFiles`
 - [annotatedLibrary](https://github.com/BrianSMiller/annotatedLibrary) — annotation utilities
 
