@@ -5,10 +5,9 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 ## Features
 
 - **Seven SNR methods** spanning bioacoustic, speech, and engineering approaches
-- **Calibrated acoustic levels** (dB re 1 µPa) from instrument metadata
-- **Spectrogram visualisation** with signal/noise window overlays and quantile contours
-- **Click removal** for recordings with impulsive interference
 - **Three display types** per method — spectrogram, time series, or histogram
+- **Calibrated acoustic levels** (dB re 1 µPa) from instrument metadata
+- **Click removal** for recordings with impulsive interference
 - **Batch processing** with optional parallel execution, with warnings when STFT parameters would produce non-comparable results across annotations
 - **Comprehensive test suite** with synthetic fixtures
 
@@ -22,7 +21,7 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 | Ridge | `'ridge'` | FM tonal | `tfridge` dominant ridge; per-bin SNR |
 | Synchrosqueeze | `'synchrosqueeze'` | FM tonal | FSST ridge, sharper TF localisation; per-bin SNR |
 | Quantiles | `'quantiles'` | Tonal (no noise window needed) | Within-window 85th/15th percentile split |
-| NIST histogram | `'nist'` | Any | Frame energy histogram; Ellis (2011); bandpass-filtered to annotation band |
+| NIST histogram | `'nist'` | Any | Frame energy histogram; Ellis (2011) |
 
 The simple power ratio and Lurton formula are both available for all methods via `params.useLurton`. Ridge and synchrosqueeze report per-bin SNR, which exceeds band-average SNR by ~10·log10(nBandBins) and is not directly comparable to the other methods.
 
@@ -35,12 +34,12 @@ addpath('C:\analysis\soundFolder');        % wavFolderInfo, getAudioFromFiles
 addpath('C:\analysis\annotatedLibrary');   % annotation utilities
 
 % Define a detection annotation
-annot.soundFolder    = 'D:\recordings\site1';
-annot.t0             = datenum([2024 03 15 10 30 00]);
-annot.tEnd           = datenum([2024 03 15 10 30 02]);
-annot.duration       = 2;
-annot.freq           = [80 120];   % Hz
-annot.channel        = 1;
+annot.soundFolder = 'D:\recordings\site1';
+annot.t0          = datenum([2024 03 15 10 30 00]);
+annot.tEnd        = datenum([2024 03 15 10 30 02]);
+annot.duration    = 2;
+annot.freq        = [80 120];   % Hz
+annot.channel     = 1;
 
 % Estimate SNR (spectrogram method, default beforeAndAfter noise window)
 snr = snrEstimate(annot);
@@ -98,15 +97,12 @@ metadata.frontEndGain_dB       % frontend gain at each frequency (dB)
 
 ## Noise Window
 
-By default, noise is measured symmetrically around the detection with a 0.5 s gap (`noiseDelay = 0.5`). Common alternatives:
+By default, noise is measured symmetrically around the detection with a 0.5 s gap. Common alternatives:
 
 ```matlab
-% Noise before detection only, 1 s gap
-params.noiseDuration = 'before';
-params.noiseDelay    = 1.0;
-
-% 25 s window before detection (long-term noise estimate)
-params.noiseDuration = '25sBefore';
+params.noiseDuration = 'before';      % single window before signal
+params.noiseDuration = '25sBefore';   % 25 s window before detection
+params.noiseDelay    = 1.0;           % gap in seconds (default 0.5)
 ```
 
 ## References
@@ -155,6 +151,7 @@ The test suite covers unit tests for each SNR method, full-pipeline integration 
 ```
 bsnr/
 ├── README.md
+├── LICENSE
 ├── bsnr.m                       Help/doc entry point
 ├── snrEstimate.m                Main entry point (scalar and batch)
 ├── snrSpectrogram.m             Spectrogram method
@@ -175,11 +172,11 @@ bsnr/
 │   ├── plotHistogramSNR.m       NIST frame energy histogram
 │   ├── plotLurtonHistogram.m    Lurton histogram wrapper
 │   ├── plotQuantilesHistogram.m Quantiles TF cell histogram
-│   └── resolveDisplayType.m     Display type selection logic
+│   └── resolveDisplayType.m    Display type selection logic
 ├── experimental/
 │   └── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
 ├── examples/
-│   ├── bsnr_gallery.m           Publishable gallery of examples
+│   ├── bsnr_gallery.m           Gallery of examples (publish to HTML)
 │   ├── simpleFlatMetadata.m     Flat-response instrument metadata example
 │   └── prepareGalleryAudio.m    Extract gallery audio clips from library
 └── tests/
