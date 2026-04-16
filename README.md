@@ -146,7 +146,7 @@ The test suite covers unit tests for each SNR method, full-pipeline integration 
 ## Dependencies
 
 - MATLAB R2021b or later
-- Signal Processing Toolbox (`designfilt`, `filtfilt`, `tfridge`, `fsst`)
+- Signal Processing Toolbox (`designfilt`, `filtfilt`, `spectrogram`, `fsst`, `tfridge`)
 - [soundFolder](https://github.com/BrianSMiller/soundFolder) — `wavFolderInfo`, `getAudioFromFiles`
 - [annotatedLibrary](https://github.com/BrianSMiller/annotatedLibrary) — annotation utilities
 
@@ -200,4 +200,4 @@ bsnr/
 
 ## Licence
 
-Copyright © Australian Antarctic Division. See LICENCE for details.
+MIT License — Copyright © 2025 Australian Antarctic Division. See [LICENSE](LICENSE) for details.
