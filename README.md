@@ -131,6 +131,16 @@ publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '..\docs')
 movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
 ```
 
+Three published-data examples demonstrate bsnr on real datasets and compare against original paper SNR values:
+
+| Script | Dataset | Reference |
+|--------|---------|-----------|
+| `snr_dcalls_casey2019.m` | Antarctic blue whale D-calls, Casey 2019 | Miller et al. (2022) |
+| `snr_abw_sorp_library.m` | ABW A/B/Z calls, 8 sites, IWC-SORP Annotated Library | Miller et al. (2021) |
+| `snr_abw_kerguelen2014_castro2024.m` | ABW A/B/Z seasonal SNR and NL, Kerguelen 2014 | Castro et al. (2024) |
+
+Each script documents the original paper's SNR method, explains what can and cannot be reproduced exactly, and provides a fully reproducible bsnr alternative.
+
 ## Running Tests
 
 ```matlab
@@ -174,12 +184,13 @@ bsnr/
 │   ├── plotQuantilesHistogram.m Quantiles TF cell histogram
 │   └── resolveDisplayType.m    Display type selection logic
 ├── experimental/
-│   ├── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
-│   ├── snr_dcalls_casey2019.m   D-call SNR comparison — Casey 2019 test dataset
-│   ├── validate_dcalls_miller2022.m  Validation against Miller et al. (2022)
-│   └── S4-captureHistory_casey2019MGA_vs_denseNetBmD24_judgedBSM_cut.csv
+│   └── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
 ├── examples/
 │   ├── bsnr_gallery.m           Gallery of examples (publish to HTML)
+│   ├── snr_dcalls_casey2019.m   D-call SNR — Casey 2019 test dataset (Miller et al. 2022)
+│   ├── snr_abw_sorp_library.m   ABW A/B/Z SNR — IWC-SORP Annotated Library (Miller et al. 2021)
+│   ├── snr_abw_kerguelen2014_castro2024.m  ABW seasonal SNR/NL — Kerguelen 2014 (Castro et al. 2024)
+│   ├── S4-captureHistory_casey2019MGA_vs_denseNetBmD24_judgedBSM_cut.csv
 │   ├── simpleFlatMetadata.m     Flat-response instrument metadata example
 │   └── prepareGalleryAudio.m    Extract gallery audio clips from library
 └── tests/

@@ -54,6 +54,7 @@
 %   % Show spectrogram with signal/noise overlays
 %   params.showClips      = true;
 %   params.pauseAfterPlot = false;
+%   params.verbose        = false;   % suppress progress output
 %   snr = snrEstimate(annot, params);
 %
 %   % Lurton formula with histogram display
@@ -121,6 +122,11 @@
 %     cd examples
 %     publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '..\docs')
 %     movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
+%
+%   Published-data examples with paper comparisons:
+%     snr_dcalls_casey2019.m              — Miller et al. (2022)
+%     snr_abw_sorp_library.m              — Miller et al. (2021)
+%     snr_abw_kerguelen2014_castro2024.m  — Castro et al. (2024)
 %
 % TEST SUITE
 %   run('tests/run_tests.m')
