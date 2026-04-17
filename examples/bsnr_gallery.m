@@ -116,7 +116,8 @@ cleanupNW();
 %
 %   |SNR_Lurton = 10*log10( (S - N)^2 / noiseVar )|
 %
-% The Lurton formula (Lurton 2010, eq. 6.26) has two key differences from
+% The Lurton formula (Lurton 2010, eq. 6.26; "An Introduction to Underwater
+% Acoustics", 2nd ed., Springer) has two key differences from
 % the simple power ratio:
 %
 % 1. It uses the *excess* signal above noise (S - N) rather than raw signal

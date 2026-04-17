@@ -47,26 +47,26 @@
 %   sf = wavFolderInfo(audioDir, '', false, false);
 %
 %   annot.soundFolder    = audioDir;
-%   annot.t0             = sf(1).startDate + 17/86400;   % 17 s into clip
+%   annot.t0             = sf(1).startDate + 12/86400;  % 12 s into clip
 %   annot.tEnd           = annot.t0 + 21/86400;          % 21 s duration
 %   annot.duration       = 21;
 %   annot.freq           = [17 28];   % Hz
 %   annot.channel        = 1;
 %   annot.classification = 'ABW Z';
-% 
+%
 %   snr = snrEstimate(annot);
 %   fprintf('SNR = %.1f dB\n', snr);
-% 
+%
 %   % Show spectrogram with signal/noise overlays
 %   params.showClips      = true;
 %   params.pauseAfterPlot = false;
 %   params.verbose        = false;   % suppress progress output
 %   snr = snrEstimate(annot, params);
 %   snr = snrEstimate(annot, params);
-% 
+%
 %   % Lurton formula with histogram display
 %   params.useLurton   = true;
-%   params.displayType = 'spectrogram';
+%   params.displayType = 'histogram';
 %   snr = snrEstimate(annot, params);
 %
 % STFT PARAMETERS
@@ -113,6 +113,9 @@
 %     https://doi.org/10.3389/fmars.2024.1406678
 %
 %   Lurton formula (snrType='spectrogram', useLurton=true):
+%     Lurton, X. (2010). An Introduction to Underwater Acoustics:
+%     Principles and Applications (2nd ed.). Springer-Praxis. eq. 6.26
+%
 %     Miller et al. (2021). An Open Access Dataset for Developing Automated
 %     Detectors of Antarctic Baleen Whale Sounds. Scientific Reports 11, 806.
 %     https://doi.org/10.1038/s41598-020-78995-8

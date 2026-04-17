@@ -72,7 +72,7 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                    .ridgePenalty  tfridge penalty (default 1)
 %                                    .guardBins     bins excluded around ridge
 %                                                   (default 2)
-%              .useLurton          If true, use Lurton (2010) eq. 6.26:
+%              .useLurton          If true, use Lurton (2010, eq. 6.26):
 %                                    SNR = 10*log10((S-N)^2 / noiseVar)
 %                                  If false (default), use simple power ratio:
 %                                    SNR = 10*log10(rmsSignal / rmsNoise)
@@ -504,7 +504,7 @@ end
 %--------------------------------------------------------------------------
 
 if params.useLurton
-    % Lurton (2010) eq. 6.26: SNR as a function of the difference between
+    % Lurton (2010, eq. 6.26): SNR as a function of the difference between
     % signal and noise power relative to the variance of the noise.
     % abs() handles cases where rmsSignal < rmsNoise.
     snr = 10 * log10(abs((rmsSignal - rmsNoise).^2 / noiseVar));
