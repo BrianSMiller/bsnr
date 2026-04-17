@@ -33,13 +33,17 @@ addpath('C:\analysis\bsnr', '-begin');
 addpath('C:\analysis\soundFolder');        % wavFolderInfo, getAudioFromFiles
 addpath('C:\analysis\annotatedLibrary');   % annotation utilities
 
-% Define a detection annotation
-annot.soundFolder = 'D:\recordings\site1';
-annot.t0          = datenum([2024 03 15 10 30 00]);
-annot.tEnd        = datenum([2024 03 15 10 30 02]);
-annot.duration    = 2;
-annot.freq        = [80 120];   % Hz
-annot.channel     = 1;
+% Use a pre-extracted Z-call clip included in examples/audio/
+audioDir = fullfile('C:\analysis\bsnr\examples\audio\abw_z');
+sf = wavFolderInfo(audioDir, '', false, false);
+
+annot.soundFolder    = audioDir;
+annot.t0             = sf(1).startDate + 12/86400;  % 12 s into clip
+annot.tEnd           = annot.t0 + 21/86400;          % 21 s duration
+annot.duration       = 21;
+annot.freq           = [17 28];   % Hz
+annot.channel        = 1;
+annot.classification = 'ABW Z';
 
 % Estimate SNR (spectrogram method, default beforeAndAfter noise window)
 snr = snrEstimate(annot);

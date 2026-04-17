@@ -41,25 +41,32 @@
 %
 % QUICK START
 %
-%   annot.soundFolder = 'D:\recordings\site1';
-%   annot.t0          = datenum([2024 03 15 10 30 00]);
-%   annot.tEnd        = datenum([2024 03 15 10 30 02]);
-%   annot.duration    = 2;
-%   annot.freq        = [80 120];   % Hz
-%   annot.channel     = 1;
+%   % Use a pre-extracted Z-call clip from the bsnr gallery audio
+%   % (run prepareGalleryAudio.m first, or place clips in examples/audio/)
+%   audioDir = fullfile(fileparts(which('bsnr')), 'examples', 'audio', 'abw_z');
+%   sf = wavFolderInfo(audioDir, '', false, false);
 %
+%   annot.soundFolder    = audioDir;
+%   annot.t0             = sf(1).startDate + 17/86400;   % 17 s into clip
+%   annot.tEnd           = annot.t0 + 21/86400;          % 21 s duration
+%   annot.duration       = 21;
+%   annot.freq           = [17 28];   % Hz
+%   annot.channel        = 1;
+%   annot.classification = 'ABW Z';
+% 
 %   snr = snrEstimate(annot);
 %   fprintf('SNR = %.1f dB\n', snr);
-%
+% 
 %   % Show spectrogram with signal/noise overlays
 %   params.showClips      = true;
 %   params.pauseAfterPlot = false;
 %   params.verbose        = false;   % suppress progress output
 %   snr = snrEstimate(annot, params);
-%
+%   snr = snrEstimate(annot, params);
+% 
 %   % Lurton formula with histogram display
 %   params.useLurton   = true;
-%   params.displayType = 'histogram';
+%   params.displayType = 'spectrogram';
 %   snr = snrEstimate(annot, params);
 %
 % STFT PARAMETERS

@@ -18,8 +18,9 @@
 % *Audio clips* (CC-BY 4.0): Miller et al. (2021)
 % doi:10.1038/s41598-020-78995-8 / doi:10.26179/5e6056035c01b
 %
-% Run |prepareGalleryAudio.m| first if you have the annotated library
-% locally; otherwise place pre-extracted clips in |examples/audio/|.
+% Pre-extracted clips are included in |examples/audio/|.
+% To extract clips from a local copy of the full annotated library,
+% run |prepareGalleryAudio.m| first.
 
 close all;
 galleryDir = fileparts(mfilename('fullpath'));
