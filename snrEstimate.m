@@ -25,6 +25,8 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %              .parallelThreshold  Min annotations to trigger parfor.
 %                                  Default: 100. Set Inf to force serial,
 %                                  1 to force parallel.
+%              .verbose            Print progress output. Default: true.
+%                                  Set false to suppress all output.
 %              .nfft               FFT length in samples for spectrogram-based
 %                                  methods. When set, this is used directly
 %                                  and recorded in the output for
@@ -223,21 +225,27 @@ sigVec      = nan(nDet, 1);
 noiseVec    = nan(nDet, 1);
 noiseVarVec = nan(nDet, 1);
 
-fprintf('SNR analysis started:  %s\n', char(datetime('now')));
-fprintf('%d annotations to process', nDet);
+if params.verbose
+    fprintf('SNR analysis started:  %s\n', char(datetime('now')));
+    fprintf('%d annotations to process', nDet);
+end
 
 if useParfor
-    fprintf(' (parallel)\n');
-    fprintf('Progress:\n');
-    fprintf('0          25          50          75         100%%\n');
-    fprintf('|----------|-----------|-----------|----------|\n ');
+    if params.verbose
+        fprintf(' (parallel)\n');
+        fprintf('Progress:\n');
+        fprintf('0          25          50          75         100%%\n');
+        fprintf('|----------|-----------|-----------|----------|\n ');
+    end
 
     if isempty(gcp('nocreate'))
         parpool('Processes', max(1, feature('numcores') - 1));
     end
 
     D       = parallel.pool.DataQueue;
-    afterEach(D, @(~) fprintf('#'));
+    if params.verbose
+        afterEach(D, @(~) fprintf('#'));
+    end
     progInc = max(1, floor(nDet / 50));
 
     parfor i = 1:nDet
@@ -247,25 +255,27 @@ if useParfor
             send(D, i);
         end
     end
-    fprintf('\n');
+    if params.verbose, fprintf('\n'); end
 
 else
-    fprintf(' (serial)\n');
+    if params.verbose, fprintf(' (serial)\n'); end
     str = '';
     tic;
     for i = 1:nDet
         [snrVec(i), sigVec(i), noiseVec(i), noiseVarVec(i)] = ...
             processOne(annot(i), params);
-        if rem(i, 10) == 0 || i == nDet
+        if params.verbose && (rem(i, 10) == 0 || i == nDet)
             fprintf(repmat('\b', 1, length(str)));
             str = sprintf('%d/%d completed in %.1f s', i, nDet, toc);
             fprintf('%s', str);
         end
     end
-    fprintf('\n');
+    if params.verbose, fprintf('\n'); end
 end
 
-fprintf('SNR analysis completed: %s\n', char(datetime('now')));
+if params.verbose
+    fprintf('SNR analysis completed: %s\n', char(datetime('now')));
+end
 
 snrCol      = snrVec;
 signalRMSdB = 10 * log10(sigVec);
@@ -617,6 +627,9 @@ function params = applyParamDefaults(params)
 
 if ~isfield(params, 'parallelThreshold') || isempty(params.parallelThreshold)
     params.parallelThreshold = 100;
+end
+if ~isfield(params, 'verbose') || isempty(params.verbose)
+    params.verbose = true;   % set false to suppress progress output
 end
 if ~isfield(params, 'noiseDelay') || isempty(params.noiseDelay)
     params.noiseDelay = 0.5;   % 0.5 s gap between signal and noise windows
