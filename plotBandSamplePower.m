@@ -59,71 +59,63 @@ tNoiseEnd   = tOffset(noise.tEnd);
 %% Plot
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+levelUnit = 'dBFS';   % plotBandSamplePower has no metadata access; always dBFS
+snrDB     = 10 * log10(rmsSignal / rmsNoise);
+
 % Background trace in light grey
-plot(tClip, power, 'color', [0.7 0.7 0.7], 'linewidth', 0.5);
+plot(tClip, power, 'color', [0.7 0.7 0.7], 'linewidth', 0.5, ...
+    'HandleVisibility', 'off');
 hold on
 
 % Highlight noise window in dark red
 noiseIx = tClip >= tNoiseStart & tClip <= tNoiseEnd & ...
          ~(tClip >= tSigStart  & tClip <= tSigEnd);
-plot(tClip(noiseIx), power(noiseIx), 'color', [0.5 0 0], 'linewidth', 1);
+plot(tClip(noiseIx), power(noiseIx), 'color', [0.5 0 0], 'linewidth', 1, ...
+    'DisplayName', sprintf('Noise (%.1f %s)', 10*log10(rmsNoise), levelUnit));
 
 % Highlight signal window in dark green
 sigIx = tClip >= tSigStart & tClip <= tSigEnd;
-plot(tClip(sigIx), power(sigIx), 'color', [0 0.5 0], 'linewidth', 1.5);
+plot(tClip(sigIx), power(sigIx), 'color', [0 0.5 0], 'linewidth', 1.5, ...
+    'DisplayName', sprintf('Signal (%.1f %s)', 10*log10(rmsSignal), levelUnit));
 
 % RMS level lines
-xLim = xlim;
-plot([tNoiseStart tSigStart],   rmsNoise  * [1 1], 'r', 'linewidth', 2);
-plot([tSigEnd     tNoiseEnd],   rmsNoise  * [1 1], 'r', 'linewidth', 2);
-plot([tSigStart   tSigEnd],     rmsSignal * [1 1], 'g', 'linewidth', 2);
+plot([tNoiseStart tSigStart],   rmsNoise  * [1 1], 'r', 'linewidth', 2, ...
+    'HandleVisibility', 'off');
+plot([tSigEnd     tNoiseEnd],   rmsNoise  * [1 1], 'r', 'linewidth', 2, ...
+    'HandleVisibility', 'off');
+plot([tSigStart   tSigEnd],     rmsSignal * [1 1], 'g', 'linewidth', 2, ...
+    'HandleVisibility', 'off');
 
 % One-sided errorbar for noise std dev (power is always positive)
 noiseStd = sqrt(noiseVar);
 line([tNoiseStart tNoiseStart], [rmsNoise rmsNoise + noiseStd], ...
-    'color', 'k', 'linewidth', 2);
+    'color', 'k', 'linewidth', 2, 'HandleVisibility', 'off');
+xLim = xlim;
 line([tNoiseStart - diff(xLim)*0.01, tNoiseStart + diff(xLim)*0.01], ...
-    [rmsNoise + noiseStd, rmsNoise + noiseStd], 'color', 'k', 'linewidth', 2);
+    [rmsNoise + noiseStd, rmsNoise + noiseStd], 'color', 'k', 'linewidth', 2, ...
+    'HandleVisibility', 'off');
 
 % Window boundary markers
 yLim = ylim;
-line([tSigStart   tSigStart],   yLim, 'color', [0 0.5 0], 'linewidth', 1, 'linestyle', '--');
-line([tSigEnd     tSigEnd],     yLim, 'color', [0 0.5 0], 'linewidth', 1, 'linestyle', '--');
-line([tNoiseStart tNoiseStart], yLim, 'color', [0.5 0 0], 'linewidth', 1, 'linestyle', '--');
-line([tNoiseEnd   tNoiseEnd],   yLim, 'color', [0.5 0 0], 'linewidth', 1, 'linestyle', '--');
+line([tSigStart   tSigStart],   yLim, 'color', [0 0.5 0], 'linewidth', 1, ...
+    'linestyle', '--', 'HandleVisibility', 'off');
+line([tSigEnd     tSigEnd],     yLim, 'color', [0 0.5 0], 'linewidth', 1, ...
+    'linestyle', '--', 'HandleVisibility', 'off');
+line([tNoiseStart tNoiseStart], yLim, 'color', [0.5 0 0], 'linewidth', 1, ...
+    'linestyle', '--', 'HandleVisibility', 'off');
+line([tNoiseEnd   tNoiseEnd],   yLim, 'color', [0.5 0 0], 'linewidth', 1, ...
+    'linestyle', '--', 'HandleVisibility', 'off');
 
-% Text labels — font and colour matching spectroAnnotationAndNoise conventions.
-% Signal: centred horizontally in the signal window, near the top.
-% Noise: right-aligned at the right edge of the noise region, near the bottom.
-yLim     = ylim;
-yMax     = yLim(2);
-yMin     = yLim(1);
-tSigMid  = (tSigStart + tSigEnd) / 2;
-tNoiseR  = max(tNoiseStart, tSigStart - 0.01*(tClip(end)-tClip(1)));   % rightmost noise edge
+% SNR label — top left inside axes
+yLim = ylim;
+text(tClip(1), yLim(2), sprintf('SNR = %.1f dB', snrDB), ...
+    'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', ...
+    'FontSize', 6, ...
+    'BackgroundColor', 'none', 'EdgeColor', 'none');
 
-levelUnit = 'dBFS';   % plotBandSamplePower has no metadata access; always dBFS
-
-if isfield(detection, 'rmsLevel') && isfinite(detection.rmsLevel)
-    sigStr = sprintf('SNR = %4.1f dB\nSig = %4.1f %s', ...
-        10*log10(rmsSignal/rmsNoise), detection.rmsLevel, levelUnit);
-else
-    sigStr = sprintf('SNR = %4.1f dB', 10*log10(rmsSignal/rmsNoise));
-end
-text(tSigMid, yMax, sigStr, ...
-    'color', [0 0.5 0], 'FontSize', 7, 'verticalAlignment', 'top', ...
-    'horizontalAlignment', 'center', 'BackgroundColor', 'w', ...
-    'EdgeColor', 'none', 'Margin', 1);
-
-if isfield(noise, 'rmsLevel') && isfinite(noise.rmsLevel)
-    noiseStr = sprintf('Noise = %4.1f %s', noise.rmsLevel, levelUnit);
-else
-    noiseStr = 'Noise';
-end
-text(tNoiseEnd, yMin, noiseStr, ...
-    'color', [0.5 0 0], 'FontSize', 7, 'verticalAlignment', 'bottom', ...
-    'horizontalAlignment', 'right', 'BackgroundColor', 'w', ...
-    'EdgeColor', 'none', 'Margin', 1);
-
+lg = legend('Location', 'northoutside', 'FontSize', 6, 'Box', 'off', ...
+    'NumColumns', 2);
+lg.ItemTokenSize = [10 6];
 hold off
 
 xlabel('Time (s)', 'FontSize', 7);

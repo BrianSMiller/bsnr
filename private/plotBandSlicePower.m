@@ -39,32 +39,38 @@ cla(ax);
 hold(ax, 'on');
 
 % Noise slices — red
-plot(ax, tNoise, noiseDB, 'Color', [0.7 0.1 0.1], 'LineWidth', 0.8);
+plot(ax, tNoise, noiseDB, 'Color', [0.7 0.1 0.1], 'LineWidth', 0.8, ...
+    'DisplayName', sprintf('Noise (%.1f %s)', nMeandB, levelUnit));
 line(ax, [tNoise(1) tNoise(end)], [nMeandB nMeandB], ...
-    'Color', [0.5 0 0], 'LineWidth', 1.5, 'LineStyle', '--');
+    'Color', [0.5 0 0], 'LineWidth', 1.5, 'LineStyle', '--', ...
+    'HandleVisibility', 'off');
 
 % Signal slices — green
-plot(ax, tSig, sigDB, 'Color', [0.1 0.6 0.1], 'LineWidth', 0.8);
+plot(ax, tSig, sigDB, 'Color', [0.1 0.6 0.1], 'LineWidth', 0.8, ...
+    'DisplayName', sprintf('Signal (%.1f %s)', sMeandB, levelUnit));
 line(ax, [tSig(1) tSig(end)], [sMeandB sMeandB], ...
-    'Color', [0 0.45 0], 'LineWidth', 1.5, 'LineStyle', '--');
+    'Color', [0 0.45 0], 'LineWidth', 1.5, 'LineStyle', '--', ...
+    'HandleVisibility', 'off');
 
 % Vertical boundary between noise and signal windows
 xBound = sigOffset;
 yL = [min([sigDB; noiseDB]) - 1, max([sigDB; noiseDB]) + 1];
 line(ax, [xBound xBound], yL, 'Color', [0.5 0.5 0.5], ...
-    'LineWidth', 1, 'LineStyle', ':');
+    'LineWidth', 1, 'LineStyle', ':', 'HandleVisibility', 'off');
 
-% SNR annotation
-text(ax, mean([tNoise(1) tSig(end)]), yL(2), ...
-    sprintf('SNR = %.1f dB', snr), ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', ...
-    'FontSize', 7, 'FontWeight', 'bold', ...
-    'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
+% SNR label — top left inside axes
+text(ax, tNoise(1), yL(2), sprintf('SNR = %.1f dB', snr), ...
+    'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', ...
+    'FontSize', 6, ...
+    'BackgroundColor', 'none', 'EdgeColor', 'none');
 
 set(ax, 'YLim', yL);
 xlabel(ax, 'Time (s)', 'FontSize', 7);
 ylabel(ax, sprintf('Band power (%s)', levelUnit), 'FontSize', 7);
 title(ax, 'Per-slice band power', 'FontSize', 7);
+lg = legend(ax, 'Location', 'northoutside', 'FontSize', 6, 'Box', 'off', ...
+    'NumColumns', 2);
+lg.ItemTokenSize = [10 6];
 hold(ax, 'off');
 
 end

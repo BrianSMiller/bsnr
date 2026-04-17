@@ -30,8 +30,8 @@ if nargin < 8 || isempty(useLurton), useLurton = false;  end
 
 sigDB   = 10 * log10(max(sigSlicePowers(:),   eps));
 noiseDB = 10 * log10(max(noiseSlicePowers(:), eps));
-nMeandB = 10 * log10(max(rmsNoise,  eps));
-sMeandB = 10 * log10(max(rmsSignal, eps));
+nMeandB = mean(noiseDB);   % consistent with histogram x-axis
+sMeandB = mean(sigDB);
 
 % Noise std in dB domain — matches what is visible in the histogram
 noiseStdDB = std(noiseDB);
@@ -65,35 +65,39 @@ yLim = [0 yMax];
 
 % Noise mean vertical line
 line(ax, [nMeandB nMeandB], yLim, 'Color', [0.5 0 0], 'LineWidth', 1.5);
-text(ax, nMeandB, yMax * 0.98, sprintf('N = %.1f', nMeandB), ...
+nLabelY = yMax * 0.92;
+sLabelY = yMax * 0.92;
+if abs(sMeandB - nMeandB) < (xHi - xLo) * 0.12
+    sLabelY = yMax * 0.78;
+end
+text(ax, nMeandB, nLabelY, sprintf('N=%.1f', nMeandB), ...
     'Color', [0.5 0 0], 'FontSize', 6, ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', ...
-    'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
+    'HorizontalAlignment', 'right', 'VerticalAlignment', 'top', ...
+    'BackgroundColor', 'none', 'EdgeColor', 'none');
 
 % Signal mean vertical line
 line(ax, [sMeandB sMeandB], yLim, 'Color', [0 0.5 0], 'LineWidth', 1.5);
-text(ax, sMeandB, yMax * 0.98, sprintf('S = %.1f', sMeandB), ...
+text(ax, sMeandB, sLabelY, sprintf('S=%.1f', sMeandB), ...
     'Color', [0 0.5 0], 'FontSize', 6, ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', ...
-    'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
+    'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', ...
+    'BackgroundColor', 'none', 'EdgeColor', 'none');
 
-% Horizontal error bar at noise mean ± 1 std
-errY  = yMax * 0.12;
-tickH = yMax * 0.04;
+% Noise ± 1 std error bar — positioned above histograms on the noise line
+errY  = yMax * 0.75;
+tickH = yMax * 0.03;
 errLo = nMeandB - noiseStdDB;
 errHi = nMeandB + noiseStdDB;
-line(ax, [errLo errHi], [errY errY],           'Color', [0.5 0 0], 'LineWidth', 2);
-line(ax, [errLo errLo], errY + [-tickH tickH], 'Color', [0.5 0 0], 'LineWidth', 2);
-line(ax, [errHi errHi], errY + [-tickH tickH], 'Color', [0.5 0 0], 'LineWidth', 2);
-text(ax, mean([errLo errHi]), errY - tickH, ...
-    sprintf('%s_N = %.1f dB', char(963), noiseStdDB), ...
+line(ax, [errLo errHi], [errY errY],           'Color', [0.5 0 0], 'LineWidth', 1.5);
+line(ax, [errLo errLo], errY + [-tickH tickH], 'Color', [0.5 0 0], 'LineWidth', 1.5);
+line(ax, [errHi errHi], errY + [-tickH tickH], 'Color', [0.5 0 0], 'LineWidth', 1.5);
+text(ax, errHi, errY, sprintf(' %s=%.1f', char(963), noiseStdDB), ...
     'Color', [0.5 0 0], 'FontSize', 6, ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', ...
-    'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
+    'HorizontalAlignment', 'left', 'VerticalAlignment', 'middle', ...
+    'BackgroundColor', 'none', 'EdgeColor', 'none');
 
 % SNR bracket
-bracketY = yMax * 0.62;
-tickHb   = yMax * 0.04;
+bracketY = yMax * 0.50;
+tickHb   = yMax * 0.03;
 line(ax, [nMeandB sMeandB], [bracketY bracketY], 'Color', 'k', 'LineWidth', 1);
 line(ax, [nMeandB nMeandB], bracketY + [-tickHb tickHb], 'Color', 'k', 'LineWidth', 1);
 line(ax, [sMeandB sMeandB], bracketY + [-tickHb tickHb], 'Color', 'k', 'LineWidth', 1);
@@ -102,10 +106,10 @@ if useLurton
 else
     snrLabel = sprintf('SNR = %.1f dB', snr);
 end
-text(ax, mean([nMeandB sMeandB]), bracketY + tickHb * 1.5, snrLabel, ...
-    'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', ...
+text(ax, mean([nMeandB sMeandB]), yMax * 0.99, snrLabel, ...
+    'HorizontalAlignment', 'center', 'VerticalAlignment', 'top', ...
     'FontSize', 7, 'FontWeight', 'bold', ...
-    'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
+    'BackgroundColor', 'none', 'EdgeColor', 'none');
 
 set(ax, 'XLim', [xLo xHi], 'YLim', yLim);
 xlabel(ax, sprintf('Per-slice band power (%s)', levelUnit), 'FontSize', 7);

@@ -414,6 +414,28 @@ for k = 1:nDist
         [noiseBuf; detAudio; noiseBuf], 1000, srwFreq, 1.0, distConfigs{k,1}, srwBufDur);
 end
 
+% DEBUG — paste after the srwAnnots loop, before figQ
+k = 2;  % Moderate SNR
+sf = wavFolderInfo(srwAnnots{k}.soundFolder, '', false, false);
+[sigAudio, ~] = getAudioFromFiles(sf, srwAnnots{k}.t0, srwAnnots{k}.tEnd);
+nfft_dbg = 2^nextpow2(floor(srwAnnots{k}.duration / 30 / 0.25 * 1000));
+fprintf('duration=%.2f s  nfft=%d\n', srwAnnots{k}.duration, nfft_dbg);
+fprintf('sigAudio: n=%d  rms=%.4f\n', numel(sigAudio), rms(sigAudio));
+[rmsS, rmsN, ~, q85, psdCells] = snrQuantiles(sigAudio, [], nfft_dbg, floor(nfft_dbg*0.75), 1000, srwAnnots{k}.freq, []);
+fprintf('rmsSignal=%.3e  rmsNoise=%.3e  q85=%.3e\n', rmsS, rmsN, q85);
+fprintf('psdCells: n=%d  min=%.3e  max=%.3e\n', numel(psdCells), min(psdCells), max(psdCells));
+fprintf('q15=%.3e (%.1f dBFS)  q85=%.3e (%.1f dBFS)\n', ...
+    quantile(psdCells,0.15), 10*log10(max(quantile(psdCells,0.15),eps)), ...
+    quantile(psdCells,0.85), 10*log10(max(quantile(psdCells,0.85),eps)));
+
+% Add after the debug block:
+p_dbg = makeParams('quantiles', srwSP);
+disp(p_dbg)
+nfft_snrEstimate = 2^nextpow2(floor(1.0 / 30 / 0.75 * 1000))
+fprintf('snrEstimate nfft=%d  bins in [75-210] Hz = %d\n', ...
+    nfft_snrEstimate, ...
+    sum((0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate >= 75 & ...
+        (0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate <= 210));
 %% 6a. Quantiles
 
 figQ = figure('Name', 'quantiles', ...
@@ -516,7 +538,7 @@ cleanupSRW();
 callTypes = {
   'ABW A'    'abw_a'  10   10   [24  28]
   'ABW B'    'abw_b'  13   12   [20  28]
-  'ABW Z'    'abw_z'  12   21   [17  28]
+  'ABW Z'    'abw_z'  17   21   [17  28]
   'ABW D'    'abw_d'  11    4   [44  72]
   'Fin 40Hz' 'bp_40'   8    2   [32  61]
   'Fin 20Hz' 'bp_20'   7    4   [15  35]
