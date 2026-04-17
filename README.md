@@ -119,7 +119,7 @@ Simple power ratio (`snrType='spectrogram'`, `useLurton=false`):
 
 Lurton formula (`useLurton=true`):
 
-> Miller et al. (2021). An Open Access Dataset for Developing Automated Detectors of Antarctic Baleen Whale Sounds. *Scientific Reports* 11, 806. https://doi.org/10.1038/s41598-020-78995-8
+> Lurton, X. (2010). An Introduction to Underwater Acoustics: Principles and Applications (2nd ed.). Springer-Praxis. eq. 6.26
 
 NIST STNR histogram method (`snrType='nist'`):
 
