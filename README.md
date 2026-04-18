@@ -219,6 +219,16 @@ bsnr/
     └── makeClickAudio.m              Click-contaminated audio generator
 ```
 
+## Acknowledgements
+
+bsnr grew out of `annotationSNR.m`, an SNR measurement function originally
+developed as part of the
+[IWC-SORP Annotated Library](https://doi.org/10.26179/5e6056035c01b) project
+at the Australian Antarctic Division. The toolbox design, implementation, test
+suite, documentation, and published-data examples were developed with
+extensive assistance from [Claude](https://claude.ai) (Anthropic), an AI
+assistant.
+
 ## Licence
 
 MIT License — Copyright © 2025 Australian Antarctic Division. See [LICENSE](LICENSE) for details.
