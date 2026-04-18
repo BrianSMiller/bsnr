@@ -22,8 +22,8 @@ function [rmsSignal, rmsNoise, noiseVar] = snrWADA( ...
 %
 % Reference:
 %   Kim, C. & Stern, R.M. (2008). Robust Signal-to-Noise Ratio Estimation
-%   Based on Waveform Amplitude Distribution Analysis. Interspeech 2008.
-%   https://www.cs.cmu.edu/~robust/Papers/KimSternIS08.pdf
+%   Based on Waveform Amplitude Distribution Analysis. Interspeech 2008,
+%   pp. 2598-2601. https://www.isca-archive.org/interspeech_2008/kim08e_interspeech.html
 %
 % INPUTS
 %   sigAudio    Signal audio samples (column vector)

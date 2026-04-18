@@ -69,7 +69,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h1>SNR of Antarctic blue whale calls &#8212; Kerguelen 2014 (Castro et al. 2024)</h1><!--introduction--><p>Reproduces the seasonal SNR and noise level distributions shown in Figure 5 of Castro et al. (2024), using bsnr's spectrogramSlices method with calibrated acoustic levels.</p><p>METHOD (from callDensityParams.m and BmZspectroParams.m)   snrType       = 'spectrogramSlices'   freq          = [25 29] Hz  (unit-A band)   noiseDuration = 'beforeAndAfter'   noiseDelay    = 1 s   nfft          = 1024  (from BmZspectroParams: win=1024, SR=1000 Hz)   nOverlap      = 870   (floor(1024 * 0.85))   metadata      = loadRecorderMetaData('Kerguelen2014')   formula       = simple power ratio: SNR = 10*log10(S/N)</p><p>The paper SNR values were not published as supplemental data; Figure 5 shows seasonal violin distributions which this script reproduces. A, B, and Z calls are pooled as ABZ following Castro et al. (2024).</p><p>REFERENCE   Castro et al. (2024). Beyond Counting Calls: Estimating Detection   Probability for Antarctic Blue Whales. Frontiers in Marine Science.   <a href="https://doi.org/10.3389/fmars.2024.1406678">https://doi.org/10.3389/fmars.2024.1406678</a></p><p>DATA   Annotations: w:\annotatedLibrary\BAFAAL\Kerguelen2014\*.Bm.Ant-*selections.txt   Recordings:  w:\annotatedLibrary\BAFAAL\Kerguelen2014\wav\   Calibration: loadRecorderMetaData('Kerguelen2014') [longTermRecorders]</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Suppress expected warnings</a></li><li><a href="#3">Published values from Castro et al. (2024) Table/Figure 5</a></li><li><a href="#4">Load calibration metadata</a></li><li><a href="#5">Load annotations</a></li><li><a href="#6">Compute SNR</a></li><li><a href="#7">Assign seasons (Southern Hemisphere)</a></li><li><a href="#8">Summary statistics by season</a></li><li><a href="#9">Figure: seasonal SNR and NL distributions (replicates Figure 5)</a></li><li><a href="#10">Save results</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Annotations are part of the IWC-SORP Annotated Library public download (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI. Calibration metadata requires loadRecorderMetaData() from the longTermRecorders toolbox (contact <a href="mailto:acoustics@aad.gov.au">acoustics@aad.gov.au</a>).</p><pre class="codeinput">annotationRoot = <span class="string">'s:\work\annotatedLibrary\SORP\kerguelen2014\'</span>;
+</head><body><div class="content"><h1>SNR of Antarctic blue whale calls &#8212; Kerguelen 2014 (Castro et al. 2024)</h1><!--introduction--><p>Reproduces the seasonal SNR and noise level distributions shown in Figure 5 of Castro et al. (2024). ABW A, B, and Z calls are pooled across 12 months at Kerguelen Island, with SNR and noise level estimated using calibrated spectrogramSlices (25-29 Hz, simple power ratio). Noise levels match the paper within 0.5 dB after bandwidth correction.</p><p>REFERENCE   Castro, F.R. et al. (2024). Beyond Counting Calls: Estimating Detection   Probability for Antarctic Blue Whales. Frontiers in Marine Science.   <a href="https://doi.org/10.3389/fmars.2024.1406678">https://doi.org/10.3389/fmars.2024.1406678</a></p><p>DATA   Annotations and recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary">https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary</a>     <a href="https://doi.org/10.26179/5e6056035c01b">https://doi.org/10.26179/5e6056035c01b</a>   Calibration: loadRecorderMetaData('Kerguelen2014') [longTermRecorders]                Contact <a href="mailto:acoustics@aad.gov.au">acoustics@aad.gov.au</a> for access.</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Suppress expected warnings</a></li><li><a href="#3">Published values from Castro et al. (2024) Table/Figure 5</a></li><li><a href="#4">Load calibration metadata</a></li><li><a href="#5">Load annotations</a></li><li><a href="#6">Compute SNR</a></li><li><a href="#7">Assign seasons (Southern Hemisphere)</a></li><li><a href="#8">Summary statistics by season</a></li><li><a href="#9">Figure: seasonal SNR and NL distributions (replicates Figure 5)</a></li><li><a href="#10">Save results</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Annotations are part of the IWC-SORP Annotated Library public download (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI. Calibration metadata requires loadRecorderMetaData() from the longTermRecorders toolbox (contact <a href="mailto:acoustics@aad.gov.au">acoustics@aad.gov.au</a>).</p><pre class="codeinput">annotationRoot = <span class="string">'s:\work\annotatedLibrary\SORP\kerguelen2014\'</span>;
 soundFolder    = <span class="string">'s:\work\annotatedLibrary\SORP\kerguelen2014\wav\'</span>;
 siteCode       = <span class="string">'Kerguelen2014'</span>;
 
@@ -273,7 +273,7 @@ title(tlo1, sprintf(<span class="string">'Kerguelen 2014 &#8212; ABZ calls, %d-%
     grid <span class="string">on</span>;
     xlim([0.5 numel(seasonOrder)+0.5]);
 <span class="keyword">end</span>
-</pre><img vspace="5" hspace="5" src="snr_abw_kerguelen2014_castro2024_01.png" alt=""> <h2 id="10">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+</pre><img vspace="5" hspace="5" src="snr_abw_kerguelen2014_castro2024_01.png" alt=""> <img vspace="5" hspace="5" src="snr_abw_kerguelen2014_castro2024_02.png" alt=""> <h2 id="10">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_abw_kerguelen2014_castro2024_results.csv'</span>);
 writetable(allDetections(:, {<span class="string">'t0'</span>, <span class="string">'duration'</span>, <span class="string">'fLow'</span>, <span class="string">'fHigh'</span>, <span class="keyword">...</span>
     <span class="string">'classification'</span>, <span class="string">'season'</span>, <span class="string">'snr'</span>, <span class="string">'signalLevel'</span>, <span class="string">'noiseLevel'</span>}), <span class="keyword">...</span>
@@ -293,32 +293,22 @@ Settings: snrType=spectrogramSlices, nfft=1024, nOverlap=870
 %% SNR of Antarctic blue whale calls — Kerguelen 2014 (Castro et al. 2024)
 %
 % Reproduces the seasonal SNR and noise level distributions shown in
-% Figure 5 of Castro et al. (2024), using bsnr's spectrogramSlices method
-% with calibrated acoustic levels.
-%
-% METHOD (from callDensityParams.m and BmZspectroParams.m)
-%   snrType       = 'spectrogramSlices'
-%   freq          = [25 29] Hz  (unit-A band)
-%   noiseDuration = 'beforeAndAfter'
-%   noiseDelay    = 1 s
-%   nfft          = 1024  (from BmZspectroParams: win=1024, SR=1000 Hz)
-%   nOverlap      = 870   (floor(1024 * 0.85))
-%   metadata      = loadRecorderMetaData('Kerguelen2014')
-%   formula       = simple power ratio: SNR = 10*log10(S/N)
-%
-% The paper SNR values were not published as supplemental data; Figure 5
-% shows seasonal violin distributions which this script reproduces.
-% A, B, and Z calls are pooled as ABZ following Castro et al. (2024).
+% Figure 5 of Castro et al. (2024). ABW A, B, and Z calls are pooled
+% across 12 months at Kerguelen Island, with SNR and noise level estimated
+% using calibrated spectrogramSlices (25-29 Hz, simple power ratio).
+% Noise levels match the paper within 0.5 dB after bandwidth correction.
 %
 % REFERENCE
-%   Castro et al. (2024). Beyond Counting Calls: Estimating Detection
+%   Castro, F.R. et al. (2024). Beyond Counting Calls: Estimating Detection
 %   Probability for Antarctic Blue Whales. Frontiers in Marine Science.
 %   https://doi.org/10.3389/fmars.2024.1406678
 %
 % DATA
-%   Annotations: w:\annotatedLibrary\BAFAAL\Kerguelen2014\*.Bm.Ant-*selections.txt
-%   Recordings:  w:\annotatedLibrary\BAFAAL\Kerguelen2014\wav\
+%   Annotations and recordings: Australian Antarctic Data Centre
+%     https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary
+%     https://doi.org/10.26179/5e6056035c01b
 %   Calibration: loadRecorderMetaData('Kerguelen2014') [longTermRecorders]
+%                Contact acoustics@aad.gov.au for access.
 
 %% User configuration
 % Edit the paths below to match your local installation.

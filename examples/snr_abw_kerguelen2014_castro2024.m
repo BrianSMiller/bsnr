@@ -1,32 +1,22 @@
 %% SNR of Antarctic blue whale calls — Kerguelen 2014 (Castro et al. 2024)
 %
 % Reproduces the seasonal SNR and noise level distributions shown in
-% Figure 5 of Castro et al. (2024), using bsnr's spectrogramSlices method
-% with calibrated acoustic levels.
-%
-% METHOD (from callDensityParams.m and BmZspectroParams.m)
-%   snrType       = 'spectrogramSlices'
-%   freq          = [25 29] Hz  (unit-A band)
-%   noiseDuration = 'beforeAndAfter'
-%   noiseDelay    = 1 s
-%   nfft          = 1024  (from BmZspectroParams: win=1024, SR=1000 Hz)
-%   nOverlap      = 870   (floor(1024 * 0.85))
-%   metadata      = loadRecorderMetaData('Kerguelen2014')
-%   formula       = simple power ratio: SNR = 10*log10(S/N)
-%
-% The paper SNR values were not published as supplemental data; Figure 5
-% shows seasonal violin distributions which this script reproduces.
-% A, B, and Z calls are pooled as ABZ following Castro et al. (2024).
+% Figure 5 of Castro et al. (2024). ABW A, B, and Z calls are pooled
+% across 12 months at Kerguelen Island, with SNR and noise level estimated
+% using calibrated spectrogramSlices (25-29 Hz, simple power ratio).
+% Noise levels match the paper within 0.5 dB after bandwidth correction.
 %
 % REFERENCE
-%   Castro et al. (2024). Beyond Counting Calls: Estimating Detection
+%   Castro, F.R. et al. (2024). Beyond Counting Calls: Estimating Detection
 %   Probability for Antarctic Blue Whales. Frontiers in Marine Science.
 %   https://doi.org/10.3389/fmars.2024.1406678
 %
 % DATA
-%   Annotations: w:\annotatedLibrary\BAFAAL\Kerguelen2014\*.Bm.Ant-*selections.txt
-%   Recordings:  w:\annotatedLibrary\BAFAAL\Kerguelen2014\wav\
+%   Annotations and recordings: Australian Antarctic Data Centre
+%     https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary
+%     https://doi.org/10.26179/5e6056035c01b
 %   Calibration: loadRecorderMetaData('Kerguelen2014') [longTermRecorders]
+%                Contact acoustics@aad.gov.au for access.
 
 %% User configuration
 % Edit the paths below to match your local installation.

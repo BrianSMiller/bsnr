@@ -69,9 +69,9 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">bsnr Gallery</a></li><li><a href="#2">Path setup</a></li><li><a href="#3">PART 1 &#8212; Synthetic fixtures: concepts and comparisons</a></li><li><a href="#4">1. Noise window strategies</a></li><li><a href="#5">2. Lurton formula vs simple power ratio</a></li><li><a href="#6">3. Calibrated acoustic levels</a></li><li><a href="#7">4. Click removal</a></li><li><a href="#8">5. Duty cycle and mean-power SNR</a></li><li><a href="#9">6. Distribution-based methods &#8212; quantiles and NIST</a></li><li><a href="#10">6a. Quantiles</a></li><li><a href="#11">6b. NIST histogram</a></li><li><a href="#12">7. Ridge and synchrosqueeze &#8212; FM signal</a></li><li><a href="#13">PART 2 &#8212; Real recordings: functional demos</a></li><li><a href="#14">8a. Tonal calls &#8212; ABW A, B, Z</a></li><li><a href="#15">8b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</a></li><li><a href="#16">9. Method comparison &#8212; SNR heatmap</a></li><li><a href="#17">Local helpers</a></li></ul></div><h2 id="1">bsnr Gallery</h2><p>Illustrated reference for the bsnr SNR estimation toolbox.</p><p><b>Part 1</b> uses synthetic test fixtures to explain each feature and the conceptual differences between methods. Every section is self-contained: the fixture is built, the method is run, and the plot is drawn within that section alone.</p><p><b>Part 2</b> uses real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021) as functional demos, with spectrogram parameters matched to the published figures.</p><p><b>Publish to HTML:</b></p><pre class="language-matlab">cd <span class="string">C:\analysis\bsnr\examples</span>
-publish(<span class="string">'bsnr_gallery.m'</span>, <span class="string">'format'</span>, <span class="string">'html'</span>, <span class="string">'outputDir'</span>, <span class="string">'.\html'</span>)
-</pre><p><b>Audio clips</b> (CC-BY 4.0): Miller et al. (2021) doi:10.1038/s41598-020-78995-8 / doi:10.26179/5e6056035c01b</p><p>Pre-extracted clips are included in <tt>examples/audio/</tt>. To extract clips from a local copy of the full annotated library, run <tt>prepareGalleryAudio.m</tt> first.</p><pre class="codeinput">close <span class="string">all</span>;
+</head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">bsnr Gallery</a></li><li><a href="#2">Path setup</a></li><li><a href="#3">PART 1 &#8212; Synthetic fixtures: concepts and comparisons</a></li><li><a href="#4">1. Noise window strategies</a></li><li><a href="#5">2. Lurton formula vs simple power ratio</a></li><li><a href="#6">3. Calibrated acoustic levels</a></li><li><a href="#7">4. Click removal</a></li><li><a href="#8">5. Duty cycle and mean-power SNR</a></li><li><a href="#9">6. Distribution-based methods &#8212; quantiles and NIST</a></li><li><a href="#10">6a. Quantiles</a></li><li><a href="#11">6b. NIST histogram</a></li><li><a href="#12">7. Ridge and synchrosqueeze &#8212; FM signal</a></li><li><a href="#13">PART 2 &#8212; Real recordings: functional demos</a></li><li><a href="#14">8a. Tonal calls &#8212; ABW A, B, Z</a></li><li><a href="#15">8b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</a></li><li><a href="#16">9. Method comparison &#8212; SNR heatmap</a></li><li><a href="#17">Local helpers</a></li></ul></div><h2 id="1">bsnr Gallery</h2><p>Illustrated reference for the bsnr SNR estimation toolbox.</p><p><b>Part 1</b> illustrates each method on synthetic signals, with every section self-contained: signal generation, SNR estimation, and display in one block. Synthetic signals allow controlled comparison across methods at known SNR.</p><p><b>Part 2</b> demonstrates each method on real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021), with spectrogram parameters matched to the published figures.</p><p>Audio clips (CC-BY 4.0, included in <tt>examples/audio/</tt>): Miller et al. (2021). doi:10.26179/5e6056035c01b</p><p><b>To publish to HTML:</b></p><pre class="language-matlab">cd <span class="string">C:\analysis\bsnr\examples</span>
+publishDocs
+</pre><pre class="codeinput">close <span class="string">all</span>;
 galleryDir = fileparts(mfilename(<span class="string">'fullpath'</span>));
 audioDir   = fullfile(galleryDir, <span class="string">'audio'</span>);
 </pre><h2 id="2">Path setup</h2><p>Add bsnr and its dependencies to the MATLAB path if not already present. Edit <tt>analysisRoot</tt> to match your local installation.</p><pre class="codeinput">sourceDir = fileparts(galleryDir);
@@ -578,26 +578,22 @@ sp = struct(<span class="string">'yLims'</span>, [0 sampleRate/2*0.6], <span cla
 %% bsnr Gallery
 % Illustrated reference for the bsnr SNR estimation toolbox.
 %
-% *Part 1* uses synthetic test fixtures to explain each feature and the
-% conceptual differences between methods. Every section is self-contained:
-% the fixture is built, the method is run, and the plot is drawn within
-% that section alone.
+% *Part 1* illustrates each method on synthetic signals, with every section
+% self-contained: signal generation, SNR estimation, and display in one
+% block. Synthetic signals allow controlled comparison across methods at
+% known SNR.
 %
-% *Part 2* uses real Antarctic baleen whale recordings from the IWC-SORP
-% Annotated Library (Miller et al. 2021) as functional demos, with
-% spectrogram parameters matched to the published figures.
+% *Part 2* demonstrates each method on real Antarctic baleen whale
+% recordings from the IWC-SORP Annotated Library (Miller et al. 2021),
+% with spectrogram parameters matched to the published figures.
 %
-% *Publish to HTML:*
+% Audio clips (CC-BY 4.0, included in |examples/audio/|):
+% Miller et al. (2021). doi:10.26179/5e6056035c01b
+%
+% *To publish to HTML:*
 %
 %   cd C:\analysis\bsnr\examples
-%   publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '.\html')
-%
-% *Audio clips* (CC-BY 4.0): Miller et al. (2021)
-% doi:10.1038/s41598-020-78995-8 / doi:10.26179/5e6056035c01b
-%
-% Pre-extracted clips are included in |examples/audio/|.
-% To extract clips from a local copy of the full annotated library,
-% run |prepareGalleryAudio.m| first.
+%   publishDocs
 
 close all;
 galleryDir = fileparts(mfilename('fullpath'));

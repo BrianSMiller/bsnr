@@ -1,50 +1,27 @@
-%% SNR of Antarctic blue whale D-calls — Casey 2019 test dataset
+%% SNR of Antarctic blue whale D-calls — Casey 2019
 %
-% Computes SNR for adjudicated analyst true-positive D-call detections from
-% the Casey 2019 test dataset used in Miller et al. (2022), using bsnr's
-% reproducible spectrogram-based methods.
+% Estimates SNR for 1319 adjudicated analyst true-positive D-call detections
+% from Miller et al. (2022), using four bsnr configurations spanning two
+% methods (spectrogram, spectrogramSlices) and two formulas (simple power
+% ratio, Lurton). Results are compared against the paper's snrLurton values.
 %
-% INTENT
-% The original paper (Miller et al. 2022) computed SNR using a Lurton
-% formula implementation in the supplemental code (annotationSNR.m), but
-% exact reproduction from the analyst annotations alone is not possible.
-% The paper's SNR was computed on reconciled detections using
-% max(analyst_duration, detector_duration) as the signal window length,
-% which requires the detector output and is not reproducible from analyst
-% annotations alone. Additionally, tEnd_table1 is corrupt in the published
-% capture history (Appendix S4) for 1318/1319 rows — tEnd equals t0,
-% making the duration field the only reliable source of signal window length.
-%
-% This script offers a reproducible alternative: four bsnr configurations
-% covering the methods and formula options most relevant to D-calls, all
-% derived solely from the published analyst annotations and capture history.
-% Results are compared against the paper's snrLurton column (Data S4) as
-% a reference.
-%
-% CONFIGURATIONS
-%   A. spectrogram,      simple power ratio  — most interpretable
-%   B. spectrogramSlices, simple power ratio  — robust to transients
-%   C. spectrogram,      Lurton formula       — closest to paper method
-%   D. spectrogramSlices, Lurton formula      — per-slice Lurton
-%
-% REPRODUCIBILITY NOTES
-%   - tEnd rebuilt from t0_table1 + duration_table1 (tEnd_table1 corrupt)
-%   - Signal window: analyst duration only (paper used max(analyst, detector))
-%   - Freq band: per-annotation analyst bounds (paper may have used fixed band)
-%   - nfft=256 at 1000 Hz SR: 0.256 s window, ~4 Hz resolution
-%   - Correlation with paper snrLurton: r~0.35 (analyst duration),
-%     r~0.52 (reconciled duration) — duration is the dominant source of
-%     discrepancy; the upper tail of the paper distribution requires the
-%     detector output to reproduce
+% Exact reproduction of the paper's SNR is not possible from the published
+% annotations alone. The original analysis used max(analyst, detector)
+% duration as the signal window length, which requires the detector output.
+% The published capture history (Appendix S4) also has corrupt tEnd values
+% for 1318/1319 rows; tEnd is reconstructed here from t0 + duration.
+% Correlation with paper snrLurton is r ~ 0.35 using analyst-only duration.
 %
 % REFERENCE
-%   Miller et al. (2022). Deep Learning Algorithm Outperforms Experienced
-%   Human Observer at Detection of Blue Whale D-calls. Remote Sensing in
-%   Ecology and Conservation. https://doi.org/10.1002/rse2.297
+%   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms
+%   Experienced Human Observer at Detection of Blue Whale D-calls.
+%   Remote Sensing in Ecology and Conservation.
+%   https://doi.org/10.1002/rse2.297
 %
 % DATA
 %   Capture history (Appendix S4): doi:10.1002/rse2.297
-%   Recordings: contact acoustics@aad.gov.au
+%   Recordings: Australian Antarctic Data Centre
+%     https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings
 
 %% Configuration
 

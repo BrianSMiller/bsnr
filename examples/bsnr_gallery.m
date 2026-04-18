@@ -1,26 +1,22 @@
 %% bsnr Gallery
 % Illustrated reference for the bsnr SNR estimation toolbox.
 %
-% *Part 1* uses synthetic test fixtures to explain each feature and the
-% conceptual differences between methods. Every section is self-contained:
-% the fixture is built, the method is run, and the plot is drawn within
-% that section alone.
+% *Part 1* illustrates each method on synthetic signals, with every section
+% self-contained: signal generation, SNR estimation, and display in one
+% block. Synthetic signals allow controlled comparison across methods at
+% known SNR.
 %
-% *Part 2* uses real Antarctic baleen whale recordings from the IWC-SORP
-% Annotated Library (Miller et al. 2021) as functional demos, with
-% spectrogram parameters matched to the published figures.
+% *Part 2* demonstrates each method on real Antarctic baleen whale
+% recordings from the IWC-SORP Annotated Library (Miller et al. 2021),
+% with spectrogram parameters matched to the published figures.
 %
-% *Publish to HTML:*
+% Audio clips (CC-BY 4.0, included in |examples/audio/|):
+% Miller et al. (2021). doi:10.26179/5e6056035c01b
+%
+% *To publish to HTML:*
 %
 %   cd C:\analysis\bsnr\examples
-%   publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '.\html')
-%
-% *Audio clips* (CC-BY 4.0): Miller et al. (2021)
-% doi:10.1038/s41598-020-78995-8 / doi:10.26179/5e6056035c01b
-%
-% Pre-extracted clips are included in |examples/audio/|.
-% To extract clips from a local copy of the full annotated library,
-% run |prepareGalleryAudio.m| first.
+%   publishDocs
 
 close all;
 galleryDir = fileparts(mfilename('fullpath'));

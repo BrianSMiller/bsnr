@@ -36,13 +36,11 @@
 %   simpleFlatMetadata    - Example calibration metadata struct (flat 20 dB gain)
 %
 % EXPERIMENTAL (not integrated into snrEstimate)
-%   experimental/snrWADA  - WADA-SNR (Kim & Stern 2008); amplitude distribution
-%                           analysis; does not require a separate noise window
+%   experimental/snrWADA  - WADA-SNR (Kim & Stern 2008); no noise window required
 %
 % QUICK START
 %
-%   % Use a pre-extracted Z-call clip from the bsnr gallery audio
-%   % (run prepareGalleryAudio.m first, or place clips in examples/audio/)
+%   % Use a pre-extracted Z-call clip included in examples/audio/
 %   audioDir = fullfile(fileparts(which('bsnr')), 'examples', 'audio', 'abw_z');
 %   sf = wavFolderInfo(audioDir, '', false, false);
 %
@@ -127,7 +125,7 @@
 %   Antarctic baleen whale recordings. Publish to HTML with:
 %
 %     cd examples
-%     publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '..\docs')
+%     publishDocs
 %     movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
 %
 %   Published-data examples with paper comparisons:

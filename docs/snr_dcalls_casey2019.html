@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>SNR of Antarctic blue whale D-calls &#8212; Casey 2019 test dataset</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-19"><meta name="DC.source" content="snr_dcalls_casey2019.m"><style type="text/css">
+      --><title>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-19"><meta name="DC.source" content="snr_dcalls_casey2019.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -69,7 +69,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h1>SNR of Antarctic blue whale D-calls &#8212; Casey 2019 test dataset</h1><!--introduction--><p>Computes SNR for adjudicated analyst true-positive D-call detections from the Casey 2019 test dataset used in Miller et al. (2022), using bsnr's reproducible spectrogram-based methods.</p><p>INTENT The original paper (Miller et al. 2022) computed SNR using a Lurton formula implementation in the supplemental code (annotationSNR.m), but exact reproduction from the analyst annotations alone is not possible. The paper's SNR was computed on reconciled detections using max(analyst_duration, detector_duration) as the signal window length, which requires the detector output and is not reproducible from analyst annotations alone. Additionally, tEnd_table1 is corrupt in the published capture history (Appendix S4) for 1318/1319 rows &#8212; tEnd equals t0, making the duration field the only reliable source of signal window length.</p><p>This script offers a reproducible alternative: four bsnr configurations covering the methods and formula options most relevant to D-calls, all derived solely from the published analyst annotations and capture history. Results are compared against the paper's snrLurton column (Data S4) as a reference.</p><p>CONFIGURATIONS   A. spectrogram,      simple power ratio  &#8212; most interpretable   B. spectrogramSlices, simple power ratio  &#8212; robust to transients   C. spectrogram,      Lurton formula       &#8212; closest to paper method   D. spectrogramSlices, Lurton formula      &#8212; per-slice Lurton</p><p>REPRODUCIBILITY NOTES   - tEnd rebuilt from t0_table1 + duration_table1 (tEnd_table1 corrupt)   - Signal window: analyst duration only (paper used max(analyst, detector))   - Freq band: per-annotation analyst bounds (paper may have used fixed band)   - nfft=256 at 1000 Hz SR: 0.256 s window, ~4 Hz resolution   - Correlation with paper snrLurton: r~0.35 (analyst duration),     r~0.52 (reconciled duration) &#8212; duration is the dominant source of     discrepancy; the upper tail of the paper distribution requires the     detector output to reproduce</p><p>REFERENCE   Miller et al. (2022). Deep Learning Algorithm Outperforms Experienced   Human Observer at Detection of Blue Whale D-calls. Remote Sensing in   Ecology and Conservation. <a href="https://doi.org/10.1002/rse2.297">https://doi.org/10.1002/rse2.297</a></p><p>DATA   Capture history (Appendix S4): doi:10.1002/rse2.297   Recordings: contact <a href="mailto:acoustics@aad.gov.au">acoustics@aad.gov.au</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Configuration</a></li><li><a href="#2">Load annotations</a></li><li><a href="#3">Compute SNR &#8212; four configurations</a></li><li><a href="#4">Summary statistics</a></li><li><a href="#5">Correlations with paper snrLurton</a></li><li><a href="#6">Figure 1: SNR distributions</a></li><li><a href="#7">Figure 2: bsnr vs paper snrLurton scatter</a></li><li><a href="#8">Save results</a></li></ul></div><h2 id="1">Configuration</h2><pre class="codeinput">wavRoot = <span class="string">'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'</span>;
+</head><body><div class="content"><h1>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</h1><!--introduction--><p>Estimates SNR for 1319 adjudicated analyst true-positive D-call detections from Miller et al. (2022), using four bsnr configurations spanning two methods (spectrogram, spectrogramSlices) and two formulas (simple power ratio, Lurton). Results are compared against the paper's snrLurton values.</p><p>Exact reproduction of the paper's SNR is not possible from the published annotations alone. The original analysis used max(analyst, detector) duration as the signal window length, which requires the detector output. The published capture history (Appendix S4) also has corrupt tEnd values for 1318/1319 rows; tEnd is reconstructed here from t0 + duration. Correlation with paper snrLurton is r ~ 0.35 using analyst-only duration.</p><p>REFERENCE   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms   Experienced Human Observer at Detection of Blue Whale D-calls.   Remote Sensing in Ecology and Conservation.   <a href="https://doi.org/10.1002/rse2.297">https://doi.org/10.1002/rse2.297</a></p><p>DATA   Capture history (Appendix S4): doi:10.1002/rse2.297   Recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings">https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Configuration</a></li><li><a href="#2">Load annotations</a></li><li><a href="#3">Compute SNR &#8212; four configurations</a></li><li><a href="#4">Summary statistics</a></li><li><a href="#5">Correlations with paper snrLurton</a></li><li><a href="#6">Figure 1: SNR distributions</a></li><li><a href="#7">Figure 2: bsnr vs paper snrLurton scatter</a></li><li><a href="#8">Save results</a></li></ul></div><h2 id="1">Configuration</h2><pre class="codeinput">wavRoot = <span class="string">'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'</span>;
 
 captureHistoryFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'S4-captureHistory_casey2019MGA_vs_denseNetBmD24_judgedBSM_cut.csv'</span>);
@@ -137,7 +137,7 @@ snrResults = cell(nConfigs, 1);
 
 paperSNR = chTP.snrLurton;
 </pre><pre class="codeoutput">Computing A. spectrogram, simple...
-SNR analysis started:  19-Apr-2026 07:40:53
+SNR analysis started:  19-Apr-2026 09:48:33
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
@@ -145,31 +145,31 @@ Progress:
  Starting parallel pool (parpool) using the 'Processes' profile ...
 Connected to the parallel pool (number of workers: 31).
 ###################################################
-SNR analysis completed: 19-Apr-2026 07:41:44
+SNR analysis completed: 19-Apr-2026 09:49:25
 Computing B. spectrogramSlices, simple...
-SNR analysis started:  19-Apr-2026 07:41:44
+SNR analysis started:  19-Apr-2026 09:49:25
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 07:41:46
+SNR analysis completed: 19-Apr-2026 09:49:26
 Computing C. spectrogram, Lurton...
-SNR analysis started:  19-Apr-2026 07:41:46
+SNR analysis started:  19-Apr-2026 09:49:26
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 07:41:47
+SNR analysis completed: 19-Apr-2026 09:49:27
 Computing D. spectrogramSlices, Lurton...
-SNR analysis started:  19-Apr-2026 07:41:47
+SNR analysis started:  19-Apr-2026 09:49:27
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 07:41:48
+SNR analysis completed: 19-Apr-2026 09:49:28
 </pre><h2 id="4">Summary statistics</h2><pre class="codeinput">allSNR    = [snrResults; {paperSNR}];
 allLabels = [configs(:,3); {<span class="string">'E. paper snrLurton'</span>}];
 nAll      = numel(allSNR);
@@ -247,7 +247,7 @@ hold <span class="string">off</span>;
 xlabel(<span class="string">'SNR (dB)'</span>); ylabel(<span class="string">'Count'</span>);
 title(<span class="string">'Lurton formula vs paper Lurton'</span>);
 legend(<span class="string">'Location'</span>, <span class="string">'northwest'</span>, <span class="string">'FontSize'</span>, 7); grid <span class="string">on</span>;
-</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_01.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper snrLurton scatter</h2><pre class="codeinput">fig2 = figure(<span class="string">'Name'</span>, <span class="string">'bsnr vs paper snrLurton'</span>, <span class="keyword">...</span>
+</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_01.png" alt=""> <img vspace="5" hspace="5" src="snr_dcalls_casey2019_02.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper snrLurton scatter</h2><pre class="codeinput">fig2 = figure(<span class="string">'Name'</span>, <span class="string">'bsnr vs paper snrLurton'</span>, <span class="keyword">...</span>
     <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 420]);
 tlo2 = tiledlayout(fig2, 1, nConfigs, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
 title(tlo2, <span class="string">'bsnr vs paper snrLurton (analyst true positives)'</span>, <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
@@ -270,7 +270,7 @@ title(tlo2, <span class="string">'bsnr vs paper snrLurton (analyst true positive
     title(configs{c,3}, <span class="string">'interpreter'</span>, <span class="string">'none'</span>, <span class="string">'FontSize'</span>, 8);
     grid <span class="string">on</span>;
 <span class="keyword">end</span>
-</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_02.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_03.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_dcalls_casey2019_results.csv'</span>);
 resultsTable = table( <span class="keyword">...</span>
     annots.t0, annots.duration, annots.freq(:,1), annots.freq(:,2), <span class="keyword">...</span>
@@ -288,53 +288,30 @@ Results saved to: C:\analysis\bsnr\examples\snr_dcalls_casey2019_results.csv
 Settings: nfft=256, nOverlap=192, noiseDuration=beforeAndAfter, noiseDelay=0.5
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
-%% SNR of Antarctic blue whale D-calls — Casey 2019 test dataset
+%% SNR of Antarctic blue whale D-calls — Casey 2019
 %
-% Computes SNR for adjudicated analyst true-positive D-call detections from
-% the Casey 2019 test dataset used in Miller et al. (2022), using bsnr's
-% reproducible spectrogram-based methods.
+% Estimates SNR for 1319 adjudicated analyst true-positive D-call detections
+% from Miller et al. (2022), using four bsnr configurations spanning two
+% methods (spectrogram, spectrogramSlices) and two formulas (simple power
+% ratio, Lurton). Results are compared against the paper's snrLurton values.
 %
-% INTENT
-% The original paper (Miller et al. 2022) computed SNR using a Lurton
-% formula implementation in the supplemental code (annotationSNR.m), but
-% exact reproduction from the analyst annotations alone is not possible.
-% The paper's SNR was computed on reconciled detections using
-% max(analyst_duration, detector_duration) as the signal window length,
-% which requires the detector output and is not reproducible from analyst
-% annotations alone. Additionally, tEnd_table1 is corrupt in the published
-% capture history (Appendix S4) for 1318/1319 rows — tEnd equals t0,
-% making the duration field the only reliable source of signal window length.
-%
-% This script offers a reproducible alternative: four bsnr configurations
-% covering the methods and formula options most relevant to D-calls, all
-% derived solely from the published analyst annotations and capture history.
-% Results are compared against the paper's snrLurton column (Data S4) as
-% a reference.
-%
-% CONFIGURATIONS
-%   A. spectrogram,      simple power ratio  — most interpretable
-%   B. spectrogramSlices, simple power ratio  — robust to transients
-%   C. spectrogram,      Lurton formula       — closest to paper method
-%   D. spectrogramSlices, Lurton formula      — per-slice Lurton
-%
-% REPRODUCIBILITY NOTES
-%   - tEnd rebuilt from t0_table1 + duration_table1 (tEnd_table1 corrupt)
-%   - Signal window: analyst duration only (paper used max(analyst, detector))
-%   - Freq band: per-annotation analyst bounds (paper may have used fixed band)
-%   - nfft=256 at 1000 Hz SR: 0.256 s window, ~4 Hz resolution
-%   - Correlation with paper snrLurton: r~0.35 (analyst duration),
-%     r~0.52 (reconciled duration) — duration is the dominant source of
-%     discrepancy; the upper tail of the paper distribution requires the
-%     detector output to reproduce
+% Exact reproduction of the paper's SNR is not possible from the published
+% annotations alone. The original analysis used max(analyst, detector)
+% duration as the signal window length, which requires the detector output.
+% The published capture history (Appendix S4) also has corrupt tEnd values
+% for 1318/1319 rows; tEnd is reconstructed here from t0 + duration.
+% Correlation with paper snrLurton is r ~ 0.35 using analyst-only duration.
 %
 % REFERENCE
-%   Miller et al. (2022). Deep Learning Algorithm Outperforms Experienced
-%   Human Observer at Detection of Blue Whale D-calls. Remote Sensing in
-%   Ecology and Conservation. https://doi.org/10.1002/rse2.297
+%   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms
+%   Experienced Human Observer at Detection of Blue Whale D-calls.
+%   Remote Sensing in Ecology and Conservation.
+%   https://doi.org/10.1002/rse2.297
 %
 % DATA
 %   Capture history (Appendix S4): doi:10.1002/rse2.297
-%   Recordings: contact acoustics@aad.gov.au
+%   Recordings: Australian Antarctic Data Centre
+%     https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings
 
 %% Configuration
 

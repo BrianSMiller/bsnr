@@ -17,9 +17,6 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %              .freq          [lowHz highHz] frequency band of detection
 %              .channel       recording channel index
 %
-%            TODO(annotation-interface): Replace direct field access with
-%            calls to the standardised annotation accessor once the
-%            cross-module interface refactor is complete.
 %
 %   params - Optional struct of analysis parameters. All fields optional:
 %              .parallelThreshold  Min annotations to trigger parfor.

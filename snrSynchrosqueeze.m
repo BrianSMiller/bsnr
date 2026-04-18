@@ -26,6 +26,7 @@ function [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = snr
 %   Synchrosqueezing algorithm for time-varying spectral analysis:
 %   Robustness properties and new paleoclimate applications.
 %   Signal Processing, 93(5), 1079-1094.
+%   https://arxiv.org/abs/1105.0010
 %
 % The caller (snrEstimate) applies whichever SNR formula is requested.
 %

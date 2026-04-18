@@ -11,7 +11,6 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 - **Calibrated acoustic levels** (dB re 1 µPa) from instrument metadata
 - **Click removal** for recordings with impulsive interference
 - **Batch processing** with optional parallel execution, with warnings when STFT parameters would produce non-comparable results across annotations
-- **Comprehensive test suite** with synthetic fixtures
 
 ## SNR Methods
 
@@ -40,7 +39,7 @@ audioDir = fullfile('C:\analysis\bsnr\examples\audio\abw_z');
 sf = wavFolderInfo(audioDir, '', false, false);
 
 annot.soundFolder    = audioDir;
-annot.t0             = sf(1).startDate + 12/86400;  % 12 s into clip
+annot.t0             = sf(1).startDate + 17/86400;  % 17 s into clip
 annot.tEnd           = annot.t0 + 21/86400;          % 21 s duration
 annot.duration       = 21;
 annot.freq           = [17 28];   % Hz
@@ -83,7 +82,6 @@ params.displayType = 'timeSeries';   % per-slice band power vs time
 params.displayType = 'histogram';    % signal and noise slice power distributions
 ```
 
-The `timeDomain` method uses `plotBandSamplePower` (per-sample FIR-filtered power) for `'timeSeries'`; all other methods use per-STFT-slice band power.
 
 ## Calibrated Levels
 
@@ -91,8 +89,6 @@ When `params.metadata` is provided, the output table includes:
 
 - `signalBandLevel_dBuPa` — band-integrated signal level (dB re 1 µPa)
 - `noiseBandLevel_dBuPa` — band-integrated noise level (dB re 1 µPa)
-
-These are equivalent to `bandpower(psdCal, f, freq, 'psd')` from a calibrated PSD, and are correct for both tonal and broadband signals.
 
 ```matlab
 metadata.hydroSensitivity_dB   % dB re V/µPa
@@ -156,7 +152,6 @@ Each script documents the original paper's SNR method, explains what can and can
 run('C:\analysis\bsnr\tests\run_tests.m')
 ```
 
-The test suite covers unit tests for each SNR method, full-pipeline integration tests, calibration chain verification, noise window placement strategies, edge cases, and visual inspection plots.
 
 ## Dependencies
 
@@ -183,7 +178,6 @@ bsnr/
 ├── spectroAnnotationAndNoise.m  Spectrogram display with overlays
 ├── plotBandSamplePower.m        Per-sample bandpass power display (timeDomain)
 ├── removeClicks.m               Impulsive noise suppression
-├── validate_dcalls_miller2022.m Validation script (Miller et al. 2022)
 ├── private/
 │   ├── colorbarFixTickLabel.m   Colorbar tick label decorator (≤/≥ for clipped ranges)
 │   ├── plotBandHistogram.m      Unified signal/noise slice power histogram
@@ -204,19 +198,7 @@ bsnr/
 │   ├── simpleFlatMetadata.m     Flat-response instrument metadata example
 │   └── prepareGalleryAudio.m    Extract gallery audio clips from library
 └── tests/
-    ├── run_tests.m                   Test suite driver
-    ├── test_snrMethods.m             Unit tests for all SNR methods
-    ├── test_removeClicks.m           Click removal tests
-    ├── test_snrEstimate_scalar.m     Integration tests (scalar)
-    ├── test_snrEstimate_batch.m      Batch processing tests
-    ├── test_snrEstimate_noiseWindows.m  Noise window strategy tests
-    ├── test_calibration.m            Calibration chain verification
-    ├── test_plots.m                  Visual inspection figures
-    ├── createTestFixture.m           Synthetic WAV fixture generator
-    ├── createCalibratedTestFixture.m Calibrated fixture generator
-    ├── makeSyntheticAudio.m          Audio array generator (tone-in-noise)
-    ├── makeSRWUpcall.m               SRW FM upcall generator
-    └── makeClickAudio.m              Click-contaminated audio generator
+    └── run_tests.m                   Test suite
 ```
 
 ## Acknowledgements

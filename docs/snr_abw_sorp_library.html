@@ -69,7 +69,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h1>SNR of Antarctic blue whale calls &#8212; IWC-SORP Annotated Library</h1><!--introduction--><p>Computes SNR for ABW A, B, and Z calls across retained sites from the IWC-SORP Annotated Library (Miller et al. 2021), using bsnr's reproducible spectrogram-based methods.</p><p>INTENT The original paper computed SNR using annotationSNR.m (project folder, dated 2021-08-06). Key settings identified from that script:   noiseType  = 'randomBeforeAndAfter' &#8212; symmetric noise windows with a                random delay (0 to noiseDelay seconds). This is NOT                reproducible: the random draw is not recoverable from                the output files.   noiseDelay = 1 s   nSlices    = 30, overlap = 0.5   nfft       = 2^nextpow2(floor(duration/nSlices/overlap * sampleRate))                (derived per annotation from its duration)   freq       = per-annotation analyst bounds (annotation.freq)   formula    = Lurton (2010, eq. 6.26): SNR = 10*log10(abs((S-N)^2/noiseVar))</p><p>This script offers a reproducible alternative using bsnr with fixed noise window placement (beforeAndAfter, noiseDelay=1 s), fixed frequency band [24-29 Hz] (params.freq=[24 29] in BmAntZSnr.m), and nfft scaled to each site's sample rate targeting ~30 slices per annotation.</p><p>A, B, and Z calls are pooled as 'ABZ' following Miller et al. (2021). Correlation with the original paper SNR values is r~0.55-0.78 across sites; systematic bias of ~6-8 dB (bsnr higher) reflects the random vs fixed noise window placement in the original.</p><p>EXCLUDED SITES   Elephant Island 2013 &#8212; annotations not comparable to other sites   Elephant Island 2014 &#8212; annotation durations anomalously long                          (likely incorrect spectrogram FFT during annotation)   Ross sea 2014        &#8212; duplicate entry with inconsistent naming</p><p>REFERENCE   Miller et al. (2021). An Open Access Dataset for Developing Automated   Detectors of Antarctic Baleen Whale Sounds. Scientific Reports 11, 806.   <a href="https://doi.org/10.1038/s41598-020-78995-8">https://doi.org/10.1038/s41598-020-78995-8</a></p><p>DATA   Annotations and recordings: <a href="https://doi.org/10.26179/5e6056035c01b">https://doi.org/10.26179/5e6056035c01b</a>   folderStructure.csv: part of annotated library download package   *_BmAntABZ_snr.csv: paper SNR values (from original project folder;                        not part of public download)</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Suppress expected warnings</a></li><li><a href="#3">Load and filter site metadata</a></li><li><a href="#4">Compute SNR for each site and call type</a></li><li><a href="#5">Summary table</a></li><li><a href="#6">Figure 1: CDF per site &#8212; replicates Miller et al. (2021) Figure 8</a></li><li><a href="#7">Figure 2: bsnr vs paper scatter &#8212; all sites pooled</a></li><li><a href="#8">Save results</a></li><li><a href="#9">Local helpers</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Annotations are part of the IWC-SORP Annotated Library public download (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI. Paper SNR files (*_BmAntABZ_snr.csv) are from the original project folder and are not publicly available; set paperSNRFolder = '' to skip comparison.</p><pre class="codeinput"><span class="comment">% Root folder containing site subfolders with WAV files</span>
+</head><body><div class="content"><h1>SNR of Antarctic blue whale calls &#8212; IWC-SORP Annotated Library</h1><!--introduction--><p>Estimates SNR for ABW A, B, and Z calls (pooled as ABZ) across 8 sites from the IWC-SORP Annotated Library (Miller et al. 2021). CDF distributions per site replicate Figure 8 of the paper.</p><p>The original analysis used random noise window placement (randomBeforeAndAfter), which is not reproducible. This script uses fixed placement (beforeAndAfter, noiseDelay=1 s) and fixed frequency band [24-29 Hz], giving r = 0.55-0.82 vs the paper's SNR values across sites. Three sites are excluded: Elephant Island 2013 (annotations not comparable), Elephant Island 2014 (anomalously long annotation durations), and Ross Sea 2014 (duplicate entry).</p><p>REFERENCE   Miller, B.S. et al. (2021). An Open Access Dataset for Developing   Automated Detectors of Antarctic Baleen Whale Sounds.   Scientific Reports 11, 806.   <a href="https://doi.org/10.1038/s41598-020-78995-8">https://doi.org/10.1038/s41598-020-78995-8</a></p><p>DATA   Annotations and recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary">https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary</a>     <a href="https://doi.org/10.26179/5e6056035c01b">https://doi.org/10.26179/5e6056035c01b</a>   folderStructure.csv: part of annotated library download package   *_BmAntABZ_snr.csv: paper SNR values (not publicly available;                        set paperSNRFolder = '' to skip comparison)</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Suppress expected warnings</a></li><li><a href="#3">Load and filter site metadata</a></li><li><a href="#4">Compute SNR for each site and call type</a></li><li><a href="#5">Summary table</a></li><li><a href="#6">Figure 1: CDF per site &#8212; replicates Miller et al. (2021) Figure 8</a></li><li><a href="#7">Figure 2: bsnr vs paper scatter &#8212; all sites pooled</a></li><li><a href="#8">Save results</a></li><li><a href="#9">Local helpers</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Annotations are part of the IWC-SORP Annotated Library public download (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI. Paper SNR files (*_BmAntABZ_snr.csv) are from the original project folder and are not publicly available; set paperSNRFolder = '' to skip comparison.</p><pre class="codeinput"><span class="comment">% Root folder containing site subfolders with WAV files</span>
 soundLibraryRoot = <span class="string">'S:\work\annotatedLibrary\SORP\'</span>;
 
 <span class="comment">% Root folder containing Raven selection tables</span>
@@ -465,50 +465,31 @@ Balleny Islands 2015  (SR=1000 Hz, nfft=2048, nOverlap=1740)
 ##### SOURCE BEGIN #####
 %% SNR of Antarctic blue whale calls — IWC-SORP Annotated Library
 %
-% Computes SNR for ABW A, B, and Z calls across retained sites from the
-% IWC-SORP Annotated Library (Miller et al. 2021), using bsnr's
-% reproducible spectrogram-based methods.
+% Estimates SNR for ABW A, B, and Z calls (pooled as ABZ) across 8 sites
+% from the IWC-SORP Annotated Library (Miller et al. 2021). CDF
+% distributions per site replicate Figure 8 of the paper.
 %
-% INTENT
-% The original paper computed SNR using annotationSNR.m (project folder,
-% dated 2021-08-06). Key settings identified from that script:
-%   noiseType  = 'randomBeforeAndAfter' — symmetric noise windows with a
-%                random delay (0 to noiseDelay seconds). This is NOT
-%                reproducible: the random draw is not recoverable from
-%                the output files.
-%   noiseDelay = 1 s
-%   nSlices    = 30, overlap = 0.5
-%   nfft       = 2^nextpow2(floor(duration/nSlices/overlap * sampleRate))
-%                (derived per annotation from its duration)
-%   freq       = per-annotation analyst bounds (annotation.freq)
-%   formula    = Lurton (2010, eq. 6.26): SNR = 10*log10(abs((S-N)^2/noiseVar))
-%
-% This script offers a reproducible alternative using bsnr with fixed
-% noise window placement (beforeAndAfter, noiseDelay=1 s), fixed frequency
-% band [24-29 Hz] (params.freq=[24 29] in BmAntZSnr.m), and nfft scaled
-% to each site's sample rate targeting ~30 slices per annotation.
-%
-% A, B, and Z calls are pooled as 'ABZ' following Miller et al. (2021).
-% Correlation with the original paper SNR values is r~0.55-0.78 across
-% sites; systematic bias of ~6-8 dB (bsnr higher) reflects the random vs
-% fixed noise window placement in the original.
-%
-% EXCLUDED SITES
-%   Elephant Island 2013 — annotations not comparable to other sites
-%   Elephant Island 2014 — annotation durations anomalously long
-%                          (likely incorrect spectrogram FFT during annotation)
-%   Ross sea 2014        — duplicate entry with inconsistent naming
+% The original analysis used random noise window placement (randomBeforeAndAfter),
+% which is not reproducible. This script uses fixed placement
+% (beforeAndAfter, noiseDelay=1 s) and fixed frequency band [24-29 Hz],
+% giving r = 0.55-0.82 vs the paper's SNR values across sites. Three sites
+% are excluded: Elephant Island 2013 (annotations not comparable), Elephant
+% Island 2014 (anomalously long annotation durations), and Ross Sea 2014
+% (duplicate entry).
 %
 % REFERENCE
-%   Miller et al. (2021). An Open Access Dataset for Developing Automated
-%   Detectors of Antarctic Baleen Whale Sounds. Scientific Reports 11, 806.
+%   Miller, B.S. et al. (2021). An Open Access Dataset for Developing
+%   Automated Detectors of Antarctic Baleen Whale Sounds.
+%   Scientific Reports 11, 806.
 %   https://doi.org/10.1038/s41598-020-78995-8
 %
 % DATA
-%   Annotations and recordings: https://doi.org/10.26179/5e6056035c01b
+%   Annotations and recordings: Australian Antarctic Data Centre
+%     https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary
+%     https://doi.org/10.26179/5e6056035c01b
 %   folderStructure.csv: part of annotated library download package
-%   *_BmAntABZ_snr.csv: paper SNR values (from original project folder;
-%                        not part of public download)
+%   *_BmAntABZ_snr.csv: paper SNR values (not publicly available;
+%                        set paperSNRFolder = '' to skip comparison)
 
 %% User configuration
 % Edit the paths below to match your local installation.
