@@ -70,9 +70,11 @@ ax = gca;
 cla(ax);
 hold(ax, 'on');
 
-% Histogram as a step plot (cleaner than fill for a pdf-style view)
-stairs(ax, bc, hs, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
-area(ax, bc, hs, 'FaceColor', [0.85 0.85 0.85], 'EdgeColor', 'none', 'FaceAlpha', 0.6);
+% Histogram — extend to zero at both ends to avoid truncated appearance
+bcExt = [bc(1), bc(:)', bc(end)];
+hsExt = [0, hs(:)', 0];
+stairs(ax, bcExt, hsExt, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+area(ax, bcExt, hsExt, 'FaceColor', [0.85 0.85 0.85], 'EdgeColor', 'none', 'FaceAlpha', 0.6);
 
 % Noise peak half-width shading
 patch(ax, [ndb-nw  ndb-nw  ndb+nw  ndb+nw], [0 yMax yMax 0], ...

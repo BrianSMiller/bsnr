@@ -53,13 +53,14 @@ ax = gca;
 cla(ax);
 hold(ax, 'on');
 
-% Noise histogram — red
-area(ax, centres, noiseH,  'FaceColor', [0.5 0 0], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
-stairs(ax, centres, noiseH,  'Color', [0.5 0 0], 'LineWidth', 1);
-
-% Signal histogram — green
-area(ax, centres, signalH, 'FaceColor', [0 0.5 0], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
-stairs(ax, centres, signalH, 'Color', [0 0.5 0], 'LineWidth', 1);
+% Histograms — extend to zero at both ends to avoid truncated appearance
+cExt = [edges(1), centres, edges(end)];
+noiseHx  = [0, noiseH,  0];
+signalHx = [0, signalH, 0];
+area(ax, cExt, noiseHx,  'FaceColor', [0.5 0 0], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+stairs(ax, cExt, noiseHx,  'Color', [0.5 0 0], 'LineWidth', 1);
+area(ax, cExt, signalHx, 'FaceColor', [0 0.5 0], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+stairs(ax, cExt, signalHx, 'Color', [0 0.5 0], 'LineWidth', 1);
 
 yLim = [0 yMax];
 

@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>SNR of Antarctic blue whale D-calls &#8212; Casey 2019 test dataset</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-18"><meta name="DC.source" content="snr_dcalls_casey2019.m"><style type="text/css">
+      --><title>SNR of Antarctic blue whale D-calls &#8212; Casey 2019 test dataset</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-19"><meta name="DC.source" content="snr_dcalls_casey2019.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -137,37 +137,39 @@ snrResults = cell(nConfigs, 1);
 
 paperSNR = chTP.snrLurton;
 </pre><pre class="codeoutput">Computing A. spectrogram, simple...
-SNR analysis started:  18-Apr-2026 18:59:04
+SNR analysis started:  19-Apr-2026 07:40:53
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
- ###################################################
-SNR analysis completed: 18-Apr-2026 18:59:05
+ Starting parallel pool (parpool) using the 'Processes' profile ...
+Connected to the parallel pool (number of workers: 31).
+###################################################
+SNR analysis completed: 19-Apr-2026 07:41:44
 Computing B. spectrogramSlices, simple...
-SNR analysis started:  18-Apr-2026 18:59:05
+SNR analysis started:  19-Apr-2026 07:41:44
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 18-Apr-2026 18:59:06
+SNR analysis completed: 19-Apr-2026 07:41:46
 Computing C. spectrogram, Lurton...
-SNR analysis started:  18-Apr-2026 18:59:06
+SNR analysis started:  19-Apr-2026 07:41:46
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 18-Apr-2026 18:59:07
+SNR analysis completed: 19-Apr-2026 07:41:47
 Computing D. spectrogramSlices, Lurton...
-SNR analysis started:  18-Apr-2026 18:59:07
+SNR analysis started:  19-Apr-2026 07:41:47
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 18-Apr-2026 18:59:08
+SNR analysis completed: 19-Apr-2026 07:41:48
 </pre><h2 id="4">Summary statistics</h2><pre class="codeinput">allSNR    = [snrResults; {paperSNR}];
 allLabels = [configs(:,3); {<span class="string">'E. paper snrLurton'</span>}];
 nAll      = numel(allSNR);

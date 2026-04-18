@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>bsnr_gallery</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-18"><meta name="DC.source" content="bsnr_gallery.m"><style type="text/css">
+      --><title>bsnr_gallery</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-19"><meta name="DC.source" content="bsnr_gallery.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -300,7 +300,7 @@ fprintf(<span class="string">'  Expected: continuous=%.1f dB, pulsed~%.1f dB (-3
     snrCont, snrCont-3, snrCont-10);
 cleanupCont(); cleanupPulsed(); cleanupBioduck();
 </pre><pre class="codeoutput">  Expected: continuous=11.3 dB, pulsed~8.3 dB (-3 dB), bio-duck~1.3 dB (-10 dB)
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_05.png" alt=""> <h2 id="9">6. Distribution-based methods &#8212; quantiles and NIST</h2><p>Both methods estimate SNR from an energy distribution rather than comparing separate signal and noise windows.</p><p><b>Quantiles</b> splits the 2D distribution of spectrogram TF cell PSD values within the signal window: the top 15% of cells by power are treated as signal; the bottom 85% as noise. No separate noise window is needed &#8212; the within-window distribution itself provides the signal/noise separation.</p><p>The <b>NIST method</b> (Ellis 2011) computes a 1D histogram of wideband 20 ms frame energies pooled from both the noise and signal windows. It fits a raised cosine to the leftmost histogram peak (the noise mode) and takes the 95th percentile of the residual as the signal level.</p><p>Each method is shown with two display types:</p><div><ul><li><b>Top row &#8212; spectrogram</b> with iso-power contour lines at the estimated   noise and signal PSD thresholds. For <tt>quantiles</tt>, these contours are   literal quantile boundaries of the TF cell distribution.</li></ul></div><div><ul><li><b>Bottom row &#8212; histogram</b> of the underlying energy distribution, with   vertical lines at the estimated noise (red) and signal (green) levels.</li></ul></div><p>The parallel display makes the conceptual relationship visible: <tt>quantiles</tt> uses TF cells from the signal window only (2D distribution over the band); NIST uses scalar frame energies from both windows (1D distribution).</p><p>All three columns use a synthetic Southern Right Whale (SRW) upcall: f(t) = 80 + 118t^2 Hz, 1 s at 1000 Hz. The diagonal TF streak is more illustrative than a stationary tone because iso-power contours follow the call energy regardless of instantaneous frequency.</p><pre class="codeinput">srwFreq   = [75 210];
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_05.png" alt=""> <h2 id="9">6. Distribution-based methods &#8212; quantiles and NIST</h2><p>Both methods estimate SNR from an energy distribution rather than comparing separate signal and noise windows.</p><p><b>Quantiles</b> splits the 2D distribution of spectrogram TF cell PSD values within the signal window: the top 15% of cells by power are treated as signal; the bottom 85% as noise. No separate noise window is needed &#8212; the within-window distribution itself provides the signal/noise separation.</p><p>The <b>NIST method</b> (NIST 1992) computes a 1D histogram of wideband 20 ms frame energies pooled from both the noise and signal windows. It fits a raised cosine to the leftmost histogram peak (the noise mode) and takes the 95th percentile of the residual as the signal level.</p><p>Each method is shown with two display types:</p><div><ul><li><b>Top row &#8212; spectrogram</b> with iso-power contour lines at the estimated   noise and signal PSD thresholds. For <tt>quantiles</tt>, these contours are   literal quantile boundaries of the TF cell distribution.</li></ul></div><div><ul><li><b>Bottom row &#8212; histogram</b> of the underlying energy distribution, with   vertical lines at the estimated noise (red) and signal (green) levels.</li></ul></div><p>The parallel display makes the conceptual relationship visible: <tt>quantiles</tt> uses TF cells from the signal window only (2D distribution over the band); NIST uses scalar frame energies from both windows (1D distribution).</p><p>All three columns use a synthetic Southern Right Whale (SRW) upcall: f(t) = 80 + 118t^2 Hz, 1 s at 1000 Hz. The diagonal TF streak is more illustrative than a stationary tone because iso-power contours follow the call energy regardless of instantaneous frequency.</p><pre class="codeinput">srwFreq   = [75 210];
 srwBufDur = 4;
 srwSP     = struct(<span class="string">'yLims'</span>, [0 250], <span class="string">'pre'</span>, 1, <span class="string">'post'</span>, 1);
 
@@ -319,47 +319,6 @@ rng(71);
     [srwAnnots{k}, srwCleanups{k}] = audioToFixture( <span class="keyword">...</span>
         [noiseBuf; detAudio; noiseBuf], 1000, srwFreq, 1.0, distConfigs{k,1}, srwBufDur);
 <span class="keyword">end</span>
-
-<span class="comment">% DEBUG &#8212; paste after the srwAnnots loop, before figQ</span>
-k = 2;  <span class="comment">% Moderate SNR</span>
-sf = wavFolderInfo(srwAnnots{k}.soundFolder, <span class="string">''</span>, false, false);
-[sigAudio, ~] = getAudioFromFiles(sf, srwAnnots{k}.t0, srwAnnots{k}.tEnd);
-nfft_dbg = 2^nextpow2(floor(srwAnnots{k}.duration / 30 / 0.25 * 1000));
-fprintf(<span class="string">'duration=%.2f s  nfft=%d\n'</span>, srwAnnots{k}.duration, nfft_dbg);
-fprintf(<span class="string">'sigAudio: n=%d  rms=%.4f\n'</span>, numel(sigAudio), rms(sigAudio));
-[rmsS, rmsN, ~, q85, psdCells] = snrQuantiles(sigAudio, [], nfft_dbg, floor(nfft_dbg*0.75), 1000, srwAnnots{k}.freq, []);
-fprintf(<span class="string">'rmsSignal=%.3e  rmsNoise=%.3e  q85=%.3e\n'</span>, rmsS, rmsN, q85);
-fprintf(<span class="string">'psdCells: n=%d  min=%.3e  max=%.3e\n'</span>, numel(psdCells), min(psdCells), max(psdCells));
-fprintf(<span class="string">'q15=%.3e (%.1f dBFS)  q85=%.3e (%.1f dBFS)\n'</span>, <span class="keyword">...</span>
-    quantile(psdCells,0.15), 10*log10(max(quantile(psdCells,0.15),eps)), <span class="keyword">...</span>
-    quantile(psdCells,0.85), 10*log10(max(quantile(psdCells,0.85),eps)));
-
-<span class="comment">% Add after the debug block:</span>
-p_dbg = makeParams(<span class="string">'quantiles'</span>, srwSP);
-disp(p_dbg)
-nfft_snrEstimate = 2^nextpow2(floor(1.0 / 30 / 0.75 * 1000))
-fprintf(<span class="string">'snrEstimate nfft=%d  bins in [75-210] Hz = %d\n'</span>, <span class="keyword">...</span>
-    nfft_snrEstimate, <span class="keyword">...</span>
-    sum((0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate &gt;= 75 &amp; <span class="keyword">...</span>
-        (0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate &lt;= 210));
-</pre><pre class="codeoutput">duration=1.00 s  nfft=256
-sigAudio: n=1003  rms=0.3307
-rmsSignal=3.763e-03  rmsNoise=9.138e-05  q85=7.151e-04
-psdCells: n=408  min=5.185e-07  max=1.488e-02
-q15=1.470e-05 (-48.3 dBFS)  q85=7.151e-04 (-31.5 dBFS)
-           snrType: 'quantiles'
-         showClips: 1
-    pauseAfterPlot: 0
-     noiseDuration: 'beforeAndAfter'
-        noiseDelay: 0.5000
-        plotParams: [1&times;1 struct]
-
-
-nfft_snrEstimate =
-
-    64
-
-snrEstimate nfft=64  bins in [75-210] Hz = 9
 </pre><h2 id="10">6a. Quantiles</h2><pre class="codeinput">figQ = figure(<span class="string">'Name'</span>, <span class="string">'quantiles'</span>, <span class="keyword">...</span>
     <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 460]);
 tloQ = tiledlayout(figQ, 2, nDist, <span class="string">'TileSpacing'</span>, <span class="string">'tight'</span>, <span class="string">'Padding'</span>, <span class="string">'tight'</span>);
@@ -375,9 +334,6 @@ title(tloQ, <span class="string">'6a. Quantiles: spectrogram contours (top) | TF
     pQ.displayType  = <span class="string">'histogram'</span>;
     runAndTitle(srwAnnots{k}, pQ, [distConfigs{k,1} <span class="string">' | histogram'</span>]);
 <span class="keyword">end</span>
-</pre><pre class="codeoutput">DEBUG quantiles histogram: psdCells n=531 min=2.124e-07 q15=2.087e-05 q85=2.090e-04
-DEBUG quantiles histogram: psdCells n=531 min=5.040e-08 q15=1.817e-05 q85=1.741e-03
-DEBUG quantiles histogram: psdCells n=531 min=4.440e-08 q15=5.042e-06 q85=4.867e-03
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_06.png" alt=""> <h2 id="11">6b. NIST histogram</h2><pre class="codeinput">figN = figure(<span class="string">'Name'</span>, <span class="string">'NIST histogram'</span>, <span class="keyword">...</span>
     <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 460]);
 tloN = tiledlayout(figN, 2, nDist, <span class="string">'TileSpacing'</span>, <span class="string">'tight'</span>, <span class="string">'Padding'</span>, <span class="string">'tight'</span>);
@@ -992,7 +948,7 @@ cleanupCont(); cleanupPulsed(); cleanupBioduck();
 % signal; the bottom 85% as noise. No separate noise window is needed —
 % the within-window distribution itself provides the signal/noise separation.
 %
-% The *NIST method* (Ellis 2011) computes a 1D histogram of wideband 20 ms
+% The *NIST method* (NIST 1992) computes a 1D histogram of wideband 20 ms
 % frame energies pooled from both the noise and signal windows. It fits a
 % raised cosine to the leftmost histogram peak (the noise mode) and takes
 % the 95th percentile of the residual as the signal level.
@@ -1035,28 +991,6 @@ for k = 1:nDist
         [noiseBuf; detAudio; noiseBuf], 1000, srwFreq, 1.0, distConfigs{k,1}, srwBufDur);
 end
 
-% DEBUG — paste after the srwAnnots loop, before figQ
-k = 2;  % Moderate SNR
-sf = wavFolderInfo(srwAnnots{k}.soundFolder, '', false, false);
-[sigAudio, ~] = getAudioFromFiles(sf, srwAnnots{k}.t0, srwAnnots{k}.tEnd);
-nfft_dbg = 2^nextpow2(floor(srwAnnots{k}.duration / 30 / 0.25 * 1000));
-fprintf('duration=%.2f s  nfft=%d\n', srwAnnots{k}.duration, nfft_dbg);
-fprintf('sigAudio: n=%d  rms=%.4f\n', numel(sigAudio), rms(sigAudio));
-[rmsS, rmsN, ~, q85, psdCells] = snrQuantiles(sigAudio, [], nfft_dbg, floor(nfft_dbg*0.75), 1000, srwAnnots{k}.freq, []);
-fprintf('rmsSignal=%.3e  rmsNoise=%.3e  q85=%.3e\n', rmsS, rmsN, q85);
-fprintf('psdCells: n=%d  min=%.3e  max=%.3e\n', numel(psdCells), min(psdCells), max(psdCells));
-fprintf('q15=%.3e (%.1f dBFS)  q85=%.3e (%.1f dBFS)\n', ...
-    quantile(psdCells,0.15), 10*log10(max(quantile(psdCells,0.15),eps)), ...
-    quantile(psdCells,0.85), 10*log10(max(quantile(psdCells,0.85),eps)));
-
-% Add after the debug block:
-p_dbg = makeParams('quantiles', srwSP);
-disp(p_dbg)
-nfft_snrEstimate = 2^nextpow2(floor(1.0 / 30 / 0.75 * 1000))
-fprintf('snrEstimate nfft=%d  bins in [75-210] Hz = %d\n', ...
-    nfft_snrEstimate, ...
-    sum((0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate >= 75 & ...
-        (0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate <= 210));
 %% 6a. Quantiles
 
 figQ = figure('Name', 'quantiles', ...

@@ -20,7 +20,7 @@
 %   snrQuantiles          - Within-window percentile estimator (no noise window needed)
 %
 % SNR METHODS (speech/engineering, adapted for bioacoustics)
-%   snrHistogram          - Frame energy histogram; Ellis (2011) / NIST STNR
+%   snrHistogram          - Frame energy histogram; NIST (1992) STNR
 %
 % DISPLAY
 %   spectroAnnotationAndNoise  - Spectrogram with signal/noise overlays
@@ -115,8 +115,11 @@
 %     Principles and Applications (2nd ed.). Springer-Praxis. eq. 6.26
 %
 %   NIST STNR histogram method (snrType='nist'):
-%     Ellis, D.P.W. (2011). nist_stnr_m.m. LabROSA/Columbia University.
+%     NIST (1992). Signal-to-Noise Ratio utility (stnr).
+%     Speech Quality Assurance Package.
 %     https://labrosa.ee.columbia.edu/~dpwe/tmp/nist/doc/stnr.txt
+%     Also implemented independently in Raven Pro 1.6.1 as 'SNR NIST Quick'.
+%     https://www.ravensoundsoftware.com/knowledge-base/signal-to-noise-ratio-snr-nist-quick-method/
 %
 % EXAMPLES
 %   See examples/bsnr_gallery.m for illustrated examples covering all

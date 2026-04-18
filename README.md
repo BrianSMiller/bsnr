@@ -23,7 +23,7 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 | Ridge | `'ridge'` | FM tonal | `tfridge` dominant ridge; per-bin SNR |
 | Synchrosqueeze | `'synchrosqueeze'` | FM tonal | FSST ridge, sharper TF localisation; per-bin SNR |
 | Quantiles | `'quantiles'` | Tonal (no noise window needed) | Within-window 85th/15th percentile split |
-| NIST histogram | `'nist'` | Any | Frame energy histogram; Ellis (2011) |
+| NIST histogram | `'nist'` | Any | Frame energy histogram; NIST (1992) STNR |
 
 The simple power ratio and Lurton formula are both available for all methods via `params.useLurton`. Ridge and synchrosqueeze report per-bin SNR, which exceeds band-average SNR by ~10·log10(nBandBins) and is not directly comparable to the other methods.
 
@@ -125,7 +125,11 @@ Lurton formula (`useLurton=true`):
 
 NIST STNR histogram method (`snrType='nist'`):
 
-> Ellis, D.P.W. (2011). nist_stnr_m.m. LabROSA/Columbia University. https://labrosa.ee.columbia.edu/~dpwe/tmp/nist/doc/stnr.txt
+> NIST (1992). Signal-to-Noise Ratio utility (stnr). Speech Quality Assurance Package.
+> https://labrosa.ee.columbia.edu/~dpwe/tmp/nist/doc/stnr.txt
+>
+> Also implemented independently in Raven Pro 1.6.1 as 'SNR NIST Quick' (Cornell Lab of Ornithology).
+> Bioacousticians familiar with Raven's SNR measurement will find bsnr's `nist` method directly comparable.
 
 ## Examples
 

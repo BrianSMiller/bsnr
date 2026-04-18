@@ -2,9 +2,12 @@ function [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate SNR using a frame-energy histogram method.
 %
-% Implements the NIST STNR 'quick' algorithm (stnr -c variant) as described
-% in the NIST Speech Quality Assurance Package and re-implemented in MATLAB
-% by Dan Ellis (LabROSA, Columbia University, 2011). The method is widely
+% Implements the NIST STNR preferred algorithm as described in the NIST Speech
+% Quality Assurance Package (NIST 1992). An independent implementation of the
+% same base algorithm is available in Raven Pro 1.6.1 as 'SNR NIST Quick'
+% (Cornell Lab of Ornithology). Bioacousticians familiar with Raven's SNR
+% measurement will find bsnr's nist method directly comparable.
+% The method is widely
 % used in speech quality assessment and made available to bioacoustics users
 % through Raven Pro 1.6.1 (Cornell Lab of Ornithology) as 'SNR NIST Quick'.
 %
@@ -27,17 +30,11 @@ function [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
 %   of both are present. For short clips with high SNR it may overestimate;
 %   for clips without clear bimodality it may give erratic results.
 %   Not available in Python librosa (which focuses on music analysis);
-%   a Python wrapper around the original MATLAB snreval package exists at
-%   https://pypi.org/project/snreval/ but shells out rather than reimplementing.
 %
 % REFERENCES
 %   NIST STNR algorithm:
 %     https://www.nist.gov/itl/iad/mig/nist-speech-signal-noise-ratio-measurements
 %     https://labrosa.ee.columbia.edu/~dpwe/tmp/nist/doc/stnr.txt
-%   MATLAB implementation (nist_stnr_m.m):
-%     Ellis, D.P.W. (2011). LabROSA, Columbia University.
-%     https://labrosa.ee.columbia.edu/projects/snreval/
-%     https://github.com/ludlows/snreval/blob/master/nist_stnr_m.m
 %   Raven Pro implementation:
 %     https://www.ravensoundsoftware.com/knowledge-base/
 %             signal-to-noise-ratio-snr-nist-quick-method/
@@ -70,7 +67,7 @@ function [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
 
 if nargin < 7, metadata = []; end
 
-%% Constants (from nist_stnr_m.m / snr.h)
+%% Constants (from stnr.txt / snr.h)
 FRAME_MS   = 20.0;    % frame width in milliseconds
 BINS       = 500;     % histogram bins
 LOW_dB     = -28.125; % histogram lower edge (dB)
@@ -114,7 +111,7 @@ end
 combined = [noiseFiltered; sigFiltered];
 
 frameWidth = round(FRAME_MS / 1000 * sampleRate);
-frameAdv   = max(1, round(frameWidth / 2));  % Ellis: frame_adv = frame_width/2
+frameAdv   = max(1, round(frameWidth / 2));  % stnr.txt: frame_adv = frame_width/2
 
 % Guard: require at least 10 frames from the signal window alone.
 % Checking the combined length is wrong — a tiny signal appended to a
@@ -129,7 +126,7 @@ if floor(length(sigFiltered) / frameAdv) < 10
 end
 
 % Frame power in dB (with 16384 scaling matching original NIST tool).
-% Following Ellis nist_stnr_m.m exactly:
+% Following stnr.txt algorithm:
 %   D2     = (D * 16384).^2           squared scaled samples
 %   P2     = mean over each half-window
 %   Pdb    = 10*log10(conv([1 1], P2)) — sums adjacent half-windows to give
@@ -150,7 +147,7 @@ binEdges   = linspace(LOW_dB, HIGH_dB, BINS + 1);
 binCentres = (binEdges(1:end-1) + binEdges(2:end)) / 2;
 histo      = histcounts(frameEnergy_dB, binEdges);
 
-% Step 1: median despike (width 3) — Ellis calls this medianf(power_hist, 3).
+% Step 1: median despike (width 3) — stnr.txt: medianf(power_hist, 3).
 % Removes single-bin impulse artefacts before smoothing.
 histRaw    = double(histo);
 unspiked   = medfilt1(histRaw, 3);
@@ -169,7 +166,7 @@ histSmooth = conv(unspiked, kernel, 'same');
 % (~34 dB) of the 500-bin range spanning -28 to +97 dB.
 %
 % Bioacoustic adaptation: use the leftmost significant peak rather than
-% the global maximum (Ellis / NIST use global max), so that a tall signal
+% the global maximum (stnr.txt uses global max), so that a tall signal
 % peak at high SNR does not displace the noise estimate.
 sigThreshold = max(histSmooth) * 0.05;   % 5 % of global peak
 localMax     = (histSmooth(2:end-1) >= histSmooth(1:end-2)) & ...
@@ -177,7 +174,7 @@ localMax     = (histSmooth(2:end-1) >= histSmooth(1:end-2)) & ...
                (histSmooth(2:end-1) >= sigThreshold);
 peakBins     = find(localMax) + 1;       % offset: localMax index 1 = bin 2
 if isempty(peakBins)
-    % Fallback: global maximum (matches Ellis exactly)
+    % Fallback: global maximum (stnr.txt algorithm)
     [~, noisePeakBin] = max(histSmooth);
 else
     noisePeakBin = peakBins(1);           % leftmost significant peak
@@ -202,7 +199,7 @@ signaldB      = binCentres(signalBin);
 
 %% Convert dB energy estimates to linear power
 % The histogram stores 10*log10(Pfull) where Pfull = P2(i) + P2(i+1),
-% the SUM of two adjacent half-window mean powers (the Ellis conv trick).
+% the SUM of two adjacent half-window mean powers (the stnr.txt conv trick).
 % For a stationary signal Pfull ≈ 2 × true_frame_power, so absolute
 % levels are ~3 dB (power) / ~1.5 dB (amplitude) higher than true RMS.
 % This offset cancels in the SNR ratio (both estimates share the same

@@ -67,7 +67,7 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                    'quantiles'    (within-window percentile;
 %                                                   see Miller et al. 2022)
 %                                    'nist'         (frame energy histogram;
-%                                                   Ellis 2011 / NIST STNR)
+%                                                   NIST 1992 / NIST STNR)
 %              .ridgeParams        Sub-struct for ridge and synchrosqueeze:
 %                                    .ridgePenalty  tfridge penalty (default 1)
 %                                    .guardBins     bins excluded around ridge
@@ -576,8 +576,6 @@ if params.showClips
                     plotHistogramSNR(histogramData, snr, ...
                         annot.rmsLevel, noise.rmsLevel, levelUnit);
                 case 'quantiles'
-                    fprintf('DEBUG quantiles histogram: psdCells n=%d min=%.3e q15=%.3e q85=%.3e\n', ...
-                        numel(psdCells), min(psdCells), quantile(psdCells,0.15), quantileThresh);
                     plotQuantilesHistogram(psdCells, quantileThresh, snr, ...
                         annot.rmsLevel, noise.rmsLevel, levelUnit);
                 otherwise

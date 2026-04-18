@@ -55,9 +55,12 @@ ax = gca;
 cla(ax);
 hold(ax, 'on');
 
-% Histogram fill and stairs
-area(ax, binCentres, hs, 'FaceColor', [0.85 0.85 0.85], 'EdgeColor', 'none', 'FaceAlpha', 0.6);
-stairs(ax, binCentres, hs, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
+% Histogram fill and stairs — extend to zero at both ends so bars
+% don't appear truncated at the axis edges
+bcExt = [binEdges(1), binCentres, binEdges(end)];
+hsExt = [0, hs, 0];
+area(ax, bcExt, hsExt, 'FaceColor', [0.85 0.85 0.85], 'EdgeColor', 'none', 'FaceAlpha', 0.6);
+stairs(ax, bcExt, hsExt, 'Color', [0.5 0.5 0.5], 'LineWidth', 1);
 
 % Noise region shading (below 15th percentile)
 patch(ax, [xLo xLo q15dB q15dB], [0 yMax yMax 0], ...
@@ -70,11 +73,15 @@ text(ax, q15dB, yMax * 0.92, sprintf('Noise\n%.1f', q15dB), ...
     'HorizontalAlignment', 'right', 'VerticalAlignment', 'top', ...
     'BackgroundColor', 'none', 'EdgeColor', 'none');
 
-% 85th percentile line + label (signal)
+% 85th percentile line + label (signal) — flip alignment if near right edge
 line(ax, [q85dB q85dB], yLim, 'Color', [0 0.5 0], 'LineWidth', 1.5);
+sigHAlign = 'left';
+if (xHi - q85dB) < (q85dB - xLo) * 0.3
+    sigHAlign = 'right';
+end
 text(ax, q85dB, yMax * 0.92, sprintf('Signal\n%.1f', q85dB), ...
     'Color', [0 0.5 0], 'FontSize', 6, ...
-    'HorizontalAlignment', 'left', 'VerticalAlignment', 'top', ...
+    'HorizontalAlignment', sigHAlign, 'VerticalAlignment', 'top', ...
     'BackgroundColor', 'none', 'EdgeColor', 'none');
 
 % SNR bracket

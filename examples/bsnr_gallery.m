@@ -371,7 +371,7 @@ cleanupCont(); cleanupPulsed(); cleanupBioduck();
 % signal; the bottom 85% as noise. No separate noise window is needed —
 % the within-window distribution itself provides the signal/noise separation.
 %
-% The *NIST method* (Ellis 2011) computes a 1D histogram of wideband 20 ms
+% The *NIST method* (NIST 1992) computes a 1D histogram of wideband 20 ms
 % frame energies pooled from both the noise and signal windows. It fits a
 % raised cosine to the leftmost histogram peak (the noise mode) and takes
 % the 95th percentile of the residual as the signal level.
@@ -414,28 +414,6 @@ for k = 1:nDist
         [noiseBuf; detAudio; noiseBuf], 1000, srwFreq, 1.0, distConfigs{k,1}, srwBufDur);
 end
 
-% DEBUG — paste after the srwAnnots loop, before figQ
-k = 2;  % Moderate SNR
-sf = wavFolderInfo(srwAnnots{k}.soundFolder, '', false, false);
-[sigAudio, ~] = getAudioFromFiles(sf, srwAnnots{k}.t0, srwAnnots{k}.tEnd);
-nfft_dbg = 2^nextpow2(floor(srwAnnots{k}.duration / 30 / 0.25 * 1000));
-fprintf('duration=%.2f s  nfft=%d\n', srwAnnots{k}.duration, nfft_dbg);
-fprintf('sigAudio: n=%d  rms=%.4f\n', numel(sigAudio), rms(sigAudio));
-[rmsS, rmsN, ~, q85, psdCells] = snrQuantiles(sigAudio, [], nfft_dbg, floor(nfft_dbg*0.75), 1000, srwAnnots{k}.freq, []);
-fprintf('rmsSignal=%.3e  rmsNoise=%.3e  q85=%.3e\n', rmsS, rmsN, q85);
-fprintf('psdCells: n=%d  min=%.3e  max=%.3e\n', numel(psdCells), min(psdCells), max(psdCells));
-fprintf('q15=%.3e (%.1f dBFS)  q85=%.3e (%.1f dBFS)\n', ...
-    quantile(psdCells,0.15), 10*log10(max(quantile(psdCells,0.15),eps)), ...
-    quantile(psdCells,0.85), 10*log10(max(quantile(psdCells,0.85),eps)));
-
-% Add after the debug block:
-p_dbg = makeParams('quantiles', srwSP);
-disp(p_dbg)
-nfft_snrEstimate = 2^nextpow2(floor(1.0 / 30 / 0.75 * 1000))
-fprintf('snrEstimate nfft=%d  bins in [75-210] Hz = %d\n', ...
-    nfft_snrEstimate, ...
-    sum((0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate >= 75 & ...
-        (0:nfft_snrEstimate/2) * 1000/nfft_snrEstimate <= 210));
 %% 6a. Quantiles
 
 figQ = figure('Name', 'quantiles', ...
