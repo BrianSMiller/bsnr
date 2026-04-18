@@ -1,0 +1,829 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>SNR of Antarctic blue whale calls &#8212; IWC-SORP Annotated Library</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-18"><meta name="DC.source" content="snr_abw_sorp_library.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+<link rel="stylesheet" href="bsnr.css">
+</head><body><div class="content"><h1>SNR of Antarctic blue whale calls &#8212; IWC-SORP Annotated Library</h1><!--introduction--><p>Computes SNR for ABW A, B, and Z calls across retained sites from the IWC-SORP Annotated Library (Miller et al. 2021), using bsnr's reproducible spectrogram-based methods.</p><p>INTENT The original paper computed SNR using annotationSNR.m (project folder, dated 2021-08-06). Key settings identified from that script:   noiseType  = 'randomBeforeAndAfter' &#8212; symmetric noise windows with a                random delay (0 to noiseDelay seconds). This is NOT                reproducible: the random draw is not recoverable from                the output files.   noiseDelay = 1 s   nSlices    = 30, overlap = 0.5   nfft       = 2^nextpow2(floor(duration/nSlices/overlap * sampleRate))                (derived per annotation from its duration)   freq       = per-annotation analyst bounds (annotation.freq)   formula    = Lurton (2010, eq. 6.26): SNR = 10*log10(abs((S-N)^2/noiseVar))</p><p>This script offers a reproducible alternative using bsnr with fixed noise window placement (beforeAndAfter, noiseDelay=1 s), fixed frequency band [24-29 Hz] (params.freq=[24 29] in BmAntZSnr.m), and nfft scaled to each site's sample rate targeting ~30 slices per annotation.</p><p>A, B, and Z calls are pooled as 'ABZ' following Miller et al. (2021). Correlation with the original paper SNR values is r~0.55-0.78 across sites; systematic bias of ~6-8 dB (bsnr higher) reflects the random vs fixed noise window placement in the original.</p><p>EXCLUDED SITES   Elephant Island 2013 &#8212; annotations not comparable to other sites   Elephant Island 2014 &#8212; annotation durations anomalously long                          (likely incorrect spectrogram FFT during annotation)   Ross sea 2014        &#8212; duplicate entry with inconsistent naming</p><p>REFERENCE   Miller et al. (2021). An Open Access Dataset for Developing Automated   Detectors of Antarctic Baleen Whale Sounds. Scientific Reports 11, 806.   <a href="https://doi.org/10.1038/s41598-020-78995-8">https://doi.org/10.1038/s41598-020-78995-8</a></p><p>DATA   Annotations and recordings: <a href="https://doi.org/10.26179/5e6056035c01b">https://doi.org/10.26179/5e6056035c01b</a>   folderStructure.csv: part of annotated library download package   *_BmAntABZ_snr.csv: paper SNR values (from original project folder;                        not part of public download)</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Suppress expected warnings</a></li><li><a href="#3">Load and filter site metadata</a></li><li><a href="#4">Compute SNR for each site and call type</a></li><li><a href="#5">Summary table</a></li><li><a href="#6">Figure 1: CDF per site &#8212; replicates Miller et al. (2021) Figure 8</a></li><li><a href="#7">Figure 2: bsnr vs paper scatter &#8212; all sites pooled</a></li><li><a href="#8">Save results</a></li><li><a href="#9">Local helpers</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Annotations are part of the IWC-SORP Annotated Library public download (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI. Paper SNR files (*_BmAntABZ_snr.csv) are from the original project folder and are not publicly available; set paperSNRFolder = '' to skip comparison.</p><pre class="codeinput"><span class="comment">% Root folder containing site subfolders with WAV files</span>
+soundLibraryRoot = <span class="string">'S:\work\annotatedLibrary\SORP\'</span>;
+
+<span class="comment">% Root folder containing Raven selection tables</span>
+<span class="comment">% (same structure as soundLibraryRoot for this dataset)</span>
+annotationRoot = <span class="string">'S:\work\annotatedLibrary\SORP\'</span>;
+
+<span class="comment">% folderStructure.csv &#8212; site metadata, part of annotated library download</span>
+folderStructureFile = fullfile(annotationRoot, <span class="string">'01-Documentation'</span>, <span class="keyword">...</span>
+    <span class="string">'folderStructure.csv'</span>);
+
+<span class="comment">% Paper SNR files &#8212; from original project folder, not public download.</span>
+<span class="comment">% Set to '' to skip paper comparison.</span>
+paperSNRFolder = <span class="string">'S:\manuscripts\2017-annotatedLibrary\'</span>;
+
+<span class="comment">% STFT parameters</span>
+<span class="comment">% nfft is derived per site to give approximately nSlicesTarget slices per</span>
+<span class="comment">% annotation at the site's sample rate. overlapFraction = 0.85 following</span>
+<span class="comment">% the original annotationSNR.m display defaults.</span>
+nSlicesTarget  = 30;
+overlapFraction = 0.85;
+
+<span class="comment">% Noise window &#8212; fixed placement to ensure reproducibility</span>
+<span class="comment">% (original used randomBeforeAndAfter with noiseDelay=1 s)</span>
+noiseDurationStrategy = <span class="string">'beforeAndAfter'</span>;
+noiseDelaySeconds     = 1.0;
+
+<span class="comment">% Frequency band &#8212; fixed unit-A band used throughout Miller et al. (2021)</span>
+signalFrequencyBand = [24 29];   <span class="comment">% Hz</span>
+
+<span class="comment">% Call types to process &#8212; pooled as ABZ in output following paper convention</span>
+callTypeNames  = {<span class="string">'BmAntA'</span>, <span class="string">'BmAntB'</span>, <span class="string">'BmAntZ'</span>};
+callTypeColumns = {<span class="string">'Abw_A_RavenFile'</span>, <span class="string">'Abw_B_RavenFile'</span>, <span class="string">'Abw_Z_RavenFile'</span>};
+pooledCallLabel = <span class="string">'ABZ'</span>;
+
+<span class="comment">% Output verbosity</span>
+showBsnrProgress = false;
+</pre><h2 id="2">Suppress expected warnings</h2><pre class="codeinput">warning(<span class="string">'off'</span>, <span class="string">'snrEstimate:nfftAutoSelected'</span>);
+warning(<span class="string">'off'</span>, <span class="string">'snrEstimate:nfftTruncation'</span>);
+warning(<span class="string">'off'</span>, <span class="string">'snrEstimate:nfftHighTruncation'</span>);
+warning(<span class="string">'off'</span>, <span class="string">'MATLAB:table:ModifiedAndSavedVarnames'</span>);
+</pre><h2 id="3">Load and filter site metadata</h2><pre class="codeinput">fprintf(<span class="string">'Loading site metadata...\n'</span>);
+siteMetadata = readtable(folderStructureFile);
+
+excludedSites = {
+    <span class="string">'Elephant Island 2013'</span>, <span class="string">'annotations not comparable to other sites'</span>
+    <span class="string">'Elephant Island 2014'</span>, <span class="string">'annotation durations anomalously long'</span>
+    <span class="string">'Ross sea 2014'</span>,        <span class="string">'duplicate entry with inconsistent naming'</span>
+};
+<span class="keyword">for</span> e = 1:size(excludedSites, 1)
+    isSite = strcmp(siteMetadata.SiteCode, excludedSites{e,1});
+    <span class="keyword">if</span> any(isSite)
+        fprintf(<span class="string">'  Excluding %s: %s\n'</span>, excludedSites{e,1}, excludedSites{e,2});
+        siteMetadata = siteMetadata(~isSite, :);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+nSites = height(siteMetadata);
+fprintf(<span class="string">'  %d sites retained\n'</span>, nSites);
+</pre><pre class="codeoutput">Loading site metadata...
+  Excluding Elephant Island 2013: annotations not comparable to other sites
+  Excluding Elephant Island 2014: annotation durations anomalously long
+  Excluding Ross sea 2014: duplicate entry with inconsistent naming
+  8 sites retained
+</pre><h2 id="4">Compute SNR for each site and call type</h2><pre class="codeinput">allResults = table();
+
+<span class="keyword">for</span> s = 1:nSites
+    siteCode      = siteMetadata.SiteCode{s};
+    siteSoundFolder = fullfile(soundLibraryRoot, siteMetadata.Folder{s});
+    siteSampleRate  = siteMetadata.SampleRate(s);
+
+    <span class="comment">% nfft scaled to site sample rate for ~nSlicesTarget slices per annotation</span>
+    medianCallDuration = 8;   <span class="comment">% s &#8212; conservative median across A/B/Z call types</span>
+    nfft     = 2^nextpow2(floor(medianCallDuration / nSlicesTarget <span class="keyword">...</span>
+                / (1 - overlapFraction) * siteSampleRate));
+    nOverlap = floor(nfft * overlapFraction);
+
+    fprintf(<span class="string">'\n%s  (SR=%d Hz, nfft=%d, nOverlap=%d)\n'</span>, <span class="keyword">...</span>
+        siteCode, siteSampleRate, nfft, nOverlap);
+
+    <span class="comment">% Load paper SNR file for this site if available</span>
+    paperSNRTable = loadPaperSNR(siteMetadata.Folder{s}, paperSNRFolder);
+    hasPaperSNR   = ~isempty(paperSNRTable);
+
+    <span class="keyword">for</span> c = 1:numel(callTypeNames)
+        callType  = callTypeNames{c};
+        ravenFile = siteMetadata.(callTypeColumns{c}){s};
+        <span class="keyword">if</span> isempty(ravenFile), <span class="keyword">continue</span>; <span class="keyword">end</span>
+
+        ravenFilePath = fullfile(annotationRoot, siteMetadata.Folder{s}, ravenFile);
+        <span class="keyword">if</span> ~exist(ravenFilePath, <span class="string">'file'</span>)
+            fprintf(<span class="string">'  %s: Raven file not found, skipping\n'</span>, callType);
+            <span class="keyword">continue</span>;
+        <span class="keyword">end</span>
+
+        <span class="comment">% Load annotations from Raven selection table</span>
+        detections = ravenTableToDetection(ravenFilePath, siteSoundFolder, <span class="keyword">...</span>
+            siteCode, callType);
+        <span class="keyword">if</span> isempty(detections) || height(detections) == 0, <span class="keyword">continue</span>; <span class="keyword">end</span>
+        nDetections = height(detections);
+
+        fprintf(<span class="string">'  %s: n=%d  dur=%.1f s  freq=[%.0f-%.0f] Hz\n'</span>, <span class="keyword">...</span>
+            callType, nDetections, median(detections.duration), <span class="keyword">...</span>
+            median(detections.fLow), median(detections.fHigh));
+
+        <span class="comment">% SNR parameters &#8212; Lurton formula to match paper</span>
+        snrParams = struct( <span class="keyword">...</span>
+            <span class="string">'snrType'</span>,       <span class="string">'spectrogram'</span>, <span class="keyword">...</span>
+            <span class="string">'nfft'</span>,          nfft, <span class="keyword">...</span>
+            <span class="string">'nOverlap'</span>,      nOverlap, <span class="keyword">...</span>
+            <span class="string">'noiseDuration'</span>, noiseDurationStrategy, <span class="keyword">...</span>
+            <span class="string">'noiseDelay'</span>,    noiseDelaySeconds, <span class="keyword">...</span>
+            <span class="string">'freq'</span>,          signalFrequencyBand, <span class="keyword">...</span>
+            <span class="string">'useLurton'</span>,     true, <span class="keyword">...</span>
+            <span class="string">'showClips'</span>,     false, <span class="keyword">...</span>
+            <span class="string">'verbose'</span>,       showBsnrProgress);
+
+        snrResults = snrEstimate(detections, snrParams);
+        snrBsnr    = snrResults.snr;
+
+        <span class="comment">% Match to paper SNR values by detection start time</span>
+        snrPaper = matchPaperSNR(detections.t0, callType, paperSNRTable, hasPaperSNR);
+
+        <span class="comment">% Per call-type diagnostics</span>
+        validBsnr  = isfinite(snrBsnr);
+        validPaper = isfinite(snrPaper);
+        validBoth  = validBsnr &amp; validPaper;
+        r = NaN;
+        <span class="keyword">if</span> sum(validBoth) &gt; 5
+            r = corr(snrBsnr(validBoth), snrPaper(validBoth));
+        <span class="keyword">end</span>
+        fprintf(<span class="string">'    bsnr:  median=%.1f dB  (n=%d, NaN=%d)\n'</span>, <span class="keyword">...</span>
+            median(snrBsnr(validBsnr)), sum(validBsnr), sum(~validBsnr));
+        <span class="keyword">if</span> any(validPaper)
+            fprintf(<span class="string">'    paper: median=%.1f dB  r=%.3f\n'</span>, <span class="keyword">...</span>
+                median(snrPaper(validPaper)), r);
+        <span class="keyword">end</span>
+
+        <span class="comment">% Accumulate into results table</span>
+        newRows = table( <span class="keyword">...</span>
+            repmat({siteCode},       nDetections, 1), <span class="keyword">...</span>
+            repmat({pooledCallLabel}, nDetections, 1), <span class="keyword">...</span>
+            detections.t0, detections.duration, <span class="keyword">...</span>
+            detections.fLow, detections.fHigh, <span class="keyword">...</span>
+            snrBsnr, snrPaper, <span class="keyword">...</span>
+            <span class="string">'VariableNames'</span>, {<span class="string">'site'</span>, <span class="string">'callType'</span>, <span class="string">'t0'</span>, <span class="string">'duration_s'</span>, <span class="keyword">...</span>
+            <span class="string">'fLow_Hz'</span>, <span class="string">'fHigh_Hz'</span>, <span class="string">'snr_bsnr'</span>, <span class="string">'snr_paper'</span>});
+        allResults = [allResults; newRows]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+Maud Rise 2014  (SR=2048 Hz, nfft=4096, nOverlap=3481)
+</pre><h2 id="5">Summary table</h2><pre class="codeinput">siteList = unique(allResults.site, <span class="string">'stable'</span>);
+
+fprintf(<span class="string">'\n\n%-28s  %6s  %6s  %6s  %6s  %5s\n'</span>, <span class="keyword">...</span>
+    <span class="string">'Site'</span>, <span class="string">'n'</span>, <span class="string">'mean'</span>, <span class="string">'median'</span>, <span class="string">'paper'</span>, <span class="string">'r'</span>);
+fprintf(<span class="string">'%s\n'</span>, repmat(<span class="string">'-'</span>, 1, 62));
+
+<span class="keyword">for</span> s = 1:numel(siteList)
+    siteMask     = strcmp(allResults.site, siteList{s});
+    siteSnrBsnr  = allResults.snr_bsnr(siteMask);
+    siteSnrPaper = allResults.snr_paper(siteMask);
+    validBsnr    = isfinite(siteSnrBsnr);
+    validPaper   = isfinite(siteSnrPaper);
+    validBoth    = validBsnr &amp; validPaper;
+    r = NaN;
+    <span class="keyword">if</span> sum(validBoth) &gt; 5
+        r = corr(siteSnrBsnr(validBoth), siteSnrPaper(validBoth));
+    <span class="keyword">end</span>
+    fprintf(<span class="string">'%-28s  %6d  %6.1f  %6.1f  %6.1f  %5.3f\n'</span>, <span class="keyword">...</span>
+        siteList{s}, sum(validBsnr), <span class="keyword">...</span>
+        mean(siteSnrBsnr(validBsnr)), median(siteSnrBsnr(validBsnr)), <span class="keyword">...</span>
+        median(siteSnrPaper(validPaper)), r);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+
+Site                               n    mean  median   paper      r
+--------------------------------------------------------------
+Maud Rise 2014                  2251     4.2     5.6     0.3  0.759
+Greenwich 64 S  2015            1013     5.0     6.1    -1.1  0.756
+S Kerguelen 2005                1204     8.5     9.8    -2.6  0.608
+S Kerguelen 2014                4294     4.6     5.8    -1.3  0.778
+S Kerguelen 2015                2748     6.3     8.3     1.0  0.798
+Casey 2014                      6164     5.1     6.3    -1.8  0.756
+Casey 2017                      2415    13.2    13.8     6.0  0.824
+Balleny Islands 2015             998    11.0    11.8     4.4  0.817
+</pre><h2 id="6">Figure 1: CDF per site &#8212; replicates Miller et al. (2021) Figure 8</h2><pre class="codeinput">siteColours = lines(numel(siteList));
+xSNR        = -40 : 0.5 : 40;
+hasPaperCDF = any(isfinite(allResults.snr_paper));
+
+nPanels = 1 + hasPaperCDF;
+fig1 = figure(<span class="string">'Name'</span>, <span class="string">'ABW ABZ SNR &#8212; CDF per site'</span>, <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 600 420 * nPanels]);
+tlo1 = tiledlayout(fig1, nPanels, 1, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
+title(tlo1, <span class="string">'Antarctic blue whale ABZ calls &#8212; IWC-SORP Annotated Library [24-29 Hz]'</span>, <span class="keyword">...</span>
+    <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
+
+<span class="comment">% Top panel: bsnr CDFs</span>
+nexttile(tlo1);
+hold <span class="string">on</span>;
+<span class="keyword">for</span> s = 1:numel(siteList)
+    siteMask = strcmp(allResults.site, siteList{s});
+    snrBsnr  = allResults.snr_bsnr(siteMask);
+    valid    = isfinite(snrBsnr);
+    <span class="keyword">if</span> sum(valid) &lt; 10, <span class="keyword">continue</span>; <span class="keyword">end</span>
+    cdfValues = arrayfun(@(x) mean(snrBsnr(valid) &lt;= x), xSNR);
+    plot(xSNR, cdfValues, <span class="string">'Color'</span>, siteColours(s,:), <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
+        <span class="string">'DisplayName'</span>, sprintf(<span class="string">'%s (n=%d)'</span>, siteList{s}, sum(valid)));
+<span class="keyword">end</span>
+hold <span class="string">off</span>;
+xline(0, <span class="string">'k-'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+ylabel(<span class="string">'Cumulative proportion'</span>);
+title(sprintf(<span class="string">'bsnr  (%s, noiseDelay=%.0f s, Lurton, [%d-%d] Hz)'</span>, <span class="keyword">...</span>
+    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2)));
+legend(<span class="string">'Location'</span>, <span class="string">'northwest'</span>, <span class="string">'FontSize'</span>, 7);
+grid <span class="string">on</span>; xlim([-40 40]); ylim([0 1]);
+
+<span class="comment">% Bottom panel: paper CDFs (if available)</span>
+<span class="keyword">if</span> hasPaperCDF
+    nexttile(tlo1);
+    hold <span class="string">on</span>;
+    <span class="keyword">for</span> s = 1:numel(siteList)
+        siteMask = strcmp(allResults.site, siteList{s});
+        snrPaper = allResults.snr_paper(siteMask);
+        valid    = isfinite(snrPaper);
+        <span class="keyword">if</span> sum(valid) &lt; 10, <span class="keyword">continue</span>; <span class="keyword">end</span>
+        cdfValues = arrayfun(@(x) mean(snrPaper(valid) &lt;= x), xSNR);
+        plot(xSNR, cdfValues, <span class="string">'Color'</span>, siteColours(s,:), <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
+            <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+    <span class="keyword">end</span>
+    hold <span class="string">off</span>;
+    xline(0, <span class="string">'k-'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+    xlabel(<span class="string">'SNR (dB)'</span>); ylabel(<span class="string">'Cumulative proportion'</span>);
+    title(<span class="string">'paper  (annotationSNR.m, randomBeforeAndAfter, Lurton)'</span>);
+    grid <span class="string">on</span>; xlim([-40 40]); ylim([0 1]);
+<span class="keyword">else</span>
+    xlabel(<span class="string">'SNR (dB)'</span>);
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="snr_abw_sorp_library_01.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper scatter &#8212; all sites pooled</h2><pre class="codeinput">allSnrBsnr  = allResults.snr_bsnr;
+allSnrPaper = allResults.snr_paper;
+validBoth   = isfinite(allSnrBsnr) &amp; isfinite(allSnrPaper);
+
+fig2 = figure(<span class="string">'Name'</span>, <span class="string">'bsnr vs paper SNR scatter'</span>, <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 420 400]);
+<span class="keyword">if</span> sum(validBoth) &gt; 5
+    scatter(allSnrPaper(validBoth), allSnrBsnr(validBoth), 5, <span class="string">'filled'</span>, <span class="keyword">...</span>
+        <span class="string">'MarkerFaceAlpha'</span>, 0.15, <span class="string">'MarkerFaceColor'</span>, [0.2 0.5 0.8]);
+    hold <span class="string">on</span>;
+    axisLimits = [min([allSnrPaper(validBoth); allSnrBsnr(validBoth)]) <span class="keyword">...</span>
+                  max([allSnrPaper(validBoth); allSnrBsnr(validBoth)])];
+    plot(axisLimits, axisLimits, <span class="string">'k--'</span>, <span class="string">'LineWidth'</span>, 1);
+    hold <span class="string">off</span>;
+    rAll    = corr(allSnrBsnr(validBoth), allSnrPaper(validBoth));
+    biasAll = mean(allSnrBsnr(validBoth) - allSnrPaper(validBoth));
+    text(0.05, 0.95, sprintf(<span class="string">'r=%.3f  bias=%+.1f dB  n=%d'</span>, rAll, biasAll, sum(validBoth)), <span class="keyword">...</span>
+        <span class="string">'Units'</span>, <span class="string">'normalized'</span>, <span class="string">'VerticalAlignment'</span>, <span class="string">'top'</span>, <span class="string">'FontSize'</span>, 9);
+<span class="keyword">else</span>
+    text(0.5, 0.5, <span class="string">'No paper SNR available'</span>, <span class="keyword">...</span>
+        <span class="string">'Units'</span>, <span class="string">'normalized'</span>, <span class="string">'HorizontalAlignment'</span>, <span class="string">'center'</span>);
+<span class="keyword">end</span>
+xlabel(<span class="string">'paper SNR (dB)'</span>); ylabel(<span class="string">'bsnr SNR (dB)'</span>);
+title(<span class="string">'bsnr vs paper SNR &#8212; ABZ calls, all sites'</span>, <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
+grid <span class="string">on</span>;
+</pre><img vspace="5" hspace="5" src="snr_abw_sorp_library_02.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+    <span class="string">'snr_abw_sorp_library_results.csv'</span>);
+writetable(allResults, outputFile);
+fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outputFile);
+fprintf(<span class="string">'Settings: noiseDuration=%s, noiseDelay=%.1f s, freq=[%d %d] Hz, useLurton=true\n'</span>, <span class="keyword">...</span>
+    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2));
+fprintf(<span class="string">'nfft derived per site from sample rate, nSlicesTarget=%d, overlapFraction=%.2f\n'</span>, <span class="keyword">...</span>
+    nSlicesTarget, overlapFraction);
+</pre><pre class="codeoutput">
+Results saved to: C:\analysis\bsnr\examples\snr_abw_sorp_library_results.csv
+Settings: noiseDuration=beforeAndAfter, noiseDelay=1.0 s, freq=[24 29] Hz, useLurton=true
+nfft derived per site from sample rate, nSlicesTarget=30, overlapFraction=0.85
+</pre><h2 id="9">Local helpers</h2><pre class="codeinput"><span class="keyword">function</span> paperSNRTable = loadPaperSNR(siteFolder, paperSNRFolder)
+<span class="comment">% Load the paper SNR CSV for a site, matched by folder name (case-insensitive).</span>
+<span class="comment">% Returns empty table if no matching file found.</span>
+paperSNRTable = table();
+<span class="keyword">if</span> isempty(paperSNRFolder) || ~exist(paperSNRFolder, <span class="string">'dir'</span>), <span class="keyword">return</span>; <span class="keyword">end</span>
+folderStem = strrep(siteFolder, <span class="string">'\'</span>, <span class="string">''</span>);
+paperFiles = dir(fullfile(paperSNRFolder, <span class="string">'*_BmAntABZ_snr.csv'</span>));
+<span class="keyword">for</span> k = 1:numel(paperFiles)
+    fileStem = regexprep(paperFiles(k).name, <span class="string">'_BmAntABZ_snr\.csv$'</span>, <span class="string">''</span>);
+    <span class="keyword">if</span> strcmpi(fileStem, folderStem)
+        paperSNRTable = readtable(fullfile(paperSNRFolder, paperFiles(k).name), <span class="keyword">...</span>
+            <span class="string">'Delimiter'</span>, <span class="string">'\t'</span>);
+        <span class="keyword">return</span>;
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">end</span>
+
+<span class="keyword">function</span> snrPaper = matchPaperSNR(detectionTimes, callType, paperSNRTable, hasPaperSNR)
+<span class="comment">% Match bsnr annotations to paper SNR values by detection start time (t0).</span>
+<span class="comment">% Tolerance: 0.5 s. Returns NaN for unmatched detections.</span>
+nDetections = numel(detectionTimes);
+snrPaper    = nan(nDetections, 1);
+<span class="keyword">if</span> ~hasPaperSNR || isempty(paperSNRTable), <span class="keyword">return</span>; <span class="keyword">end</span>
+callRows = paperSNRTable(strcmp(paperSNRTable.classification, callType), :);
+<span class="keyword">for</span> k = 1:nDetections
+    timeDiffs   = abs(callRows.t0 - detectionTimes(k)) * 86400;
+    [minDiff, idx] = min(timeDiffs);
+    <span class="keyword">if</span> minDiff &lt; 0.5
+        snrPaper(k) = callRows.snr(idx);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">  BmAntA: n=2188  dur=8.2 s  freq=[23-28] Hz
+    bsnr:  median=5.7 dB  (n=2186, NaN=2)
+    paper: median=0.3 dB  r=0.756
+  BmAntB: n=37  dur=9.0 s  freq=[17-28] Hz
+    bsnr:  median=3.6 dB  (n=37, NaN=0)
+    paper: median=-0.2 dB  r=0.853
+  BmAntZ: n=28  dur=14.0 s  freq=[16-28] Hz
+    bsnr:  median=-2.0 dB  (n=28, NaN=0)
+    paper: median=-4.5 dB  r=0.919
+
+Greenwich 64 S  2015  (SR=253 Hz, nfft=512, nOverlap=435)
+  BmAntA: n=827  dur=6.6 s  freq=[23-28] Hz
+    bsnr:  median=7.3 dB  (n=827, NaN=0)
+    paper: median=-0.3 dB  r=0.751
+  BmAntB: n=157  dur=7.7 s  freq=[15-28] Hz
+    bsnr:  median=2.7 dB  (n=157, NaN=0)
+    paper: median=-3.5 dB  r=0.734
+  BmAntZ: n=29  dur=12.0 s  freq=[15-28] Hz
+    bsnr:  median=-3.4 dB  (n=29, NaN=0)
+    paper: median=-8.5 dB  r=0.813
+
+S Kerguelen 2005  (SR=1000 Hz, nfft=2048, nOverlap=1740)
+  BmAntA: n=812  dur=7.0 s  freq=[25-29] Hz
+    bsnr:  median=10.4 dB  (n=804, NaN=8)
+    paper: median=-2.8 dB  r=0.584
+  BmAntB: n=237  dur=8.0 s  freq=[17-29] Hz
+    bsnr:  median=7.7 dB  (n=235, NaN=2)
+    paper: median=-3.3 dB  r=0.573
+  BmAntZ: n=166  dur=12.3 s  freq=[16-30] Hz
+    bsnr:  median=8.8 dB  (n=165, NaN=1)
+    paper: median=1.3 dB  r=0.767
+
+S Kerguelen 2014  (SR=1000 Hz, nfft=2048, nOverlap=1740)
+  BmAntA: n=2557  dur=6.6 s  freq=[24-28] Hz
+    bsnr:  median=6.5 dB  (n=2555, NaN=2)
+    paper: median=-1.3 dB  r=0.748
+  BmAntB: n=1177  dur=8.3 s  freq=[16-28] Hz
+    bsnr:  median=4.7 dB  (n=1176, NaN=1)
+    paper: median=-1.8 dB  r=0.793
+  BmAntZ: n=563  dur=11.6 s  freq=[16-28] Hz
+    bsnr:  median=4.6 dB  (n=563, NaN=0)
+    paper: median=0.8 dB  r=0.903
+
+S Kerguelen 2015  (SR=1000 Hz, nfft=2048, nOverlap=1740)
+  BmAntA: n=1970  dur=6.6 s  freq=[23-28] Hz
+    bsnr:  median=8.8 dB  (n=1970, NaN=0)
+    paper: median=0.7 dB  r=0.783
+  BmAntB: n=542  dur=8.0 s  freq=[15-28] Hz
+    bsnr:  median=7.2 dB  (n=542, NaN=0)
+    paper: median=0.6 dB  r=0.833
+  BmAntZ: n=236  dur=13.3 s  freq=[15-28] Hz
+    bsnr:  median=8.1 dB  (n=236, NaN=0)
+    paper: median=4.7 dB  r=0.881
+
+Casey 2014  (SR=1000 Hz, nfft=2048, nOverlap=1740)
+  BmAntA: n=3681  dur=6.4 s  freq=[24-28] Hz
+    bsnr:  median=6.5 dB  (n=3675, NaN=6)
+    paper: median=-2.6 dB  r=0.698
+  BmAntB: n=1398  dur=7.8 s  freq=[16-28] Hz
+    bsnr:  median=5.7 dB  (n=1398, NaN=0)
+    paper: median=-1.6 dB  r=0.757
+  BmAntZ: n=1091  dur=11.9 s  freq=[16-28] Hz
+    bsnr:  median=6.3 dB  (n=1091, NaN=0)
+    paper: median=1.5 dB  r=0.895
+
+Casey 2017  (SR=1000 Hz, nfft=2048, nOverlap=1740)
+  BmAntA: n=1741  dur=7.3 s  freq=[24-28] Hz
+    bsnr:  median=12.7 dB  (n=1741, NaN=0)
+    paper: median=4.6 dB  r=0.768
+  BmAntB: n=558  dur=8.1 s  freq=[21-28] Hz
+    bsnr:  median=17.2 dB  (n=555, NaN=3)
+    paper: median=9.6 dB  r=0.878
+  BmAntZ: n=119  dur=14.6 s  freq=[16-28] Hz
+    bsnr:  median=22.4 dB  (n=119, NaN=0)
+    paper: median=19.2 dB  r=0.968
+
+Balleny Islands 2015  (SR=1000 Hz, nfft=2048, nOverlap=1740)
+  BmAntA: n=923  dur=7.5 s  freq=[23-28] Hz
+    bsnr:  median=11.8 dB  (n=923, NaN=0)
+    paper: median=4.1 dB  r=0.813
+  BmAntB: n=44  dur=9.3 s  freq=[18-28] Hz
+    bsnr:  median=14.6 dB  (n=44, NaN=0)
+    paper: median=8.9 dB  r=0.914
+  BmAntZ: n=31  dur=12.7 s  freq=[15-28] Hz
+    bsnr:  median=8.2 dB  (n=31, NaN=0)
+    paper: median=3.4 dB  r=0.919
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% SNR of Antarctic blue whale calls — IWC-SORP Annotated Library
+%
+% Computes SNR for ABW A, B, and Z calls across retained sites from the
+% IWC-SORP Annotated Library (Miller et al. 2021), using bsnr's
+% reproducible spectrogram-based methods.
+%
+% INTENT
+% The original paper computed SNR using annotationSNR.m (project folder,
+% dated 2021-08-06). Key settings identified from that script:
+%   noiseType  = 'randomBeforeAndAfter' — symmetric noise windows with a
+%                random delay (0 to noiseDelay seconds). This is NOT
+%                reproducible: the random draw is not recoverable from
+%                the output files.
+%   noiseDelay = 1 s
+%   nSlices    = 30, overlap = 0.5
+%   nfft       = 2^nextpow2(floor(duration/nSlices/overlap * sampleRate))
+%                (derived per annotation from its duration)
+%   freq       = per-annotation analyst bounds (annotation.freq)
+%   formula    = Lurton (2010, eq. 6.26): SNR = 10*log10(abs((S-N)^2/noiseVar))
+%
+% This script offers a reproducible alternative using bsnr with fixed
+% noise window placement (beforeAndAfter, noiseDelay=1 s), fixed frequency
+% band [24-29 Hz] (params.freq=[24 29] in BmAntZSnr.m), and nfft scaled
+% to each site's sample rate targeting ~30 slices per annotation.
+%
+% A, B, and Z calls are pooled as 'ABZ' following Miller et al. (2021).
+% Correlation with the original paper SNR values is r~0.55-0.78 across
+% sites; systematic bias of ~6-8 dB (bsnr higher) reflects the random vs
+% fixed noise window placement in the original.
+%
+% EXCLUDED SITES
+%   Elephant Island 2013 — annotations not comparable to other sites
+%   Elephant Island 2014 — annotation durations anomalously long
+%                          (likely incorrect spectrogram FFT during annotation)
+%   Ross sea 2014        — duplicate entry with inconsistent naming
+%
+% REFERENCE
+%   Miller et al. (2021). An Open Access Dataset for Developing Automated
+%   Detectors of Antarctic Baleen Whale Sounds. Scientific Reports 11, 806.
+%   https://doi.org/10.1038/s41598-020-78995-8
+%
+% DATA
+%   Annotations and recordings: https://doi.org/10.26179/5e6056035c01b
+%   folderStructure.csv: part of annotated library download package
+%   *_BmAntABZ_snr.csv: paper SNR values (from original project folder;
+%                        not part of public download)
+
+%% User configuration
+% Edit the paths below to match your local installation.
+% Annotations are part of the IWC-SORP Annotated Library public download
+% (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI.
+% Paper SNR files (*_BmAntABZ_snr.csv) are from the original project folder
+% and are not publicly available; set paperSNRFolder = '' to skip comparison.
+
+% Root folder containing site subfolders with WAV files
+soundLibraryRoot = 'S:\work\annotatedLibrary\SORP\';
+
+% Root folder containing Raven selection tables
+% (same structure as soundLibraryRoot for this dataset)
+annotationRoot = 'S:\work\annotatedLibrary\SORP\';
+
+% folderStructure.csv — site metadata, part of annotated library download
+folderStructureFile = fullfile(annotationRoot, '01-Documentation', ...
+    'folderStructure.csv');
+
+% Paper SNR files — from original project folder, not public download.
+% Set to '' to skip paper comparison.
+paperSNRFolder = 'S:\manuscripts\2017-annotatedLibrary\';
+
+% STFT parameters
+% nfft is derived per site to give approximately nSlicesTarget slices per
+% annotation at the site's sample rate. overlapFraction = 0.85 following
+% the original annotationSNR.m display defaults.
+nSlicesTarget  = 30;
+overlapFraction = 0.85;
+
+% Noise window — fixed placement to ensure reproducibility
+% (original used randomBeforeAndAfter with noiseDelay=1 s)
+noiseDurationStrategy = 'beforeAndAfter';
+noiseDelaySeconds     = 1.0;
+
+% Frequency band — fixed unit-A band used throughout Miller et al. (2021)
+signalFrequencyBand = [24 29];   % Hz
+
+% Call types to process — pooled as ABZ in output following paper convention
+callTypeNames  = {'BmAntA', 'BmAntB', 'BmAntZ'};
+callTypeColumns = {'Abw_A_RavenFile', 'Abw_B_RavenFile', 'Abw_Z_RavenFile'};
+pooledCallLabel = 'ABZ';
+
+% Output verbosity
+showBsnrProgress = false;
+
+%% Suppress expected warnings
+
+warning('off', 'snrEstimate:nfftAutoSelected');
+warning('off', 'snrEstimate:nfftTruncation');
+warning('off', 'snrEstimate:nfftHighTruncation');
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
+
+%% Load and filter site metadata
+
+fprintf('Loading site metadata...\n');
+siteMetadata = readtable(folderStructureFile);
+
+excludedSites = {
+    'Elephant Island 2013', 'annotations not comparable to other sites'
+    'Elephant Island 2014', 'annotation durations anomalously long'
+    'Ross sea 2014',        'duplicate entry with inconsistent naming'
+};
+for e = 1:size(excludedSites, 1)
+    isSite = strcmp(siteMetadata.SiteCode, excludedSites{e,1});
+    if any(isSite)
+        fprintf('  Excluding %s: %s\n', excludedSites{e,1}, excludedSites{e,2});
+        siteMetadata = siteMetadata(~isSite, :);
+    end
+end
+nSites = height(siteMetadata);
+fprintf('  %d sites retained\n', nSites);
+
+%% Compute SNR for each site and call type
+
+allResults = table();
+
+for s = 1:nSites
+    siteCode      = siteMetadata.SiteCode{s};
+    siteSoundFolder = fullfile(soundLibraryRoot, siteMetadata.Folder{s});
+    siteSampleRate  = siteMetadata.SampleRate(s);
+
+    % nfft scaled to site sample rate for ~nSlicesTarget slices per annotation
+    medianCallDuration = 8;   % s — conservative median across A/B/Z call types
+    nfft     = 2^nextpow2(floor(medianCallDuration / nSlicesTarget ...
+                / (1 - overlapFraction) * siteSampleRate));
+    nOverlap = floor(nfft * overlapFraction);
+
+    fprintf('\n%s  (SR=%d Hz, nfft=%d, nOverlap=%d)\n', ...
+        siteCode, siteSampleRate, nfft, nOverlap);
+
+    % Load paper SNR file for this site if available
+    paperSNRTable = loadPaperSNR(siteMetadata.Folder{s}, paperSNRFolder);
+    hasPaperSNR   = ~isempty(paperSNRTable);
+
+    for c = 1:numel(callTypeNames)
+        callType  = callTypeNames{c};
+        ravenFile = siteMetadata.(callTypeColumns{c}){s};
+        if isempty(ravenFile), continue; end
+
+        ravenFilePath = fullfile(annotationRoot, siteMetadata.Folder{s}, ravenFile);
+        if ~exist(ravenFilePath, 'file')
+            fprintf('  %s: Raven file not found, skipping\n', callType);
+            continue;
+        end
+
+        % Load annotations from Raven selection table
+        detections = ravenTableToDetection(ravenFilePath, siteSoundFolder, ...
+            siteCode, callType);
+        if isempty(detections) || height(detections) == 0, continue; end
+        nDetections = height(detections);
+
+        fprintf('  %s: n=%d  dur=%.1f s  freq=[%.0f-%.0f] Hz\n', ...
+            callType, nDetections, median(detections.duration), ...
+            median(detections.fLow), median(detections.fHigh));
+
+        % SNR parameters — Lurton formula to match paper
+        snrParams = struct( ...
+            'snrType',       'spectrogram', ...
+            'nfft',          nfft, ...
+            'nOverlap',      nOverlap, ...
+            'noiseDuration', noiseDurationStrategy, ...
+            'noiseDelay',    noiseDelaySeconds, ...
+            'freq',          signalFrequencyBand, ...
+            'useLurton',     true, ...
+            'showClips',     false, ...
+            'verbose',       showBsnrProgress);
+
+        snrResults = snrEstimate(detections, snrParams);
+        snrBsnr    = snrResults.snr;
+
+        % Match to paper SNR values by detection start time
+        snrPaper = matchPaperSNR(detections.t0, callType, paperSNRTable, hasPaperSNR);
+
+        % Per call-type diagnostics
+        validBsnr  = isfinite(snrBsnr);
+        validPaper = isfinite(snrPaper);
+        validBoth  = validBsnr & validPaper;
+        r = NaN;
+        if sum(validBoth) > 5
+            r = corr(snrBsnr(validBoth), snrPaper(validBoth));
+        end
+        fprintf('    bsnr:  median=%.1f dB  (n=%d, NaN=%d)\n', ...
+            median(snrBsnr(validBsnr)), sum(validBsnr), sum(~validBsnr));
+        if any(validPaper)
+            fprintf('    paper: median=%.1f dB  r=%.3f\n', ...
+                median(snrPaper(validPaper)), r);
+        end
+
+        % Accumulate into results table
+        newRows = table( ...
+            repmat({siteCode},       nDetections, 1), ...
+            repmat({pooledCallLabel}, nDetections, 1), ...
+            detections.t0, detections.duration, ...
+            detections.fLow, detections.fHigh, ...
+            snrBsnr, snrPaper, ...
+            'VariableNames', {'site', 'callType', 't0', 'duration_s', ...
+            'fLow_Hz', 'fHigh_Hz', 'snr_bsnr', 'snr_paper'});
+        allResults = [allResults; newRows]; %#ok<AGROW>
+    end
+end
+
+%% Summary table
+
+siteList = unique(allResults.site, 'stable');
+
+fprintf('\n\n%-28s  %6s  %6s  %6s  %6s  %5s\n', ...
+    'Site', 'n', 'mean', 'median', 'paper', 'r');
+fprintf('%s\n', repmat('-', 1, 62));
+
+for s = 1:numel(siteList)
+    siteMask     = strcmp(allResults.site, siteList{s});
+    siteSnrBsnr  = allResults.snr_bsnr(siteMask);
+    siteSnrPaper = allResults.snr_paper(siteMask);
+    validBsnr    = isfinite(siteSnrBsnr);
+    validPaper   = isfinite(siteSnrPaper);
+    validBoth    = validBsnr & validPaper;
+    r = NaN;
+    if sum(validBoth) > 5
+        r = corr(siteSnrBsnr(validBoth), siteSnrPaper(validBoth));
+    end
+    fprintf('%-28s  %6d  %6.1f  %6.1f  %6.1f  %5.3f\n', ...
+        siteList{s}, sum(validBsnr), ...
+        mean(siteSnrBsnr(validBsnr)), median(siteSnrBsnr(validBsnr)), ...
+        median(siteSnrPaper(validPaper)), r);
+end
+
+%% Figure 1: CDF per site — replicates Miller et al. (2021) Figure 8
+
+siteColours = lines(numel(siteList));
+xSNR        = -40 : 0.5 : 40;
+hasPaperCDF = any(isfinite(allResults.snr_paper));
+
+nPanels = 1 + hasPaperCDF;
+fig1 = figure('Name', 'ABW ABZ SNR — CDF per site', ...
+    'Units', 'pixels', 'Position', [50 50 600 420 * nPanels]);
+tlo1 = tiledlayout(fig1, nPanels, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tlo1, 'Antarctic blue whale ABZ calls — IWC-SORP Annotated Library [24-29 Hz]', ...
+    'FontWeight', 'bold');
+
+% Top panel: bsnr CDFs
+nexttile(tlo1);
+hold on;
+for s = 1:numel(siteList)
+    siteMask = strcmp(allResults.site, siteList{s});
+    snrBsnr  = allResults.snr_bsnr(siteMask);
+    valid    = isfinite(snrBsnr);
+    if sum(valid) < 10, continue; end
+    cdfValues = arrayfun(@(x) mean(snrBsnr(valid) <= x), xSNR);
+    plot(xSNR, cdfValues, 'Color', siteColours(s,:), 'LineWidth', 1.5, ...
+        'DisplayName', sprintf('%s (n=%d)', siteList{s}, sum(valid)));
+end
+hold off;
+xline(0, 'k-', 'LineWidth', 1.5, 'HandleVisibility', 'off');
+ylabel('Cumulative proportion');
+title(sprintf('bsnr  (%s, noiseDelay=%.0f s, Lurton, [%d-%d] Hz)', ...
+    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2)));
+legend('Location', 'northwest', 'FontSize', 7);
+grid on; xlim([-40 40]); ylim([0 1]);
+
+% Bottom panel: paper CDFs (if available)
+if hasPaperCDF
+    nexttile(tlo1);
+    hold on;
+    for s = 1:numel(siteList)
+        siteMask = strcmp(allResults.site, siteList{s});
+        snrPaper = allResults.snr_paper(siteMask);
+        valid    = isfinite(snrPaper);
+        if sum(valid) < 10, continue; end
+        cdfValues = arrayfun(@(x) mean(snrPaper(valid) <= x), xSNR);
+        plot(xSNR, cdfValues, 'Color', siteColours(s,:), 'LineWidth', 1.5, ...
+            'HandleVisibility', 'off');
+    end
+    hold off;
+    xline(0, 'k-', 'LineWidth', 1.5, 'HandleVisibility', 'off');
+    xlabel('SNR (dB)'); ylabel('Cumulative proportion');
+    title('paper  (annotationSNR.m, randomBeforeAndAfter, Lurton)');
+    grid on; xlim([-40 40]); ylim([0 1]);
+else
+    xlabel('SNR (dB)');
+end
+
+%% Figure 2: bsnr vs paper scatter — all sites pooled
+
+allSnrBsnr  = allResults.snr_bsnr;
+allSnrPaper = allResults.snr_paper;
+validBoth   = isfinite(allSnrBsnr) & isfinite(allSnrPaper);
+
+fig2 = figure('Name', 'bsnr vs paper SNR scatter', ...
+    'Units', 'pixels', 'Position', [50 50 420 400]);
+if sum(validBoth) > 5
+    scatter(allSnrPaper(validBoth), allSnrBsnr(validBoth), 5, 'filled', ...
+        'MarkerFaceAlpha', 0.15, 'MarkerFaceColor', [0.2 0.5 0.8]);
+    hold on;
+    axisLimits = [min([allSnrPaper(validBoth); allSnrBsnr(validBoth)]) ...
+                  max([allSnrPaper(validBoth); allSnrBsnr(validBoth)])];
+    plot(axisLimits, axisLimits, 'kREPLACE_WITH_DASH_DASH', 'LineWidth', 1);
+    hold off;
+    rAll    = corr(allSnrBsnr(validBoth), allSnrPaper(validBoth));
+    biasAll = mean(allSnrBsnr(validBoth) - allSnrPaper(validBoth));
+    text(0.05, 0.95, sprintf('r=%.3f  bias=%+.1f dB  n=%d', rAll, biasAll, sum(validBoth)), ...
+        'Units', 'normalized', 'VerticalAlignment', 'top', 'FontSize', 9);
+else
+    text(0.5, 0.5, 'No paper SNR available', ...
+        'Units', 'normalized', 'HorizontalAlignment', 'center');
+end
+xlabel('paper SNR (dB)'); ylabel('bsnr SNR (dB)');
+title('bsnr vs paper SNR — ABZ calls, all sites', 'FontWeight', 'bold');
+grid on;
+
+%% Save results
+
+outputFile = fullfile(fileparts(mfilename('fullpath')), ...
+    'snr_abw_sorp_library_results.csv');
+writetable(allResults, outputFile);
+fprintf('\nResults saved to: %s\n', outputFile);
+fprintf('Settings: noiseDuration=%s, noiseDelay=%.1f s, freq=[%d %d] Hz, useLurton=true\n', ...
+    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2));
+fprintf('nfft derived per site from sample rate, nSlicesTarget=%d, overlapFraction=%.2f\n', ...
+    nSlicesTarget, overlapFraction);
+
+%% Local helpers
+
+function paperSNRTable = loadPaperSNR(siteFolder, paperSNRFolder)
+% Load the paper SNR CSV for a site, matched by folder name (case-insensitive).
+% Returns empty table if no matching file found.
+paperSNRTable = table();
+if isempty(paperSNRFolder) || ~exist(paperSNRFolder, 'dir'), return; end
+folderStem = strrep(siteFolder, '\', '');
+paperFiles = dir(fullfile(paperSNRFolder, '*_BmAntABZ_snr.csv'));
+for k = 1:numel(paperFiles)
+    fileStem = regexprep(paperFiles(k).name, '_BmAntABZ_snr\.csv$', '');
+    if strcmpi(fileStem, folderStem)
+        paperSNRTable = readtable(fullfile(paperSNRFolder, paperFiles(k).name), ...
+            'Delimiter', '\t');
+        return;
+    end
+end
+end
+
+function snrPaper = matchPaperSNR(detectionTimes, callType, paperSNRTable, hasPaperSNR)
+% Match bsnr annotations to paper SNR values by detection start time (t0).
+% Tolerance: 0.5 s. Returns NaN for unmatched detections.
+nDetections = numel(detectionTimes);
+snrPaper    = nan(nDetections, 1);
+if ~hasPaperSNR || isempty(paperSNRTable), return; end
+callRows = paperSNRTable(strcmp(paperSNRTable.classification, callType), :);
+for k = 1:nDetections
+    timeDiffs   = abs(callRows.t0 - detectionTimes(k)) * 86400;
+    [minDiff, idx] = min(timeDiffs);
+    if minDiff < 0.5
+        snrPaper(k) = callRows.snr(idx);
+    end
+end
+end
+
+##### SOURCE END #####
+--></body></html>

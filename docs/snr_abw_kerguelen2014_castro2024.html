@@ -1,0 +1,556 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>SNR of Antarctic blue whale calls &#8212; Kerguelen 2014 (Castro et al. 2024)</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-18"><meta name="DC.source" content="snr_abw_kerguelen2014_castro2024.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+<link rel="stylesheet" href="bsnr.css">
+</head><body><div class="content"><h1>SNR of Antarctic blue whale calls &#8212; Kerguelen 2014 (Castro et al. 2024)</h1><!--introduction--><p>Reproduces the seasonal SNR and noise level distributions shown in Figure 5 of Castro et al. (2024), using bsnr's spectrogramSlices method with calibrated acoustic levels.</p><p>METHOD (from callDensityParams.m and BmZspectroParams.m)   snrType       = 'spectrogramSlices'   freq          = [25 29] Hz  (unit-A band)   noiseDuration = 'beforeAndAfter'   noiseDelay    = 1 s   nfft          = 1024  (from BmZspectroParams: win=1024, SR=1000 Hz)   nOverlap      = 870   (floor(1024 * 0.85))   metadata      = loadRecorderMetaData('Kerguelen2014')   formula       = simple power ratio: SNR = 10*log10(S/N)</p><p>The paper SNR values were not published as supplemental data; Figure 5 shows seasonal violin distributions which this script reproduces. A, B, and Z calls are pooled as ABZ following Castro et al. (2024).</p><p>REFERENCE   Castro et al. (2024). Beyond Counting Calls: Estimating Detection   Probability for Antarctic Blue Whales. Frontiers in Marine Science.   <a href="https://doi.org/10.3389/fmars.2024.1406678">https://doi.org/10.3389/fmars.2024.1406678</a></p><p>DATA   Annotations: w:\annotatedLibrary\BAFAAL\Kerguelen2014\*.Bm.Ant-*selections.txt   Recordings:  w:\annotatedLibrary\BAFAAL\Kerguelen2014\wav\   Calibration: loadRecorderMetaData('Kerguelen2014') [longTermRecorders]</p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Suppress expected warnings</a></li><li><a href="#3">Published values from Castro et al. (2024) Table/Figure 5</a></li><li><a href="#4">Load calibration metadata</a></li><li><a href="#5">Load annotations</a></li><li><a href="#6">Compute SNR</a></li><li><a href="#7">Assign seasons (Southern Hemisphere)</a></li><li><a href="#8">Summary statistics by season</a></li><li><a href="#9">Figure: seasonal SNR and NL distributions (replicates Figure 5)</a></li><li><a href="#10">Save results</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Annotations are part of the IWC-SORP Annotated Library public download (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI. Calibration metadata requires loadRecorderMetaData() from the longTermRecorders toolbox (contact <a href="mailto:acoustics@aad.gov.au">acoustics@aad.gov.au</a>).</p><pre class="codeinput">annotationRoot = <span class="string">'s:\work\annotatedLibrary\SORP\kerguelen2014\'</span>;
+soundFolder    = <span class="string">'s:\work\annotatedLibrary\SORP\kerguelen2014\wav\'</span>;
+siteCode       = <span class="string">'Kerguelen2014'</span>;
+
+<span class="comment">% STFT parameters from BmZspectroParams.m</span>
+nfft     = 1024;
+nOverlap = floor(nfft * 0.85);   <span class="comment">% 870 samples</span>
+
+<span class="comment">% SNR parameters matching callDensityParams.m</span>
+signalFrequencyBand   = [25 29];  <span class="comment">% Hz &#8212; unit-A band</span>
+noiseDurationStrategy = <span class="string">'beforeAndAfter'</span>;
+noiseDelaySeconds     = 1.0;
+
+<span class="comment">% Call types &#8212; pooled as ABZ following Castro et al. (2024)</span>
+callTypePattern = <span class="string">'*.Bm.Ant-*selections.txt'</span>;
+pooledCallLabel = <span class="string">'ABZ'</span>;
+
+<span class="comment">% Output verbosity</span>
+showBsnrProgress = false;
+</pre><h2 id="2">Suppress expected warnings</h2><pre class="codeinput">warning(<span class="string">'off'</span>, <span class="string">'snrEstimate:nfftAutoSelected'</span>);
+warning(<span class="string">'off'</span>, <span class="string">'snrEstimate:nfftTruncation'</span>);
+warning(<span class="string">'off'</span>, <span class="string">'snrEstimate:nfftHighTruncation'</span>);
+warning(<span class="string">'off'</span>, <span class="string">'MATLAB:table:ModifiedAndSavedVarnames'</span>);
+</pre><h2 id="3">Published values from Castro et al. (2024) Table/Figure 5</h2><p>Noise level mean and std by season (dB re 1 &micro;Pa, mean PSD in [25-29] Hz band)</p><pre class="codeinput">paperNL.seasonOrder = {<span class="string">'summer'</span>, <span class="string">'autumn'</span>, <span class="string">'winter'</span>, <span class="string">'spring'</span>, <span class="string">'year'</span>};
+paperNL.mean = [92.4, 96.8, 87.5, 81.0, 88.6];
+paperNL.std  = [ 2.6,  3.7,  3.5,  2.4,  5.9];
+</pre><h2 id="4">Load calibration metadata</h2><pre class="codeinput">fprintf(<span class="string">'Loading calibration metadata for %s...\n'</span>, siteCode);
+recorderMetadata = loadRecorderMetaData(siteCode);
+fprintf(<span class="string">'  Sensitivity: %.1f dB re V/&micro;Pa\n'</span>, recorderMetadata.hydroSensitivity_dB);
+fprintf(<span class="string">'  ADC peak: %.1f V\n'</span>, recorderMetadata.adPeakVolt);
+</pre><pre class="codeoutput">Loading calibration metadata for Kerguelen2014...
+  Sensitivity: -165.5 dB re V/&micro;Pa
+  ADC peak: 1.5 V
+</pre><h2 id="5">Load annotations</h2><pre class="codeinput">fprintf(<span class="string">'\nLoading Raven selection tables...\n'</span>);
+ravenFileList = dir(fullfile(annotationRoot, callTypePattern));
+<span class="keyword">if</span> isempty(ravenFileList)
+    error(<span class="string">'No Raven selection tables found in %s'</span>, annotationRoot);
+<span class="keyword">end</span>
+
+allDetections = table();
+<span class="keyword">for</span> f = 1:numel(ravenFileList)
+    ravenFilePath = fullfile(ravenFileList(f).folder, ravenFileList(f).name);
+    <span class="comment">% Infer classification from filename</span>
+    <span class="keyword">if</span> contains(ravenFileList(f).name, <span class="string">'Ant-A'</span>)
+        callType = <span class="string">'BmAntA'</span>;
+    <span class="keyword">elseif</span> contains(ravenFileList(f).name, <span class="string">'Ant-B'</span>)
+        callType = <span class="string">'BmAntB'</span>;
+    <span class="keyword">elseif</span> contains(ravenFileList(f).name, <span class="string">'Ant-Z'</span>)
+        callType = <span class="string">'BmAntZ'</span>;
+    <span class="keyword">else</span>
+        callType = <span class="string">'BmAnt'</span>;
+    <span class="keyword">end</span>
+    detections = ravenTableToDetection(ravenFilePath, soundFolder, siteCode, callType);
+    <span class="keyword">if</span> ~isempty(detections) &amp;&amp; height(detections) &gt; 0
+        fprintf(<span class="string">'  %s: n=%d\n'</span>, callType, height(detections));
+        allDetections = [allDetections; detections]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+fprintf(<span class="string">'  Total: n=%d\n'</span>, height(allDetections));
+</pre><pre class="codeoutput">
+Loading Raven selection tables...
+  BmAntA: n=2557
+  BmAntB: n=1177
+  BmAntZ: n=563
+  Total: n=4297
+</pre><h2 id="6">Compute SNR</h2><pre class="codeinput">fprintf(<span class="string">'\nComputing SNR (spectrogramSlices, calibrated)...\n'</span>);
+snrParams = struct( <span class="keyword">...</span>
+    <span class="string">'snrType'</span>,       <span class="string">'spectrogramSlices'</span>, <span class="keyword">...</span>
+    <span class="string">'nfft'</span>,          nfft, <span class="keyword">...</span>
+    <span class="string">'nOverlap'</span>,      nOverlap, <span class="keyword">...</span>
+    <span class="string">'noiseDuration'</span>, noiseDurationStrategy, <span class="keyword">...</span>
+    <span class="string">'noiseDelay'</span>,    noiseDelaySeconds, <span class="keyword">...</span>
+    <span class="string">'freq'</span>,          signalFrequencyBand, <span class="keyword">...</span>
+    <span class="string">'useLurton'</span>,     false, <span class="keyword">...</span>
+    <span class="string">'metadata'</span>,      recorderMetadata, <span class="keyword">...</span>
+    <span class="string">'showClips'</span>,     false, <span class="keyword">...</span>
+    <span class="string">'verbose'</span>,       showBsnrProgress);
+
+snrResults = snrEstimate(allDetections, snrParams);
+
+allDetections.snr         = snrResults.snr;
+allDetections.signalLevel = snrResults.signalRMSdB;
+allDetections.noiseLevel  = snrResults.noiseRMSdB;
+
+<span class="comment">% Convert band-integrated power to mean PSD level in band.</span>
+<span class="comment">% bsnr returns bandpower() which integrates PSD over [25-29] Hz (4 Hz bandwidth).</span>
+<span class="comment">% The paper reports mean PSD level: bandpower / bandwidth in dB.</span>
+<span class="comment">% 10*log10(bandwidth) = 10*log10(4) = 6.02 dB correction.</span>
+bandwidthCorrection_dB    = 10 * log10(diff(signalFrequencyBand));
+allDetections.noiseLevel  = allDetections.noiseLevel  - bandwidthCorrection_dB;
+allDetections.signalLevel = allDetections.signalLevel - bandwidthCorrection_dB;
+</pre><pre class="codeoutput">
+Computing SNR (spectrogramSlices, calibrated)...
+</pre><h2 id="7">Assign seasons (Southern Hemisphere)</h2><p>summer: Dec-Feb, autumn: Mar-May, winter: Jun-Aug, spring: Sep-Nov</p><pre class="codeinput">detectionDatetime = datetime(allDetections.t0, <span class="string">'ConvertFrom'</span>, <span class="string">'datenum'</span>);
+allDetections.season = dt2season(detectionDatetime);
+</pre><h2 id="8">Summary statistics by season</h2><pre class="codeinput">seasonOrder  = {<span class="string">'summer'</span>, <span class="string">'autumn'</span>, <span class="string">'winter'</span>, <span class="string">'spring'</span>, <span class="string">'year'</span>};
+seasonLabels = {<span class="string">'Summer'</span>, <span class="string">'Autumn'</span>, <span class="string">'Winter'</span>, <span class="string">'Spring'</span>, <span class="string">'Year'</span>};
+
+fprintf(<span class="string">'\n%-8s  %5s  %6s  %6s  %6s  %6s  %6s  %6s\n'</span>, <span class="keyword">...</span>
+    <span class="string">'Season'</span>, <span class="string">'n'</span>, <span class="string">'SNR_mn'</span>, <span class="string">'SNR_med'</span>, <span class="string">'NL_mn'</span>, <span class="string">'NL_med'</span>, <span class="string">'NL_paper'</span>, <span class="string">'NL_diff'</span>);
+fprintf(<span class="string">'%s\n'</span>, repmat(<span class="string">'-'</span>, 1, 66));
+
+<span class="keyword">for</span> s = 1:numel(seasonOrder)
+    <span class="keyword">if</span> strcmp(seasonOrder{s}, <span class="string">'year'</span>)
+        mask = isfinite(allDetections.snr);
+    <span class="keyword">else</span>
+        mask = allDetections.season == seasonOrder{s} &amp; isfinite(allDetections.snr);
+    <span class="keyword">end</span>
+    snrSeason   = allDetections.snr(mask);
+    nlSeason    = allDetections.noiseLevel(mask);
+    paperNLmean = paperNL.mean(strcmp(paperNL.seasonOrder, seasonOrder{s}));
+    nlDiff      = mean(nlSeason) - paperNLmean;
+    fprintf(<span class="string">'%-8s  %5d  %6.1f  %6.1f  %6.1f  %6.1f  %6.1f  %+6.2f\n'</span>, <span class="keyword">...</span>
+        seasonOrder{s}, sum(mask), <span class="keyword">...</span>
+        mean(snrSeason), median(snrSeason), <span class="keyword">...</span>
+        mean(nlSeason), median(nlSeason), paperNLmean, nlDiff);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">
+Season        n  SNR_mn  SNR_med   NL_mn  NL_med  NL_paper  NL_diff
+------------------------------------------------------------------
+summer      221     1.9     2.0    92.0    91.4    92.4   -0.36
+autumn      858     2.3     2.3    96.7    97.6    96.8   -0.11
+winter     2543     2.5     2.4    87.2    86.8    87.5   -0.33
+spring      675     2.1     2.0    80.5    80.8    81.0   -0.48
+year       4297     2.4     2.3    88.3    87.5    88.6   -0.32
+</pre><h2 id="9">Figure: seasonal SNR and NL distributions (replicates Figure 5)</h2><pre class="codeinput">seasonColours = [0.85 0.33 0.10;   <span class="comment">% summer  &#8212; red</span>
+                 0.75 0.73 0.05;   <span class="comment">% autumn  &#8212; olive</span>
+                 0.17 0.63 0.44;   <span class="comment">% winter  &#8212; teal</span>
+                 0.30 0.75 0.93;   <span class="comment">% spring  &#8212; sky blue</span>
+                 0.72 0.53 0.90];  <span class="comment">% year    &#8212; lavender</span>
+
+fig1 = figure(<span class="string">'Name'</span>, <span class="string">'Castro 2024 Figure 5 &#8212; SNR and NL by season'</span>, <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 500 700]);
+tlo1 = tiledlayout(fig1, 2, 1, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
+title(tlo1, sprintf(<span class="string">'Kerguelen 2014 &#8212; ABZ calls, %d-%d Hz (Castro et al. 2024)\n&#9650; = paper mean &plusmn; SD (Castro et al. 2024)'</span>, <span class="keyword">...</span>
+    signalFrequencyBand(1), signalFrequencyBand(2)), <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
+
+<span class="keyword">for</span> panel = 1:2
+    nexttile(tlo1);
+    hold <span class="string">on</span>;
+
+    <span class="keyword">for</span> s = 1:numel(seasonOrder)
+        <span class="keyword">if</span> strcmp(seasonOrder{s}, <span class="string">'year'</span>)
+            mask = isfinite(allDetections.snr);
+        <span class="keyword">else</span>
+            mask = allDetections.season == seasonOrder{s} &amp; isfinite(allDetections.snr);
+        <span class="keyword">end</span>
+
+        <span class="keyword">if</span> panel == 1
+            vals = allDetections.noiseLevel(mask);
+        <span class="keyword">else</span>
+            vals = allDetections.snr(mask);
+        <span class="keyword">end</span>
+        vals = vals(isfinite(vals));
+        <span class="keyword">if</span> numel(vals) &lt; 5, <span class="keyword">continue</span>; <span class="keyword">end</span>
+
+        <span class="comment">% Violin using ksdensity</span>
+        [ksDensity, ksGrid] = ksdensity(vals, <span class="string">'NumPoints'</span>, 200);
+        ksDensity = ksDensity / max(ksDensity) * 0.35;  <span class="comment">% normalise width</span>
+        xPos = s;
+        fill([xPos + ksDensity, xPos - fliplr(ksDensity)], <span class="keyword">...</span>
+             [ksGrid, fliplr(ksGrid)], <span class="keyword">...</span>
+             seasonColours(s,:), <span class="string">'FaceAlpha'</span>, 0.15, <span class="keyword">...</span>
+             <span class="string">'EdgeColor'</span>, seasonColours(s,:), <span class="string">'LineWidth'</span>, 1.2, <span class="keyword">...</span>
+             <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+
+        <span class="comment">% Mean and std error bars</span>
+        valMean = mean(vals);
+        valStd  = std(vals);
+        plot(xPos, valMean, <span class="string">'o'</span>, <span class="string">'MarkerSize'</span>, 7, <span class="keyword">...</span>
+            <span class="string">'MarkerFaceColor'</span>, seasonColours(s,:), <span class="keyword">...</span>
+            <span class="string">'MarkerEdgeColor'</span>, seasonColours(s,:), <span class="keyword">...</span>
+            <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+        plot([xPos xPos], valMean + [-1 1]*valStd, <span class="string">'k-'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
+            <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+        plot(xPos + [-0.12 0.12], [valMean-valStd valMean-valStd], <span class="string">'k-'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
+            <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+        plot(xPos + [-0.12 0.12], [valMean+valStd valMean+valStd], <span class="string">'k-'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
+            <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+    <span class="keyword">end</span>
+    <span class="comment">% Overlay paper NL mean &plusmn; std for NL panel</span>
+    <span class="keyword">if</span> panel == 1
+        <span class="keyword">for</span> s = 1:numel(seasonOrder)
+            pMean = paperNL.mean(strcmp(paperNL.seasonOrder, seasonOrder{s}));
+            pStd  = paperNL.std(strcmp(paperNL.seasonOrder, seasonOrder{s}));
+            plot(s + 0.25, pMean, <span class="string">'k^'</span>, <span class="string">'MarkerSize'</span>, 6, <span class="string">'MarkerFaceColor'</span>, <span class="string">'k'</span>, <span class="keyword">...</span>
+                <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+            plot([s+0.25 s+0.25], pMean + [-1 1]*pStd, <span class="string">'k:'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
+                <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+    hold <span class="string">off</span>;
+
+    set(gca, <span class="string">'XTick'</span>, 1:numel(seasonOrder), <span class="string">'XTickLabel'</span>, seasonLabels, <span class="keyword">...</span>
+        <span class="string">'XTickLabelRotation'</span>, 30);
+    <span class="keyword">if</span> panel == 1
+        ylabel(<span class="string">'Noise Level (dB re 1 &micro;Pa RMS)'</span>);
+    <span class="keyword">else</span>
+        ylabel(<span class="string">'Signal-to-noise ratio (dB)'</span>);
+        xline(0, <span class="string">'k--'</span>, <span class="string">'LineWidth'</span>, 0.5, <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+    <span class="keyword">end</span>
+    grid <span class="string">on</span>;
+    xlim([0.5 numel(seasonOrder)+0.5]);
+<span class="keyword">end</span>
+</pre><img vspace="5" hspace="5" src="snr_abw_kerguelen2014_castro2024_01.png" alt=""> <h2 id="10">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+    <span class="string">'snr_abw_kerguelen2014_castro2024_results.csv'</span>);
+writetable(allDetections(:, {<span class="string">'t0'</span>, <span class="string">'duration'</span>, <span class="string">'fLow'</span>, <span class="string">'fHigh'</span>, <span class="keyword">...</span>
+    <span class="string">'classification'</span>, <span class="string">'season'</span>, <span class="string">'snr'</span>, <span class="string">'signalLevel'</span>, <span class="string">'noiseLevel'</span>}), <span class="keyword">...</span>
+    outputFile);
+fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outputFile);
+fprintf(<span class="string">'Settings: snrType=spectrogramSlices, nfft=%d, nOverlap=%d\n'</span>, nfft, nOverlap);
+fprintf(<span class="string">'          freq=[%d %d] Hz, noiseDuration=%s, noiseDelay=%.1f s\n'</span>, <span class="keyword">...</span>
+    signalFrequencyBand(1), signalFrequencyBand(2), noiseDurationStrategy, noiseDelaySeconds);
+fprintf(<span class="string">'          useLurton=false, calibrated (loadRecorderMetaData(''%s''))\n'</span>, siteCode);
+</pre><pre class="codeoutput">
+Results saved to: C:\analysis\bsnr\examples\snr_abw_kerguelen2014_castro2024_results.csv
+Settings: snrType=spectrogramSlices, nfft=1024, nOverlap=870
+          freq=[25 29] Hz, noiseDuration=beforeAndAfter, noiseDelay=1.0 s
+          useLurton=false, calibrated (loadRecorderMetaData('Kerguelen2014'))
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% SNR of Antarctic blue whale calls — Kerguelen 2014 (Castro et al. 2024)
+%
+% Reproduces the seasonal SNR and noise level distributions shown in
+% Figure 5 of Castro et al. (2024), using bsnr's spectrogramSlices method
+% with calibrated acoustic levels.
+%
+% METHOD (from callDensityParams.m and BmZspectroParams.m)
+%   snrType       = 'spectrogramSlices'
+%   freq          = [25 29] Hz  (unit-A band)
+%   noiseDuration = 'beforeAndAfter'
+%   noiseDelay    = 1 s
+%   nfft          = 1024  (from BmZspectroParams: win=1024, SR=1000 Hz)
+%   nOverlap      = 870   (floor(1024 * 0.85))
+%   metadata      = loadRecorderMetaData('Kerguelen2014')
+%   formula       = simple power ratio: SNR = 10*log10(S/N)
+%
+% The paper SNR values were not published as supplemental data; Figure 5
+% shows seasonal violin distributions which this script reproduces.
+% A, B, and Z calls are pooled as ABZ following Castro et al. (2024).
+%
+% REFERENCE
+%   Castro et al. (2024). Beyond Counting Calls: Estimating Detection
+%   Probability for Antarctic Blue Whales. Frontiers in Marine Science.
+%   https://doi.org/10.3389/fmars.2024.1406678
+%
+% DATA
+%   Annotations: w:\annotatedLibrary\BAFAAL\Kerguelen2014\*.Bm.Ant-*selections.txt
+%   Recordings:  w:\annotatedLibrary\BAFAAL\Kerguelen2014\wav\
+%   Calibration: loadRecorderMetaData('Kerguelen2014') [longTermRecorders]
+
+%% User configuration
+% Edit the paths below to match your local installation.
+% Annotations are part of the IWC-SORP Annotated Library public download
+% (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI.
+% Calibration metadata requires loadRecorderMetaData() from the
+% longTermRecorders toolbox (contact acoustics@aad.gov.au).
+
+annotationRoot = 's:\work\annotatedLibrary\SORP\kerguelen2014\';
+soundFolder    = 's:\work\annotatedLibrary\SORP\kerguelen2014\wav\';
+siteCode       = 'Kerguelen2014';
+
+% STFT parameters from BmZspectroParams.m
+nfft     = 1024;
+nOverlap = floor(nfft * 0.85);   % 870 samples
+
+% SNR parameters matching callDensityParams.m
+signalFrequencyBand   = [25 29];  % Hz — unit-A band
+noiseDurationStrategy = 'beforeAndAfter';
+noiseDelaySeconds     = 1.0;
+
+% Call types — pooled as ABZ following Castro et al. (2024)
+callTypePattern = '*.Bm.Ant-*selections.txt';
+pooledCallLabel = 'ABZ';
+
+% Output verbosity
+showBsnrProgress = false;
+
+%% Suppress expected warnings
+
+warning('off', 'snrEstimate:nfftAutoSelected');
+warning('off', 'snrEstimate:nfftTruncation');
+warning('off', 'snrEstimate:nfftHighTruncation');
+warning('off', 'MATLAB:table:ModifiedAndSavedVarnames');
+
+
+%% Published values from Castro et al. (2024) Table/Figure 5
+% Noise level mean and std by season (dB re 1 µPa, mean PSD in [25-29] Hz band)
+paperNL.seasonOrder = {'summer', 'autumn', 'winter', 'spring', 'year'};
+paperNL.mean = [92.4, 96.8, 87.5, 81.0, 88.6];
+paperNL.std  = [ 2.6,  3.7,  3.5,  2.4,  5.9];
+
+%% Load calibration metadata
+
+fprintf('Loading calibration metadata for %s...\n', siteCode);
+recorderMetadata = loadRecorderMetaData(siteCode);
+fprintf('  Sensitivity: %.1f dB re V/µPa\n', recorderMetadata.hydroSensitivity_dB);
+fprintf('  ADC peak: %.1f V\n', recorderMetadata.adPeakVolt);
+
+%% Load annotations
+
+fprintf('\nLoading Raven selection tables...\n');
+ravenFileList = dir(fullfile(annotationRoot, callTypePattern));
+if isempty(ravenFileList)
+    error('No Raven selection tables found in %s', annotationRoot);
+end
+
+allDetections = table();
+for f = 1:numel(ravenFileList)
+    ravenFilePath = fullfile(ravenFileList(f).folder, ravenFileList(f).name);
+    % Infer classification from filename
+    if contains(ravenFileList(f).name, 'Ant-A')
+        callType = 'BmAntA';
+    elseif contains(ravenFileList(f).name, 'Ant-B')
+        callType = 'BmAntB';
+    elseif contains(ravenFileList(f).name, 'Ant-Z')
+        callType = 'BmAntZ';
+    else
+        callType = 'BmAnt';
+    end
+    detections = ravenTableToDetection(ravenFilePath, soundFolder, siteCode, callType);
+    if ~isempty(detections) && height(detections) > 0
+        fprintf('  %s: n=%d\n', callType, height(detections));
+        allDetections = [allDetections; detections]; %#ok<AGROW>
+    end
+end
+fprintf('  Total: n=%d\n', height(allDetections));
+
+%% Compute SNR
+
+fprintf('\nComputing SNR (spectrogramSlices, calibrated)...\n');
+snrParams = struct( ...
+    'snrType',       'spectrogramSlices', ...
+    'nfft',          nfft, ...
+    'nOverlap',      nOverlap, ...
+    'noiseDuration', noiseDurationStrategy, ...
+    'noiseDelay',    noiseDelaySeconds, ...
+    'freq',          signalFrequencyBand, ...
+    'useLurton',     false, ...
+    'metadata',      recorderMetadata, ...
+    'showClips',     false, ...
+    'verbose',       showBsnrProgress);
+
+snrResults = snrEstimate(allDetections, snrParams);
+
+allDetections.snr         = snrResults.snr;
+allDetections.signalLevel = snrResults.signalRMSdB;
+allDetections.noiseLevel  = snrResults.noiseRMSdB;
+
+% Convert band-integrated power to mean PSD level in band.
+% bsnr returns bandpower() which integrates PSD over [25-29] Hz (4 Hz bandwidth).
+% The paper reports mean PSD level: bandpower / bandwidth in dB.
+% 10*log10(bandwidth) = 10*log10(4) = 6.02 dB correction.
+bandwidthCorrection_dB    = 10 * log10(diff(signalFrequencyBand));
+allDetections.noiseLevel  = allDetections.noiseLevel  - bandwidthCorrection_dB;
+allDetections.signalLevel = allDetections.signalLevel - bandwidthCorrection_dB;
+
+%% Assign seasons (Southern Hemisphere)
+% summer: Dec-Feb, autumn: Mar-May, winter: Jun-Aug, spring: Sep-Nov
+
+detectionDatetime = datetime(allDetections.t0, 'ConvertFrom', 'datenum');
+allDetections.season = dt2season(detectionDatetime);
+
+%% Summary statistics by season
+
+seasonOrder  = {'summer', 'autumn', 'winter', 'spring', 'year'};
+seasonLabels = {'Summer', 'Autumn', 'Winter', 'Spring', 'Year'};
+
+fprintf('\n%-8s  %5s  %6s  %6s  %6s  %6s  %6s  %6s\n', ...
+    'Season', 'n', 'SNR_mn', 'SNR_med', 'NL_mn', 'NL_med', 'NL_paper', 'NL_diff');
+fprintf('%s\n', repmat('-', 1, 66));
+
+for s = 1:numel(seasonOrder)
+    if strcmp(seasonOrder{s}, 'year')
+        mask = isfinite(allDetections.snr);
+    else
+        mask = allDetections.season == seasonOrder{s} & isfinite(allDetections.snr);
+    end
+    snrSeason   = allDetections.snr(mask);
+    nlSeason    = allDetections.noiseLevel(mask);
+    paperNLmean = paperNL.mean(strcmp(paperNL.seasonOrder, seasonOrder{s}));
+    nlDiff      = mean(nlSeason) - paperNLmean;
+    fprintf('%-8s  %5d  %6.1f  %6.1f  %6.1f  %6.1f  %6.1f  %+6.2f\n', ...
+        seasonOrder{s}, sum(mask), ...
+        mean(snrSeason), median(snrSeason), ...
+        mean(nlSeason), median(nlSeason), paperNLmean, nlDiff);
+end
+
+%% Figure: seasonal SNR and NL distributions (replicates Figure 5)
+
+seasonColours = [0.85 0.33 0.10;   % summer  — red
+                 0.75 0.73 0.05;   % autumn  — olive
+                 0.17 0.63 0.44;   % winter  — teal
+                 0.30 0.75 0.93;   % spring  — sky blue
+                 0.72 0.53 0.90];  % year    — lavender
+
+fig1 = figure('Name', 'Castro 2024 Figure 5 — SNR and NL by season', ...
+    'Units', 'pixels', 'Position', [50 50 500 700]);
+tlo1 = tiledlayout(fig1, 2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tlo1, sprintf('Kerguelen 2014 — ABZ calls, %d-%d Hz (Castro et al. 2024)\n▲ = paper mean ± SD (Castro et al. 2024)', ...
+    signalFrequencyBand(1), signalFrequencyBand(2)), 'FontWeight', 'bold');
+
+for panel = 1:2
+    nexttile(tlo1);
+    hold on;
+
+    for s = 1:numel(seasonOrder)
+        if strcmp(seasonOrder{s}, 'year')
+            mask = isfinite(allDetections.snr);
+        else
+            mask = allDetections.season == seasonOrder{s} & isfinite(allDetections.snr);
+        end
+
+        if panel == 1
+            vals = allDetections.noiseLevel(mask);
+        else
+            vals = allDetections.snr(mask);
+        end
+        vals = vals(isfinite(vals));
+        if numel(vals) < 5, continue; end
+
+        % Violin using ksdensity
+        [ksDensity, ksGrid] = ksdensity(vals, 'NumPoints', 200);
+        ksDensity = ksDensity / max(ksDensity) * 0.35;  % normalise width
+        xPos = s;
+        fill([xPos + ksDensity, xPos - fliplr(ksDensity)], ...
+             [ksGrid, fliplr(ksGrid)], ...
+             seasonColours(s,:), 'FaceAlpha', 0.15, ...
+             'EdgeColor', seasonColours(s,:), 'LineWidth', 1.2, ...
+             'HandleVisibility', 'off');
+
+        % Mean and std error bars
+        valMean = mean(vals);
+        valStd  = std(vals);
+        plot(xPos, valMean, 'o', 'MarkerSize', 7, ...
+            'MarkerFaceColor', seasonColours(s,:), ...
+            'MarkerEdgeColor', seasonColours(s,:), ...
+            'HandleVisibility', 'off');
+        plot([xPos xPos], valMean + [-1 1]*valStd, 'k-', 'LineWidth', 1.5, ...
+            'HandleVisibility', 'off');
+        plot(xPos + [-0.12 0.12], [valMean-valStd valMean-valStd], 'k-', 'LineWidth', 1.5, ...
+            'HandleVisibility', 'off');
+        plot(xPos + [-0.12 0.12], [valMean+valStd valMean+valStd], 'k-', 'LineWidth', 1.5, ...
+            'HandleVisibility', 'off');
+    end
+    % Overlay paper NL mean ± std for NL panel
+    if panel == 1
+        for s = 1:numel(seasonOrder)
+            pMean = paperNL.mean(strcmp(paperNL.seasonOrder, seasonOrder{s}));
+            pStd  = paperNL.std(strcmp(paperNL.seasonOrder, seasonOrder{s}));
+            plot(s + 0.25, pMean, 'k^', 'MarkerSize', 6, 'MarkerFaceColor', 'k', ...
+                'HandleVisibility', 'off');
+            plot([s+0.25 s+0.25], pMean + [-1 1]*pStd, 'k:', 'LineWidth', 1.5, ...
+                'HandleVisibility', 'off');
+        end
+    end
+    hold off;
+
+    set(gca, 'XTick', 1:numel(seasonOrder), 'XTickLabel', seasonLabels, ...
+        'XTickLabelRotation', 30);
+    if panel == 1
+        ylabel('Noise Level (dB re 1 µPa RMS)');
+    else
+        ylabel('Signal-to-noise ratio (dB)');
+        xline(0, 'kREPLACE_WITH_DASH_DASH', 'LineWidth', 0.5, 'HandleVisibility', 'off');
+    end
+    grid on;
+    xlim([0.5 numel(seasonOrder)+0.5]);
+end
+
+%% Save results
+
+outputFile = fullfile(fileparts(mfilename('fullpath')), ...
+    'snr_abw_kerguelen2014_castro2024_results.csv');
+writetable(allDetections(:, {'t0', 'duration', 'fLow', 'fHigh', ...
+    'classification', 'season', 'snr', 'signalLevel', 'noiseLevel'}), ...
+    outputFile);
+fprintf('\nResults saved to: %s\n', outputFile);
+fprintf('Settings: snrType=spectrogramSlices, nfft=%d, nOverlap=%d\n', nfft, nOverlap);
+fprintf('          freq=[%d %d] Hz, noiseDuration=%s, noiseDelay=%.1f s\n', ...
+    signalFrequencyBand(1), signalFrequencyBand(2), noiseDurationStrategy, noiseDelaySeconds);
+fprintf('          useLurton=false, calibrated (loadRecorderMetaData(''%s''))\n', siteCode);
+
+##### SOURCE END #####
+--></body></html>

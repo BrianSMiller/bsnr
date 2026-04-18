@@ -131,8 +131,7 @@ See `examples/bsnr_gallery.m` for illustrated examples covering all methods, dis
 
 ```matlab
 cd C:\analysis\bsnr\examples
-publish('bsnr_gallery.m', 'format', 'html', 'outputDir', '..\docs')
-movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
+publishDocs
 ```
 
 Three published-data examples demonstrate bsnr on real datasets and compare against original paper SNR values:
@@ -191,6 +190,7 @@ bsnr/
 │   └── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
 ├── examples/
 │   ├── bsnr_gallery.m           Gallery of examples (publish to HTML)
+│   ├── publishDocs.m            Publish all examples to docs/ for GitHub Pages
 │   ├── snr_dcalls_casey2019.m   D-call SNR — Casey 2019 test dataset (Miller et al. 2022)
 │   ├── snr_abw_sorp_library.m   ABW A/B/Z SNR — IWC-SORP Annotated Library (Miller et al. 2021)
 │   ├── snr_abw_kerguelen2014_castro2024.m  ABW seasonal SNR/NL — Kerguelen 2014 (Castro et al. 2024)

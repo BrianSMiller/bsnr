@@ -16,7 +16,7 @@
 %   nfft       = 2^nextpow2(floor(duration/nSlices/overlap * sampleRate))
 %                (derived per annotation from its duration)
 %   freq       = per-annotation analyst bounds (annotation.freq)
-%   formula    = Lurton (2010) eq. 6.26: SNR = 10*log10(abs((S-N)^2/noiseVar))
+%   formula    = Lurton (2010, eq. 6.26): SNR = 10*log10(abs((S-N)^2/noiseVar))
 %
 % This script offers a reproducible alternative using bsnr with fixed
 % noise window placement (beforeAndAfter, noiseDelay=1 s), fixed frequency
@@ -45,7 +45,12 @@
 %   *_BmAntABZ_snr.csv: paper SNR values (from original project folder;
 %                        not part of public download)
 
-%% Configuration
+%% User configuration
+% Edit the paths below to match your local installation.
+% Annotations are part of the IWC-SORP Annotated Library public download
+% (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI.
+% Paper SNR files (*_BmAntABZ_snr.csv) are from the original project folder
+% and are not publicly available; set paperSNRFolder = '' to skip comparison.
 
 % Root folder containing site subfolders with WAV files
 soundLibraryRoot = 'S:\work\annotatedLibrary\SORP\';
