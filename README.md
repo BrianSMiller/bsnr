@@ -144,7 +144,7 @@ Three published-data examples demonstrate bsnr on real datasets and compare agai
 | `snr_abw_sorp_library.m` | ABW A/B/Z calls, 8 sites, IWC-SORP Annotated Library | Miller et al. (2021) |
 | `snr_abw_kerguelen2014_castro2024.m` | ABW A/B/Z seasonal SNR and NL, Kerguelen 2014 | Castro et al. (2024) |
 
-Each script documents the original paper's SNR method, explains what can and cannot be reproduced exactly, and provides a fully reproducible bsnr alternative.
+Each script documents the original paper's SNR method, explains the sources of discrepancy between the original and bsnr estimates, and provides a consistent bsnr implementation for future use.
 
 ## Running Tests
 
@@ -200,6 +200,17 @@ bsnr/
 └── tests/
     └── run_tests.m                   Test suite
 ```
+
+## Roadmap
+
+bsnr is a working tool in active use, not a finished standard. Current priorities
+include a Common Ground example (Miller et al., in press, *Methods in Ecology and
+Evolution*) and output table improvements for reproducibility.
+
+Longer-term, we aim to align input and output formats with emerging standards for
+passive acoustic metadata — including the ASA specification for recording and
+detection metadata — to improve interoperability with PAMGuard, Raven Pro, and
+other tools in the bioacoustics ecosystem.
 
 ## Acknowledgements
 

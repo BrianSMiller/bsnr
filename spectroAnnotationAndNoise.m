@@ -36,7 +36,7 @@ function spectroAnnotationAndNoise( ...
 %   metadata      Calibration metadata struct, or [].
 %
 % TODO(annotation-interface): Replace direct field access on detection and
-% noise with standardised accessor calls once that refactor is complete.
+% noise window placement.
 %
 % Brian Miller, Australian Antarctic Division, 2017.
 % Refactored 2025.

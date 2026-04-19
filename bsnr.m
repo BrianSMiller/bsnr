@@ -126,6 +126,13 @@
 %
 %     cd examples
 %     publishDocs
+%
+% ROADMAP
+%
+%   bsnr is a working tool in active use, not a finished standard.
+%   Future work includes alignment with the ASA specification for passive
+%   acoustic metadata (detections, recordings, and output), to improve
+%   interoperability with PAMGuard, Raven Pro, and related tools.
 %     movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
 %
 %   Published-data examples with paper comparisons:

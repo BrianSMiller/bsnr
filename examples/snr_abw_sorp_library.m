@@ -159,19 +159,13 @@ for s = 1:nSites
         % Match to paper SNR values by detection start time
         snrPaper = matchPaperSNR(detections.t0, callType, paperSNRTable, hasPaperSNR);
 
-        % Per call-type diagnostics
+        % Correlation with paper SNR values
         validBsnr  = isfinite(snrBsnr);
         validPaper = isfinite(snrPaper);
         validBoth  = validBsnr & validPaper;
         r = NaN;
         if sum(validBoth) > 5
             r = corr(snrBsnr(validBoth), snrPaper(validBoth));
-        end
-        fprintf('    bsnr:  median=%.1f dB  (n=%d, NaN=%d)\n', ...
-            median(snrBsnr(validBsnr)), sum(validBsnr), sum(~validBsnr));
-        if any(validPaper)
-            fprintf('    paper: median=%.1f dB  r=%.3f\n', ...
-                median(snrPaper(validPaper)), r);
         end
 
         % Accumulate into results table
