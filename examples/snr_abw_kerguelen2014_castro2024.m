@@ -16,14 +16,14 @@
 %     https://data.aad.gov.au/metadata/AcousticTrends_BlueFinLibrary
 %     https://doi.org/10.26179/5e6056035c01b
 %   Calibration: loadRecorderMetaData('Kerguelen2014') [longTermRecorders]
-%                Contact acoustics@aad.gov.au for access.
+%                Contact aadcwebqueries@aad.gov.au for access.
 
 %% User configuration
 % Edit the paths below to match your local installation.
 % Annotations are part of the IWC-SORP Annotated Library public download
 % (doi:10.26179/5e6056035c01b). Recordings are available from the same DOI.
 % Calibration metadata requires loadRecorderMetaData() from the
-% longTermRecorders toolbox (contact acoustics@aad.gov.au).
+% longTermRecorders toolbox (contact aadcwebqueries@aad.gov.au).
 
 annotationRoot = 's:\work\annotatedLibrary\SORP\kerguelen2014\';
 soundFolder    = 's:\work\annotatedLibrary\SORP\kerguelen2014\wav\';
