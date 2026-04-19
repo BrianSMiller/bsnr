@@ -113,7 +113,7 @@ fprintf(<span class="string">'  Freq bounds: median [%.0f-%.0f] Hz, range [%.0f-
 </pre><h2 id="3">Compute SNR &#8212; four configurations</h2><pre class="codeinput">baseParams = struct( <span class="keyword">...</span>
     <span class="string">'nfft'</span>,          nfft, <span class="keyword">...</span>
     <span class="string">'nOverlap'</span>,      nOverlap, <span class="keyword">...</span>
-    <span class="string">'noiseDuration'</span>, <span class="string">'beforeAndAfter'</span>, <span class="keyword">...</span>
+    <span class="string">'noiseLocation'</span>, <span class="string">'beforeAndAfter'</span>, <span class="keyword">...</span>
     <span class="string">'noiseDelay'</span>,    0.5, <span class="keyword">...</span>
     <span class="string">'showClips'</span>,     false);
 
@@ -137,37 +137,37 @@ snrResults = cell(nConfigs, 1);
 
 paperSNR = chTP.snrLurton;
 </pre><pre class="codeoutput">Computing A. spectrogram, simple...
-SNR analysis started:  19-Apr-2026 23:14:46
+SNR analysis started:  19-Apr-2026 23:47:25
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:14:48
+SNR analysis completed: 19-Apr-2026 23:47:26
 Computing B. spectrogramSlices, simple...
-SNR analysis started:  19-Apr-2026 23:14:48
+SNR analysis started:  19-Apr-2026 23:47:26
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:14:49
+SNR analysis completed: 19-Apr-2026 23:47:27
 Computing C. spectrogram, Lurton...
-SNR analysis started:  19-Apr-2026 23:14:49
+SNR analysis started:  19-Apr-2026 23:47:27
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:14:50
+SNR analysis completed: 19-Apr-2026 23:47:28
 Computing D. spectrogramSlices, Lurton...
-SNR analysis started:  19-Apr-2026 23:14:50
+SNR analysis started:  19-Apr-2026 23:47:28
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:14:51
+SNR analysis completed: 19-Apr-2026 23:47:29
 </pre><h2 id="4">Summary statistics</h2><pre class="codeinput">allSNR    = [snrResults; {paperSNR}];
 allLabels = [configs(:,3); {<span class="string">'E. paper snrLurton'</span>}];
 nAll      = numel(allSNR);
@@ -279,11 +279,11 @@ resultsTable = table( <span class="keyword">...</span>
     <span class="string">'snrLurton_paper'</span>});
 writetable(resultsTable, outFile);
 fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outFile);
-fprintf(<span class="string">'Settings: nfft=%d, nOverlap=%d, noiseDuration=%s, noiseDelay=%.1f\n'</span>, <span class="keyword">...</span>
-    nfft, nOverlap, baseParams.noiseDuration, baseParams.noiseDelay);
+fprintf(<span class="string">'Settings: nfft=%d, nOverlap=%d, noiseLocation=%s, noiseDelay=%.1f\n'</span>, <span class="keyword">...</span>
+    nfft, nOverlap, baseParams.noiseLocation, baseParams.noiseDelay);
 </pre><pre class="codeoutput">
 Results saved to: C:\analysis\bsnr\examples\snr_dcalls_casey2019_results.csv
-Settings: nfft=256, nOverlap=192, noiseDuration=beforeAndAfter, noiseDelay=0.5
+Settings: nfft=256, nOverlap=192, noiseLocation=beforeAndAfter, noiseDelay=0.5
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% SNR of Antarctic blue whale D-calls — Casey 2019
@@ -359,7 +359,7 @@ fprintf('  Freq bounds: median [%.0f-%.0f] Hz, range [%.0f-%.0f] Hz\n', ...
 baseParams = struct( ...
     'nfft',          nfft, ...
     'nOverlap',      nOverlap, ...
-    'noiseDuration', 'beforeAndAfter', ...
+    'noiseLocation', 'beforeAndAfter', ...
     'noiseDelay',    0.5, ...
     'showClips',     false);
 
@@ -494,8 +494,8 @@ resultsTable = table( ...
     'snrLurton_paper'});
 writetable(resultsTable, outFile);
 fprintf('\nResults saved to: %s\n', outFile);
-fprintf('Settings: nfft=%d, nOverlap=%d, noiseDuration=%s, noiseDelay=%.1f\n', ...
-    nfft, nOverlap, baseParams.noiseDuration, baseParams.noiseDelay);
+fprintf('Settings: nfft=%d, nOverlap=%d, noiseLocation=%s, noiseDelay=%.1f\n', ...
+    nfft, nOverlap, baseParams.noiseLocation, baseParams.noiseDelay);
 
 ##### SOURCE END #####
 --></body></html>

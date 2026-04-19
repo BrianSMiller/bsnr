@@ -88,8 +88,8 @@
 %   By default, the noise window is placed symmetrically before and after
 %   the detection with a 0.5 s gap (params.noiseDelay = 0.5). Alternatives:
 %
-%   params.noiseDuration = 'before';      % single window before signal
-%   params.noiseDuration = '25sBefore';   % 25 s window before detection
+%   params.noiseLocation = 'before';      % single window before signal
+%   params.noiseLocation = '25sBefore';   % 25 s window before detection
 %   params.noiseDelay    = 1.0;           % gap in seconds
 %
 % BATCH PROCESSING

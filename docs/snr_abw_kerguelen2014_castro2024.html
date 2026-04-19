@@ -79,7 +79,7 @@ nOverlap = floor(nfft * 0.85);   <span class="comment">% 870 samples</span>
 
 <span class="comment">% SNR parameters matching callDensityParams.m</span>
 signalFrequencyBand   = [25 29];  <span class="comment">% Hz &#8212; unit-A band</span>
-noiseDurationStrategy = <span class="string">'beforeAndAfter'</span>;
+noiseLocationStrategy = <span class="string">'beforeAndAfter'</span>;
 noiseDelaySeconds     = 1.0;
 
 <span class="comment">% Call types &#8212; pooled as ABZ following Castro et al. (2024)</span>
@@ -139,7 +139,7 @@ snrParams = struct( <span class="keyword">...</span>
     <span class="string">'snrType'</span>,       <span class="string">'spectrogramSlices'</span>, <span class="keyword">...</span>
     <span class="string">'nfft'</span>,          nfft, <span class="keyword">...</span>
     <span class="string">'nOverlap'</span>,      nOverlap, <span class="keyword">...</span>
-    <span class="string">'noiseDuration'</span>, noiseDurationStrategy, <span class="keyword">...</span>
+    <span class="string">'noiseLocation'</span>, noiseLocationStrategy, <span class="keyword">...</span>
     <span class="string">'noiseDelay'</span>,    noiseDelaySeconds, <span class="keyword">...</span>
     <span class="string">'freq'</span>,          signalFrequencyBand, <span class="keyword">...</span>
     <span class="string">'useLurton'</span>,     false, <span class="keyword">...</span>
@@ -320,7 +320,7 @@ nOverlap = floor(nfft * 0.85);   % 870 samples
 
 % SNR parameters matching callDensityParams.m
 signalFrequencyBand   = [25 29];  % Hz — unit-A band
-noiseDurationStrategy = 'beforeAndAfter';
+noiseLocationStrategy = 'beforeAndAfter';
 noiseDelaySeconds     = 1.0;
 
 % Call types — pooled as ABZ following Castro et al. (2024)
@@ -387,7 +387,7 @@ snrParams = struct( ...
     'snrType',       'spectrogramSlices', ...
     'nfft',          nfft, ...
     'nOverlap',      nOverlap, ...
-    'noiseDuration', noiseDurationStrategy, ...
+    'noiseLocation', noiseLocationStrategy, ...
     'noiseDelay',    noiseDelaySeconds, ...
     'freq',          signalFrequencyBand, ...
     'useLurton',     false, ...

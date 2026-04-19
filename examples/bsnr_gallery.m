@@ -95,7 +95,7 @@ preBuffers      = [1, 1, 2];
 for s = 1:3
     nexttile(tloNW);
     paramsNW               = makeParams('spectrogram', fixtureSP(noiseWinSR, noiseWinFreq));
-    paramsNW.noiseDuration = noiseStrategies{s};
+    paramsNW.noiseLocation = noiseStrategies{s};
     paramsNW.noiseDelay    = 0.5;
     sp      = fixtureSP(noiseWinSR, noiseWinFreq);
     sp.pre  = preBuffers(s);
@@ -619,7 +619,7 @@ end
 
 function params = makeParams(snrType, plotDisp)
 params = struct('snrType', snrType, 'showClips', true, 'pauseAfterPlot', false, ...
-    'noiseDuration', 'beforeAndAfter', 'noiseDelay', 0.5);
+    'noiseLocation', 'beforeAndAfter', 'noiseDelay', 0.5);
 if ~isempty(plotDisp)
     params.plotParams = plotDisp;
 end

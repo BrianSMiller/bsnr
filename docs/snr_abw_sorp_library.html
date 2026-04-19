@@ -93,7 +93,7 @@ overlapFraction = 0.85;
 
 <span class="comment">% Noise window &#8212; fixed placement to ensure reproducibility</span>
 <span class="comment">% (original used randomBeforeAndAfter with noiseDelay=1 s)</span>
-noiseDurationStrategy = <span class="string">'beforeAndAfter'</span>;
+noiseLocationStrategy = <span class="string">'beforeAndAfter'</span>;
 noiseDelaySeconds     = 1.0;
 
 <span class="comment">% Frequency band &#8212; fixed unit-A band used throughout Miller et al. (2021)</span>
@@ -178,7 +178,7 @@ fprintf(<span class="string">'  %d sites retained\n'</span>, nSites);
             <span class="string">'snrType'</span>,       <span class="string">'spectrogram'</span>, <span class="keyword">...</span>
             <span class="string">'nfft'</span>,          nfft, <span class="keyword">...</span>
             <span class="string">'nOverlap'</span>,      nOverlap, <span class="keyword">...</span>
-            <span class="string">'noiseDuration'</span>, noiseDurationStrategy, <span class="keyword">...</span>
+            <span class="string">'noiseLocation'</span>, noiseLocationStrategy, <span class="keyword">...</span>
             <span class="string">'noiseDelay'</span>,    noiseDelaySeconds, <span class="keyword">...</span>
             <span class="string">'freq'</span>,          signalFrequencyBand, <span class="keyword">...</span>
             <span class="string">'useLurton'</span>,     true, <span class="keyword">...</span>
@@ -275,7 +275,7 @@ hold <span class="string">off</span>;
 xline(0, <span class="string">'k-'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
 ylabel(<span class="string">'Cumulative proportion'</span>);
 title(sprintf(<span class="string">'bsnr  (%s, noiseDelay=%.0f s, Lurton, [%d-%d] Hz)'</span>, <span class="keyword">...</span>
-    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2)));
+    noiseLocationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2)));
 legend(<span class="string">'Location'</span>, <span class="string">'northwest'</span>, <span class="string">'FontSize'</span>, 7);
 grid <span class="string">on</span>; xlim([-40 40]); ylim([0 1]);
 
@@ -329,13 +329,13 @@ grid <span class="string">on</span>;
     <span class="string">'snr_abw_sorp_library_results.csv'</span>);
 writetable(allResults, outputFile);
 fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outputFile);
-fprintf(<span class="string">'Settings: noiseDuration=%s, noiseDelay=%.1f s, freq=[%d %d] Hz, useLurton=true\n'</span>, <span class="keyword">...</span>
-    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2));
+fprintf(<span class="string">'Settings: noiseLocation=%s, noiseDelay=%.1f s, freq=[%d %d] Hz, useLurton=true\n'</span>, <span class="keyword">...</span>
+    noiseLocationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2));
 fprintf(<span class="string">'nfft derived per site from sample rate, nSlicesTarget=%d, overlapFraction=%.2f\n'</span>, <span class="keyword">...</span>
     nSlicesTarget, overlapFraction);
 </pre><pre class="codeoutput">
 Results saved to: C:\analysis\bsnr\examples\snr_abw_sorp_library_results.csv
-Settings: noiseDuration=beforeAndAfter, noiseDelay=1.0 s, freq=[24 29] Hz, useLurton=true
+Settings: noiseLocation=beforeAndAfter, noiseDelay=1.0 s, freq=[24 29] Hz, useLurton=true
 nfft derived per site from sample rate, nSlicesTarget=30, overlapFraction=0.85
 </pre><h2 id="9">Local helpers</h2><pre class="codeinput"><span class="keyword">function</span> paperSNRTable = loadPaperSNR(siteFolder, paperSNRFolder)
 <span class="comment">% Load the paper SNR CSV for a site, matched by folder name (case-insensitive).</span>
@@ -468,7 +468,7 @@ overlapFraction = 0.85;
 
 % Noise window — fixed placement to ensure reproducibility
 % (original used randomBeforeAndAfter with noiseDelay=1 s)
-noiseDurationStrategy = 'beforeAndAfter';
+noiseLocationStrategy = 'beforeAndAfter';
 noiseDelaySeconds     = 1.0;
 
 % Frequency band — fixed unit-A band used throughout Miller et al. (2021)
@@ -557,7 +557,7 @@ for s = 1:nSites
             'snrType',       'spectrogram', ...
             'nfft',          nfft, ...
             'nOverlap',      nOverlap, ...
-            'noiseDuration', noiseDurationStrategy, ...
+            'noiseLocation', noiseLocationStrategy, ...
             'noiseDelay',    noiseDelaySeconds, ...
             'freq',          signalFrequencyBand, ...
             'useLurton',     true, ...
@@ -646,7 +646,7 @@ hold off;
 xline(0, 'k-', 'LineWidth', 1.5, 'HandleVisibility', 'off');
 ylabel('Cumulative proportion');
 title(sprintf('bsnr  (%s, noiseDelay=%.0f s, Lurton, [%d-%d] Hz)', ...
-    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2)));
+    noiseLocationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2)));
 legend('Location', 'northwest', 'FontSize', 7);
 grid on; xlim([-40 40]); ylim([0 1]);
 
@@ -706,8 +706,8 @@ outputFile = fullfile(fileparts(mfilename('fullpath')), ...
     'snr_abw_sorp_library_results.csv');
 writetable(allResults, outputFile);
 fprintf('\nResults saved to: %s\n', outputFile);
-fprintf('Settings: noiseDuration=%s, noiseDelay=%.1f s, freq=[%d %d] Hz, useLurton=true\n', ...
-    noiseDurationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2));
+fprintf('Settings: noiseLocation=%s, noiseDelay=%.1f s, freq=[%d %d] Hz, useLurton=true\n', ...
+    noiseLocationStrategy, noiseDelaySeconds, signalFrequencyBand(1), signalFrequencyBand(2));
 fprintf('nfft derived per site from sample rate, nSlicesTarget=%d, overlapFraction=%.2f\n', ...
     nSlicesTarget, overlapFraction);
 

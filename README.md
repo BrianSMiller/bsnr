@@ -102,9 +102,9 @@ metadata.frontEndGain_dB       % frontend gain at each frequency (dB)
 By default, noise is measured symmetrically around the detection with a 0.5 s gap. Common alternatives:
 
 ```matlab
-params.noiseDuration = 'before';      % single window before signal
-params.noiseDuration = '25sBefore';   % 25 s window before detection
-params.noiseDelay    = 1.0;           % gap in seconds (default 0.5)
+params.noiseLocation   = 'before';   % single window before signal
+params.noiseLocation_s = 25;         % 25 s window (default: annotation duration)
+params.noiseDelay      = 1.0;        % gap in seconds (default 0.5)
 ```
 
 ## References

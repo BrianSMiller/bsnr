@@ -47,12 +47,18 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                  Default: 30.
 %              .noiseDelay         Gap in seconds between signal and noise
 %                                  windows. Default: 0.5 s.
-%              .noiseDuration      Noise window placement strategy:
+%              .noiseLocation      Noise window placement strategy:
 %                                    'beforeAndAfter'       (default)
 %                                    'before'
-%                                    '25sBefore'
-%                                    '30sBeforeAndAfter'
 %                                    'randomBeforeAndAfter'
+%                                  Legacy aliases (use noiseLocation_s instead):
+%                                    '25sBefore'            (before, 25 s)
+%                                    '30sBeforeAndAfter'    (beforeAndAfter, 30 s)
+%              .noiseLocation_s    Noise window duration in seconds.
+%                                  Default: [] (match annotation duration).
+%                                  Example: params.noiseLocation_s = 60
+%                                  sets a 60 s window regardless of call
+%                                  duration, with placement from noiseLocation.
 %              .freq               Override [lowHz highHz] frequency band.
 %                                  Falls back to annot.freq if absent.
 %              .snrType            Power estimation method:
@@ -631,8 +637,11 @@ end
 if ~isfield(params, 'noiseDelay') || isempty(params.noiseDelay)
     params.noiseDelay = 0.5;   % 0.5 s gap between signal and noise windows
 end
-if ~isfield(params, 'noiseDuration') || isempty(params.noiseDuration)
-    params.noiseDuration = 'beforeAndAfter';
+if ~isfield(params, 'noiseLocation') || isempty(params.noiseLocation)
+    params.noiseLocation = 'beforeAndAfter';
+end
+if ~isfield(params, 'noiseLocation_s') || isempty(params.noiseLocation_s)
+    params.noiseLocation_s = [];   % empty = match annotation duration
 end
 if ~isfield(params, 'snrType') || isempty(params.snrType)
     params.snrType = 'spectrogram';
@@ -690,31 +699,39 @@ function [noise, excludeTimes] = buildNoiseWindow(annot, params)
 noise        = annot;
 excludeTimes = [];
 
-switch params.noiseDuration
+% Resolve noise window duration. params.noiseLocation_s sets it explicitly.
+% Legacy named cases ('25sBefore', '30sBeforeAndAfter') set it implicitly
+% and are mapped to their base strategy. Default: match annotation duration.
+noiseDur_s       = params.noiseLocation_s;
+noisePlacement   = params.noiseLocation;
+
+switch noisePlacement
+    case '25sBefore'
+        if isempty(noiseDur_s), noiseDur_s = 25; end
+        noisePlacement = 'before';
+    case '30sBeforeAndAfter'
+        if isempty(noiseDur_s), noiseDur_s = 30; end
+        noisePlacement = 'beforeAndAfter';
+end
+
+if isempty(noiseDur_s)
+    noiseDur_s = annot.duration;
+end
+
+switch noisePlacement
     case 'before'
         noise.tEnd = annot.t0   - params.noiseDelay / 86400;
-        noise.t0   = noise.tEnd - annot.duration    / 86400;
-
-    case '25sBefore'
-        % 25 s window before the detection - as requested by Franciele
-        % Castro for SORP ATWG post-doc analysis.
-        noise.tEnd = annot.t0   - params.noiseDelay / 86400;
-        noise.t0   = noise.tEnd - 25               / 86400;
-
-    case '30sBeforeAndAfter'
-        noise.t0   = annot.t0   - (30 + params.noiseDelay) / 86400;
-        noise.tEnd = annot.tEnd + (30 + params.noiseDelay) / 86400;
-        excludeTimes = [annot.t0 annot.tEnd] + params.noiseDelay * ([-1 1] / 86400);
+        noise.t0   = noise.tEnd - noiseDur_s        / 86400;
 
     case 'randomBeforeAndAfter'
         randDelay  = rand * params.noiseDelay;
-        noise.t0   = annot.t0   - (0.5 * annot.duration + randDelay) / 86400;
-        noise.tEnd = annot.tEnd + (0.5 * annot.duration + randDelay) / 86400;
+        noise.t0   = annot.t0   - (0.5 * noiseDur_s + randDelay) / 86400;
+        noise.tEnd = annot.tEnd + (0.5 * noiseDur_s + randDelay) / 86400;
         excludeTimes = [annot.t0 annot.tEnd] + randDelay * ([-1 1] / 86400);
 
     otherwise % 'beforeAndAfter' (default)
-        noise.t0   = annot.t0   - (0.5 * annot.duration + params.noiseDelay) / 86400;
-        noise.tEnd = annot.tEnd + (0.5 * annot.duration + params.noiseDelay) / 86400;
+        noise.t0   = annot.t0   - (0.5 * noiseDur_s + params.noiseDelay) / 86400;
+        noise.tEnd = annot.tEnd + (0.5 * noiseDur_s + params.noiseDelay) / 86400;
         excludeTimes = [annot.t0 annot.tEnd] + params.noiseDelay * ([-1 1] / 86400);
 end
 
