@@ -273,21 +273,14 @@ title(tlo1, sprintf(<span class="string">'Kerguelen 2014 &#8212; ABZ calls, %d-%
     grid <span class="string">on</span>;
     xlim([0.5 numel(seasonOrder)+0.5]);
 <span class="keyword">end</span>
-</pre><img vspace="5" hspace="5" src="snr_abw_kerguelen2014_castro2024_01.png" alt=""> <img vspace="5" hspace="5" src="snr_abw_kerguelen2014_castro2024_02.png" alt=""> <h2 id="10">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+</pre><img vspace="5" hspace="5" src="snr_abw_kerguelen2014_castro2024_01.png" alt=""> <h2 id="10">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_abw_kerguelen2014_castro2024_results.csv'</span>);
 writetable(allDetections(:, {<span class="string">'t0'</span>, <span class="string">'duration'</span>, <span class="string">'fLow'</span>, <span class="string">'fHigh'</span>, <span class="keyword">...</span>
     <span class="string">'classification'</span>, <span class="string">'season'</span>, <span class="string">'snr'</span>, <span class="string">'signalLevel'</span>, <span class="string">'noiseLevel'</span>}), <span class="keyword">...</span>
     outputFile);
 fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outputFile);
-fprintf(<span class="string">'Settings: snrType=spectrogramSlices, nfft=%d, nOverlap=%d\n'</span>, nfft, nOverlap);
-fprintf(<span class="string">'          freq=[%d %d] Hz, noiseDuration=%s, noiseDelay=%.1f s\n'</span>, <span class="keyword">...</span>
-    signalFrequencyBand(1), signalFrequencyBand(2), noiseDurationStrategy, noiseDelaySeconds);
-fprintf(<span class="string">'          useLurton=false, calibrated (loadRecorderMetaData(''%s''))\n'</span>, siteCode);
 </pre><pre class="codeoutput">
 Results saved to: C:\analysis\bsnr\examples\snr_abw_kerguelen2014_castro2024_results.csv
-Settings: snrType=spectrogramSlices, nfft=1024, nOverlap=870
-          freq=[25 29] Hz, noiseDuration=beforeAndAfter, noiseDelay=1.0 s
-          useLurton=false, calibrated (loadRecorderMetaData('Kerguelen2014'))
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% SNR of Antarctic blue whale calls — Kerguelen 2014 (Castro et al. 2024)
@@ -537,10 +530,7 @@ writetable(allDetections(:, {'t0', 'duration', 'fLow', 'fHigh', ...
     'classification', 'season', 'snr', 'signalLevel', 'noiseLevel'}), ...
     outputFile);
 fprintf('\nResults saved to: %s\n', outputFile);
-fprintf('Settings: snrType=spectrogramSlices, nfft=%d, nOverlap=%d\n', nfft, nOverlap);
-fprintf('          freq=[%d %d] Hz, noiseDuration=%s, noiseDelay=%.1f s\n', ...
-    signalFrequencyBand(1), signalFrequencyBand(2), noiseDurationStrategy, noiseDelaySeconds);
-fprintf('          useLurton=false, calibrated (loadRecorderMetaData(''%s''))\n', siteCode);
+
 
 ##### SOURCE END #####
 --></body></html>

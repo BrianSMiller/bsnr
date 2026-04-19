@@ -137,7 +137,7 @@ snrResults = cell(nConfigs, 1);
 
 paperSNR = chTP.snrLurton;
 </pre><pre class="codeoutput">Computing A. spectrogram, simple...
-SNR analysis started:  19-Apr-2026 09:48:33
+SNR analysis started:  19-Apr-2026 23:04:20
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
@@ -145,31 +145,31 @@ Progress:
  Starting parallel pool (parpool) using the 'Processes' profile ...
 Connected to the parallel pool (number of workers: 31).
 ###################################################
-SNR analysis completed: 19-Apr-2026 09:49:25
+SNR analysis completed: 19-Apr-2026 23:05:11
 Computing B. spectrogramSlices, simple...
-SNR analysis started:  19-Apr-2026 09:49:25
+SNR analysis started:  19-Apr-2026 23:05:11
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 09:49:26
+SNR analysis completed: 19-Apr-2026 23:05:13
 Computing C. spectrogram, Lurton...
-SNR analysis started:  19-Apr-2026 09:49:26
+SNR analysis started:  19-Apr-2026 23:05:13
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 09:49:27
+SNR analysis completed: 19-Apr-2026 23:05:14
 Computing D. spectrogramSlices, Lurton...
-SNR analysis started:  19-Apr-2026 09:49:27
+SNR analysis started:  19-Apr-2026 23:05:14
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 09:49:28
+SNR analysis completed: 19-Apr-2026 23:05:15
 </pre><h2 id="4">Summary statistics</h2><pre class="codeinput">allSNR    = [snrResults; {paperSNR}];
 allLabels = [configs(:,3); {<span class="string">'E. paper snrLurton'</span>}];
 nAll      = numel(allSNR);
@@ -247,7 +247,7 @@ hold <span class="string">off</span>;
 xlabel(<span class="string">'SNR (dB)'</span>); ylabel(<span class="string">'Count'</span>);
 title(<span class="string">'Lurton formula vs paper Lurton'</span>);
 legend(<span class="string">'Location'</span>, <span class="string">'northwest'</span>, <span class="string">'FontSize'</span>, 7); grid <span class="string">on</span>;
-</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_01.png" alt=""> <img vspace="5" hspace="5" src="snr_dcalls_casey2019_02.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper snrLurton scatter</h2><pre class="codeinput">fig2 = figure(<span class="string">'Name'</span>, <span class="string">'bsnr vs paper snrLurton'</span>, <span class="keyword">...</span>
+</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_01.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper snrLurton scatter</h2><pre class="codeinput">fig2 = figure(<span class="string">'Name'</span>, <span class="string">'bsnr vs paper snrLurton'</span>, <span class="keyword">...</span>
     <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 420]);
 tlo2 = tiledlayout(fig2, 1, nConfigs, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
 title(tlo2, <span class="string">'bsnr vs paper snrLurton (analyst true positives)'</span>, <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
@@ -270,7 +270,7 @@ title(tlo2, <span class="string">'bsnr vs paper snrLurton (analyst true positive
     title(configs{c,3}, <span class="string">'interpreter'</span>, <span class="string">'none'</span>, <span class="string">'FontSize'</span>, 8);
     grid <span class="string">on</span>;
 <span class="keyword">end</span>
-</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_03.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_02.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_dcalls_casey2019_results.csv'</span>);
 resultsTable = table( <span class="keyword">...</span>
     annots.t0, annots.duration, annots.freq(:,1), annots.freq(:,2), <span class="keyword">...</span>

@@ -431,7 +431,7 @@ Warning: Fewer than 3 frequency bins in [24.0 28.0] Hz.
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_09.png" alt=""> <h2 id="15">8b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</h2><p>A frequency-modulated downsweep (ABW D) and two call types from fin whales. These have wider bands, shorter durations, or pulsed structure, providing a contrast with the narrow tonal calls in 8a.</p><pre class="codeinput">fmIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW D'</span>, <span class="string">'Fin 40Hz'</span>, <span class="string">'Fin 20Hz'</span>}) &amp; callAvailable);
 snrByMethod = drawRealCallFigure(fmIdx, callTypes, callAnnots, callSP, <span class="keyword">...</span>
     methodNames, snrByMethod, <span class="string">'8b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz'</span>);
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_10.png" alt=""> <h2 id="16">9. Method comparison &#8212; SNR heatmap</h2><p>SNR estimates (dB, simple power ratio) for all seven methods across all available call types. Ridge and synchrosqueeze report per-bin SNR and are not directly comparable to the band-average methods; they are included for completeness and shown in the same colour scale.</p><pre class="codeinput">colLabels = strrep(callTypes(availableIdx, 1)', <span class="string">' '</span>, <span class="string">'_'</span>);
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_10.png" alt=""> <img vspace="5" hspace="5" src="bsnr_gallery_11.png" alt=""> <h2 id="16">9. Method comparison &#8212; SNR heatmap</h2><p>SNR estimates (dB, simple power ratio) for all seven methods across all available call types. Ridge and synchrosqueeze report per-bin SNR and are not directly comparable to the band-average methods; they are included for completeness and shown in the same colour scale.</p><pre class="codeinput">colLabels = strrep(callTypes(availableIdx, 1)', <span class="string">' '</span>, <span class="string">'_'</span>);
 snrTable  = array2table(snrByMethod(:, availableIdx), <span class="keyword">...</span>
     <span class="string">'RowNames'</span>, methodNames, <span class="string">'VariableNames'</span>, colLabels);
 disp(snrTable);
@@ -474,7 +474,7 @@ fprintf(<span class="string">'Audio: Miller et al. (2021) doi:10.26179/5e6056035
 
 === gallery complete ===
 Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_11.png" alt=""> <h2 id="17">Local helpers</h2><pre class="codeinput"><span class="keyword">function</span> snrValue = runAndTitle(annot, params, titleStr)
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_12.png" alt=""> <h2 id="17">Local helpers</h2><pre class="codeinput"><span class="keyword">function</span> snrValue = runAndTitle(annot, params, titleStr)
 snrValue = snrEstimate(annot, params);
 <span class="keyword">if</span> istable(snrValue), snrValue = snrValue.snr; <span class="keyword">end</span>
 title(gca, titleStr, <span class="string">'interpreter'</span>, <span class="string">'none'</span>, <span class="string">'FontSize'</span>, 8);

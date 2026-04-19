@@ -191,19 +191,13 @@ fprintf(<span class="string">'  %d sites retained\n'</span>, nSites);
         <span class="comment">% Match to paper SNR values by detection start time</span>
         snrPaper = matchPaperSNR(detections.t0, callType, paperSNRTable, hasPaperSNR);
 
-        <span class="comment">% Per call-type diagnostics</span>
+        <span class="comment">% Correlation with paper SNR values</span>
         validBsnr  = isfinite(snrBsnr);
         validPaper = isfinite(snrPaper);
         validBoth  = validBsnr &amp; validPaper;
         r = NaN;
         <span class="keyword">if</span> sum(validBoth) &gt; 5
             r = corr(snrBsnr(validBoth), snrPaper(validBoth));
-        <span class="keyword">end</span>
-        fprintf(<span class="string">'    bsnr:  median=%.1f dB  (n=%d, NaN=%d)\n'</span>, <span class="keyword">...</span>
-            median(snrBsnr(validBsnr)), sum(validBsnr), sum(~validBsnr));
-        <span class="keyword">if</span> any(validPaper)
-            fprintf(<span class="string">'    paper: median=%.1f dB  r=%.3f\n'</span>, <span class="keyword">...</span>
-                median(snrPaper(validPaper)), r);
         <span class="keyword">end</span>
 
         <span class="comment">% Accumulate into results table</span>
@@ -220,7 +214,7 @@ fprintf(<span class="string">'  %d sites retained\n'</span>, nSites);
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">
 Maud Rise 2014  (SR=2048 Hz, nfft=4096, nOverlap=3481)
-</pre><h2 id="5">Summary table</h2><pre class="codeinput">siteList = unique(allResults.site, <span class="string">'stable'</span>);
+</pre><img vspace="5" hspace="5" src="snr_abw_sorp_library_01.png" alt=""> <h2 id="5">Summary table</h2><pre class="codeinput">siteList = unique(allResults.site, <span class="string">'stable'</span>);
 
 fprintf(<span class="string">'\n\n%-28s  %6s  %6s  %6s  %6s  %5s\n'</span>, <span class="keyword">...</span>
     <span class="string">'Site'</span>, <span class="string">'n'</span>, <span class="string">'mean'</span>, <span class="string">'median'</span>, <span class="string">'paper'</span>, <span class="string">'r'</span>);
@@ -306,7 +300,7 @@ grid <span class="string">on</span>; xlim([-40 40]); ylim([0 1]);
 <span class="keyword">else</span>
     xlabel(<span class="string">'SNR (dB)'</span>);
 <span class="keyword">end</span>
-</pre><img vspace="5" hspace="5" src="snr_abw_sorp_library_01.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper scatter &#8212; all sites pooled</h2><pre class="codeinput">allSnrBsnr  = allResults.snr_bsnr;
+</pre><img vspace="5" hspace="5" src="snr_abw_sorp_library_02.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper scatter &#8212; all sites pooled</h2><pre class="codeinput">allSnrBsnr  = allResults.snr_bsnr;
 allSnrPaper = allResults.snr_paper;
 validBoth   = isfinite(allSnrBsnr) &amp; isfinite(allSnrPaper);
 
@@ -331,7 +325,7 @@ fig2 = figure(<span class="string">'Name'</span>, <span class="string">'bsnr vs 
 xlabel(<span class="string">'paper SNR (dB)'</span>); ylabel(<span class="string">'bsnr SNR (dB)'</span>);
 title(<span class="string">'bsnr vs paper SNR &#8212; ABZ calls, all sites'</span>, <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
 grid <span class="string">on</span>;
-</pre><img vspace="5" hspace="5" src="snr_abw_sorp_library_02.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+</pre><img vspace="5" hspace="5" src="snr_abw_sorp_library_03.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outputFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_abw_sorp_library_results.csv'</span>);
 writetable(allResults, outputFile);
 fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outputFile);
@@ -376,91 +370,43 @@ callRows = paperSNRTable(strcmp(paperSNRTable.classification, callType), :);
 <span class="keyword">end</span>
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">  BmAntA: n=2188  dur=8.2 s  freq=[23-28] Hz
-    bsnr:  median=5.7 dB  (n=2186, NaN=2)
-    paper: median=0.3 dB  r=0.756
   BmAntB: n=37  dur=9.0 s  freq=[17-28] Hz
-    bsnr:  median=3.6 dB  (n=37, NaN=0)
-    paper: median=-0.2 dB  r=0.853
   BmAntZ: n=28  dur=14.0 s  freq=[16-28] Hz
-    bsnr:  median=-2.0 dB  (n=28, NaN=0)
-    paper: median=-4.5 dB  r=0.919
 
 Greenwich 64 S  2015  (SR=253 Hz, nfft=512, nOverlap=435)
   BmAntA: n=827  dur=6.6 s  freq=[23-28] Hz
-    bsnr:  median=7.3 dB  (n=827, NaN=0)
-    paper: median=-0.3 dB  r=0.751
   BmAntB: n=157  dur=7.7 s  freq=[15-28] Hz
-    bsnr:  median=2.7 dB  (n=157, NaN=0)
-    paper: median=-3.5 dB  r=0.734
   BmAntZ: n=29  dur=12.0 s  freq=[15-28] Hz
-    bsnr:  median=-3.4 dB  (n=29, NaN=0)
-    paper: median=-8.5 dB  r=0.813
 
 S Kerguelen 2005  (SR=1000 Hz, nfft=2048, nOverlap=1740)
   BmAntA: n=812  dur=7.0 s  freq=[25-29] Hz
-    bsnr:  median=10.4 dB  (n=804, NaN=8)
-    paper: median=-2.8 dB  r=0.584
   BmAntB: n=237  dur=8.0 s  freq=[17-29] Hz
-    bsnr:  median=7.7 dB  (n=235, NaN=2)
-    paper: median=-3.3 dB  r=0.573
   BmAntZ: n=166  dur=12.3 s  freq=[16-30] Hz
-    bsnr:  median=8.8 dB  (n=165, NaN=1)
-    paper: median=1.3 dB  r=0.767
 
 S Kerguelen 2014  (SR=1000 Hz, nfft=2048, nOverlap=1740)
   BmAntA: n=2557  dur=6.6 s  freq=[24-28] Hz
-    bsnr:  median=6.5 dB  (n=2555, NaN=2)
-    paper: median=-1.3 dB  r=0.748
   BmAntB: n=1177  dur=8.3 s  freq=[16-28] Hz
-    bsnr:  median=4.7 dB  (n=1176, NaN=1)
-    paper: median=-1.8 dB  r=0.793
   BmAntZ: n=563  dur=11.6 s  freq=[16-28] Hz
-    bsnr:  median=4.6 dB  (n=563, NaN=0)
-    paper: median=0.8 dB  r=0.903
 
 S Kerguelen 2015  (SR=1000 Hz, nfft=2048, nOverlap=1740)
   BmAntA: n=1970  dur=6.6 s  freq=[23-28] Hz
-    bsnr:  median=8.8 dB  (n=1970, NaN=0)
-    paper: median=0.7 dB  r=0.783
   BmAntB: n=542  dur=8.0 s  freq=[15-28] Hz
-    bsnr:  median=7.2 dB  (n=542, NaN=0)
-    paper: median=0.6 dB  r=0.833
   BmAntZ: n=236  dur=13.3 s  freq=[15-28] Hz
-    bsnr:  median=8.1 dB  (n=236, NaN=0)
-    paper: median=4.7 dB  r=0.881
 
 Casey 2014  (SR=1000 Hz, nfft=2048, nOverlap=1740)
   BmAntA: n=3681  dur=6.4 s  freq=[24-28] Hz
-    bsnr:  median=6.5 dB  (n=3675, NaN=6)
-    paper: median=-2.6 dB  r=0.698
   BmAntB: n=1398  dur=7.8 s  freq=[16-28] Hz
-    bsnr:  median=5.7 dB  (n=1398, NaN=0)
-    paper: median=-1.6 dB  r=0.757
   BmAntZ: n=1091  dur=11.9 s  freq=[16-28] Hz
-    bsnr:  median=6.3 dB  (n=1091, NaN=0)
-    paper: median=1.5 dB  r=0.895
 
 Casey 2017  (SR=1000 Hz, nfft=2048, nOverlap=1740)
   BmAntA: n=1741  dur=7.3 s  freq=[24-28] Hz
-    bsnr:  median=12.7 dB  (n=1741, NaN=0)
-    paper: median=4.6 dB  r=0.768
   BmAntB: n=558  dur=8.1 s  freq=[21-28] Hz
-    bsnr:  median=17.2 dB  (n=555, NaN=3)
-    paper: median=9.6 dB  r=0.878
   BmAntZ: n=119  dur=14.6 s  freq=[16-28] Hz
-    bsnr:  median=22.4 dB  (n=119, NaN=0)
-    paper: median=19.2 dB  r=0.968
 
 Balleny Islands 2015  (SR=1000 Hz, nfft=2048, nOverlap=1740)
   BmAntA: n=923  dur=7.5 s  freq=[23-28] Hz
-    bsnr:  median=11.8 dB  (n=923, NaN=0)
-    paper: median=4.1 dB  r=0.813
   BmAntB: n=44  dur=9.3 s  freq=[18-28] Hz
-    bsnr:  median=14.6 dB  (n=44, NaN=0)
-    paper: median=8.9 dB  r=0.914
   BmAntZ: n=31  dur=12.7 s  freq=[15-28] Hz
-    bsnr:  median=8.2 dB  (n=31, NaN=0)
-    paper: median=3.4 dB  r=0.919
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% SNR of Antarctic blue whale calls — IWC-SORP Annotated Library
@@ -624,19 +570,13 @@ for s = 1:nSites
         % Match to paper SNR values by detection start time
         snrPaper = matchPaperSNR(detections.t0, callType, paperSNRTable, hasPaperSNR);
 
-        % Per call-type diagnostics
+        % Correlation with paper SNR values
         validBsnr  = isfinite(snrBsnr);
         validPaper = isfinite(snrPaper);
         validBoth  = validBsnr & validPaper;
         r = NaN;
         if sum(validBoth) > 5
             r = corr(snrBsnr(validBoth), snrPaper(validBoth));
-        end
-        fprintf('    bsnr:  median=%.1f dB  (n=%d, NaN=%d)\n', ...
-            median(snrBsnr(validBsnr)), sum(validBsnr), sum(~validBsnr));
-        if any(validPaper)
-            fprintf('    paper: median=%.1f dB  r=%.3f\n', ...
-                median(snrPaper(validPaper)), r);
         end
 
         % Accumulate into results table
