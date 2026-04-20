@@ -69,7 +69,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h1>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</h1><!--introduction--><p>Estimates SNR for 1319 adjudicated analyst true-positive D-call detections from Miller et al. (2022), and compares against the paper's snrLurton values (Data S4, Appendix S4).</p><p>The paper applied the Lurton (2010) formula to spectrogramSlices power estimates, using the merged signal window (max of analyst and detector duration) and a fixed frequency band consistent with a 40-80 Hz bandpass filter. A systematic parameter search found the closest reproducible match is r ~ 0.47 &#8212; consistent with the paper computing SNR separately for analyst and detector detections then merging, a step that is not reproducible from the published supplemental material alone.</p><p>bsnr computes mean per-slice band power; the original code used rms of per-slice power, which produces ~3-4 dB higher Lurton SNR estimates. This systematic offset is documented but does not affect rank ordering or the scientific interpretation of relative SNR differences.</p><p>CANONICAL CONFIGURATION   snrType       = spectrogramSlices   freq          = [40 80] Hz   duration      = max(analyst, detector)  &#8212; merged column   noiseLocation = beforeAndAfter   noiseDelay    = 0.5 s   useLurton     = true   nfft          = derived per-annotation (nSlicesTarget = 30)% REFERENCE   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms   Experienced Human Observer at Detection of Blue Whale D-calls.   Remote Sensing in Ecology and Conservation.   <a href="https://doi.org/10.1002/rse2.297">https://doi.org/10.1002/rse2.297</a></p><p>DATA   Capture history (Appendix S4): doi:10.1002/rse2.297   Recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings">https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Load annotations</a></li><li><a href="#3">Canonical bsnr estimate</a></li><li><a href="#4">Sensitivity sweep</a></li><li><a href="#5">Summary table</a></li><li><a href="#6">Figures</a></li><li><a href="#7">Figure 2: sensitivity sweep (noise window and location)</a></li><li><a href="#8">Save results</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Recordings are not publicly available; contact <a href="mailto:aadcwebqueries@aad.gov.au">aadcwebqueries@aad.gov.au</a>.</p><pre class="codeinput">wavRoot = <span class="string">'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'</span>;
+</head><body><div class="content"><h1>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</h1><!--introduction--><p>Estimates SNR for 1319 adjudicated analyst true-positive D-call detections from Miller et al. (2022), and compares against the paper's snrLurton values (Data S4, Appendix S4).</p><p>The paper applied the Lurton (2010) formula to spectrogramSlices power estimates, using the merged signal window (max of analyst and detector duration) and a fixed frequency band consistent with a 40-80 Hz bandpass filter. A systematic parameter search across methods, noise windows, STFT parameters, and frequency bands found the best achievable match is r ~ 0.47 &#8212; the original SNR values could not be reproduced exactly from the published supplemental material.</p><p>bsnr computes mean per-slice band power; the original code used rms of per-slice power, which produces ~3-4 dB higher Lurton SNR estimates.</p><p>CANONICAL CONFIGURATION   snrType       = spectrogramSlices   freq          = [40 80] Hz   duration      = max(analyst, detector)  &#8212; merged column   noiseLocation = beforeAndAfter   noiseDelay    = 0.5 s   useLurton     = true   nfft          = derived per-annotation (nSlicesTarget = 30)% REFERENCE   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms   Experienced Human Observer at Detection of Blue Whale D-calls.   Remote Sensing in Ecology and Conservation.   <a href="https://doi.org/10.1002/rse2.297">https://doi.org/10.1002/rse2.297</a></p><p>DATA   Capture history (Appendix S4): doi:10.1002/rse2.297   Recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings">https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Load annotations</a></li><li><a href="#3">Canonical bsnr estimate</a></li><li><a href="#4">Sensitivity sweep</a></li><li><a href="#5">Summary table</a></li><li><a href="#6">Figures</a></li><li><a href="#7">Figure 2: sensitivity sweep (noise window and location)</a></li><li><a href="#8">Save results</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Recordings are not publicly available; contact <a href="mailto:aadcwebqueries@aad.gov.au">aadcwebqueries@aad.gov.au</a>.</p><pre class="codeinput">wavRoot = <span class="string">'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'</span>;
 
 captureHistoryFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'S4-captureHistory_casey2019MGA_vs_denseNetBmD24_judgedBSM_cut.csv'</span>);
@@ -122,13 +122,13 @@ fprintf(<span class="string">'  Paper: median=%.1f dB\n'</span>, median(paperSNR
 fprintf(<span class="string">'  r=%.3f  bias=%+.1f dB\n'</span>, r, bias);
 </pre><pre class="codeoutput">
 Computing canonical bsnr estimate...
-SNR analysis started:  20-Apr-2026 17:20:03
+SNR analysis started:  20-Apr-2026 17:33:20
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 20-Apr-2026 17:20:05
+SNR analysis completed: 20-Apr-2026 17:33:22
   bsnr:  median=-4.3 dB  n=1319
   Paper: median=-2.7 dB
   r=0.476  bias=-1.0 dB
@@ -161,37 +161,37 @@ snrSweep = cell(nC, 1);
     snrSweep{c} = res.snr;
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">Computing sweep: [40 80], B&amp;A,    annot, delay=0.5...
-SNR analysis started:  20-Apr-2026 17:20:05
+SNR analysis started:  20-Apr-2026 17:33:22
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 20-Apr-2026 17:20:06
+SNR analysis completed: 20-Apr-2026 17:33:23
 Computing sweep: [40 80], before, 5s,  delay=0.5...
-SNR analysis started:  20-Apr-2026 17:20:06
+SNR analysis started:  20-Apr-2026 17:33:23
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 20-Apr-2026 17:20:07
+SNR analysis completed: 20-Apr-2026 17:33:24
 Computing sweep: [40 80], before, 20s, delay=0.5...
-SNR analysis started:  20-Apr-2026 17:20:07
+SNR analysis started:  20-Apr-2026 17:33:24
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 20-Apr-2026 17:20:08
+SNR analysis completed: 20-Apr-2026 17:33:25
 Computing sweep: analyst, B&amp;A,   annot, delay=0.5...
-SNR analysis started:  20-Apr-2026 17:20:08
+SNR analysis started:  20-Apr-2026 17:33:25
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 20-Apr-2026 17:20:09
+SNR analysis completed: 20-Apr-2026 17:33:26
 </pre><h2 id="5">Summary table</h2><pre class="codeinput">allSNR    = [{snrCanon}; snrSweep; {paperSNR}];
 allLabels = [{<span class="string">'canonical ([40 80], B&amp;A, annot dur, delay=0.5)'</span>}; <span class="keyword">...</span>
               configs(:,1); {<span class="string">'paper snrLurton'</span>}];
@@ -308,15 +308,13 @@ Results saved to: C:\analysis\bsnr\examples\snr_dcalls_casey2019_results.csv
 % The paper applied the Lurton (2010) formula to spectrogramSlices power
 % estimates, using the merged signal window (max of analyst and detector
 % duration) and a fixed frequency band consistent with a 40-80 Hz bandpass
-% filter. A systematic parameter search found the closest reproducible
-% match is r ~ 0.47 — consistent with the paper computing SNR separately
-% for analyst and detector detections then merging, a step that is not
-% reproducible from the published supplemental material alone.
+% filter. A systematic parameter search across methods, noise windows, STFT
+% parameters, and frequency bands found the best achievable match is
+% r ~ 0.47 — the original SNR values could not be reproduced exactly from
+% the published supplemental material.
 %
 % bsnr computes mean per-slice band power; the original code used rms of
 % per-slice power, which produces ~3-4 dB higher Lurton SNR estimates.
-% This systematic offset is documented but does not affect rank ordering
-% or the scientific interpretation of relative SNR differences.
 %
 % CANONICAL CONFIGURATION
 %   snrType       = spectrogramSlices

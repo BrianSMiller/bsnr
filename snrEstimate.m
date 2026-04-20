@@ -245,13 +245,15 @@ if useParfor
         parpool('Processes', max(1, feature('numcores') - 1));
     end
 
-    D        = parallel.pool.DataQueue;
     if params.verbose
+        D        = parallel.pool.DataQueue;
         afterEach(D, @(~) fprintf('#'));
+        progTrig = false(nDet, 1);
+        progTrig(unique(round(linspace(1, nDet, 50)))) = true;
+    else
+        D        = parallel.pool.DataQueue;
+        progTrig = false(nDet, 1);
     end
-    % Logical vector: true at exactly 50 evenly-spaced indices
-    progTrig = false(nDet, 1);
-    progTrig(unique(round(linspace(1, nDet, 50)))) = true;
 
     parfor i = 1:nDet
         [snrVec(i), sigVec(i), noiseVec(i), noiseVarVec(i)] = ...

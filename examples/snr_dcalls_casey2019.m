@@ -7,15 +7,13 @@
 % The paper applied the Lurton (2010) formula to spectrogramSlices power
 % estimates, using the merged signal window (max of analyst and detector
 % duration) and a fixed frequency band consistent with a 40-80 Hz bandpass
-% filter. A systematic parameter search found the closest reproducible
-% match is r ~ 0.47 — consistent with the paper computing SNR separately
-% for analyst and detector detections then merging, a step that is not
-% reproducible from the published supplemental material alone.
+% filter. A systematic parameter search across methods, noise windows, STFT
+% parameters, and frequency bands found the best achievable match is
+% r ~ 0.47 — the original SNR values could not be reproduced exactly from
+% the published supplemental material.
 %
 % bsnr computes mean per-slice band power; the original code used rms of
 % per-slice power, which produces ~3-4 dB higher Lurton SNR estimates.
-% This systematic offset is documented but does not affect rank ordering
-% or the scientific interpretation of relative SNR differences.
 %
 % CANONICAL CONFIGURATION
 %   snrType       = spectrogramSlices
