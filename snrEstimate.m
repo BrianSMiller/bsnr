@@ -238,23 +238,25 @@ if useParfor
         fprintf(' (parallel)\n');
         fprintf('Progress:\n');
         fprintf('0          25          50          75         100%%\n');
-        fprintf('|----------|-----------|-----------|----------|\n ');
+        fprintf('|-----------|-----------|-----------|------------|\n');
     end
 
     if isempty(gcp('nocreate'))
         parpool('Processes', max(1, feature('numcores') - 1));
     end
 
-    D       = parallel.pool.DataQueue;
+    D        = parallel.pool.DataQueue;
     if params.verbose
         afterEach(D, @(~) fprintf('#'));
     end
-    progInc = max(1, floor(nDet / 50));
+    % Logical vector: true at exactly 50 evenly-spaced indices
+    progTrig = false(nDet, 1);
+    progTrig(unique(round(linspace(1, nDet, 50)))) = true;
 
     parfor i = 1:nDet
         [snrVec(i), sigVec(i), noiseVec(i), noiseVarVec(i)] = ...
             processOne(annot(i), params);                                   %#ok<PFBNS>
-        if rem(i, progInc) == 0 || i == nDet
+        if progTrig(i)
             send(D, i);
         end
     end
