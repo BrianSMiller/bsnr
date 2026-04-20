@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-19"><meta name="DC.source" content="snr_dcalls_casey2019.m"><style type="text/css">
+      --><title>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-20"><meta name="DC.source" content="snr_dcalls_casey2019.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -69,237 +69,263 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h1>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</h1><!--introduction--><p>Estimates SNR for 1319 adjudicated analyst true-positive D-call detections from Miller et al. (2022), using four bsnr configurations spanning two methods (spectrogram, spectrogramSlices) and two formulas (simple power ratio, Lurton). Results are compared against the paper's snrLurton values.</p><p>Exact reproduction of the paper's SNR is not possible from the published annotations alone. The original analysis used max(analyst, detector) duration as the signal window length, which requires the detector output. The published capture history (Appendix S4) also has corrupt tEnd values for 1318/1319 rows; tEnd is reconstructed here from t0 + duration. Correlation with paper snrLurton is r ~ 0.35 using analyst-only duration.</p><p>REFERENCE   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms   Experienced Human Observer at Detection of Blue Whale D-calls.   Remote Sensing in Ecology and Conservation.   <a href="https://doi.org/10.1002/rse2.297">https://doi.org/10.1002/rse2.297</a></p><p>DATA   Capture history (Appendix S4): doi:10.1002/rse2.297   Recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings">https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">Configuration</a></li><li><a href="#2">Load annotations</a></li><li><a href="#3">Compute SNR &#8212; four configurations</a></li><li><a href="#4">Summary statistics</a></li><li><a href="#5">Correlations with paper snrLurton</a></li><li><a href="#6">Figure 1: SNR distributions</a></li><li><a href="#7">Figure 2: bsnr vs paper snrLurton scatter</a></li><li><a href="#8">Save results</a></li></ul></div><h2 id="1">Configuration</h2><pre class="codeinput">wavRoot = <span class="string">'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'</span>;
+</head><body><div class="content"><h1>SNR of Antarctic blue whale D-calls &#8212; Casey 2019</h1><!--introduction--><p>Estimates SNR for 1319 adjudicated analyst true-positive D-call detections from Miller et al. (2022), and compares against the paper's snrLurton values (Data S4, Appendix S4).</p><p>The paper applied the Lurton (2010) formula to spectrogramSlices power estimates, using the merged signal window (max of analyst and detector duration) and a fixed frequency band consistent with a 40-80 Hz bandpass filter. A systematic parameter search found the closest reproducible match is r ~ 0.47 &#8212; consistent with the paper computing SNR separately for analyst and detector detections then merging, a step that is not reproducible from the published supplemental material alone.</p><p>bsnr computes mean per-slice band power; the original code used rms of per-slice power, which produces ~3-4 dB higher Lurton SNR estimates. This systematic offset is documented but does not affect rank ordering or the scientific interpretation of relative SNR differences.</p><p>CANONICAL CONFIGURATION   snrType       = spectrogramSlices   freq          = [40 80] Hz   duration      = max(analyst, detector)  &#8212; merged column   noiseLocation = beforeAndAfter   noiseDelay    = 0.5 s   useLurton     = true   nfft          = derived per-annotation (nSlicesTarget = 30)% REFERENCE   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms   Experienced Human Observer at Detection of Blue Whale D-calls.   Remote Sensing in Ecology and Conservation.   <a href="https://doi.org/10.1002/rse2.297">https://doi.org/10.1002/rse2.297</a></p><p>DATA   Capture history (Appendix S4): doi:10.1002/rse2.297   Recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings">https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Load annotations</a></li><li><a href="#3">Canonical bsnr estimate</a></li><li><a href="#4">Sensitivity sweep</a></li><li><a href="#5">Summary table</a></li><li><a href="#6">Figures</a></li><li><a href="#7">Figure 2: sensitivity sweep (noise window and location)</a></li><li><a href="#8">Save results</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Recordings are not publicly available; contact <a href="mailto:aadcwebqueries@aad.gov.au">aadcwebqueries@aad.gov.au</a>.</p><pre class="codeinput">wavRoot = <span class="string">'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'</span>;
 
 captureHistoryFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'S4-captureHistory_casey2019MGA_vs_denseNetBmD24_judgedBSM_cut.csv'</span>);
-
-<span class="comment">% STFT: nfft=256 at 1000 Hz SR gives 0.256 s windows, ~4 Hz resolution.</span>
-<span class="comment">% This is the best-matching configuration to the paper's SNR distribution</span>
-<span class="comment">% (median within 0.5 dB, 33rd percentile within 1 dB) without requiring</span>
-<span class="comment">% the reconciled detector duration.</span>
-nfft     = 256;
-nOverlap = 192;   <span class="comment">% 75% overlap</span>
 </pre><h2 id="2">Load annotations</h2><pre class="codeinput">fprintf(<span class="string">'Loading capture history...\n'</span>);
-ch = readtable(captureHistoryFile);
+ch = readtable(captureHistoryFile, <span class="string">'VariableNamingRule'</span>, <span class="string">'preserve'</span>);
 
-<span class="comment">% Analyst true positives: verdict==1 (adjudicator confirmed) &amp; detect_t1==1 (analyst detected)</span>
+<span class="comment">% Analyst true positives: verdict==1 and analyst detected</span>
 tpMask = ch.verdict == 1 &amp; ch.detect_t1 == 1;
 chTP   = ch(tpMask, :);
 nTP    = height(chTP);
 fprintf(<span class="string">'  Analyst true positives: %d / %d\n'</span>, nTP, height(ch));
 
-<span class="comment">% Build annotation table.</span>
-<span class="comment">% tEnd rebuilt from t0+duration &#8212; tEnd_table1 is corrupt in Data S4</span>
-<span class="comment">% (equals t0 for 1318/1319 rows).</span>
+paperSNR = chTP{:, <span class="string">'snrLurton'</span>};
+fprintf(<span class="string">'  Paper snrLurton: median=%.1f dB  n=%d\n'</span>, <span class="keyword">...</span>
+    median(paperSNR(isfinite(paperSNR))), sum(isfinite(paperSNR)));
+
+<span class="comment">% Merged annotations: max(analyst, detector) duration, freq=[40 80] Hz.</span>
+<span class="comment">% tEnd rebuilt from t0 + duration &#8212; tEnd_table1 is corrupt in Data S4.</span>
 annots = table();
 annots.soundFolder    = repmat({wavRoot}, nTP, 1);
-annots.t0             = chTP.t0_table1;
-annots.duration       = chTP.duration_table1;
-annots.tEnd           = chTP.t0_table1 + chTP.duration_table1 / 86400;
-annots.freq           = [chTP.fLow_table1, chTP.fHigh_table1];
+annots.t0             = chTP.t0;
+annots.duration       = chTP.duration;
+annots.tEnd           = chTP.t0 + chTP.duration / 86400;
+annots.freq           = repmat([40 80], nTP, 1);
 annots.channel        = ones(nTP, 1);
 annots.classification = repmat({<span class="string">'Bm-D'</span>}, nTP, 1);
 
-fprintf(<span class="string">'  Duration: median=%.2f s, range=[%.2f, %.2f] s\n'</span>, <span class="keyword">...</span>
+fprintf(<span class="string">'  Duration: median=%.2f s, range=[%.2f %.2f] s\n'</span>, <span class="keyword">...</span>
     median(annots.duration), min(annots.duration), max(annots.duration));
-fprintf(<span class="string">'  Freq bounds: median [%.0f-%.0f] Hz, range [%.0f-%.0f] Hz\n'</span>, <span class="keyword">...</span>
-    median(annots.freq(:,1)), median(annots.freq(:,2)), <span class="keyword">...</span>
-    min(annots.freq(:,1)),    max(annots.freq(:,2)));
 </pre><pre class="codeoutput">Loading capture history...
   Analyst true positives: 1319 / 2189
-  Duration: median=3.71 s, range=[1.46, 14.46] s
-  Freq bounds: median [38-77] Hz, range [8-113] Hz
-</pre><h2 id="3">Compute SNR &#8212; four configurations</h2><pre class="codeinput">baseParams = struct( <span class="keyword">...</span>
-    <span class="string">'nfft'</span>,          nfft, <span class="keyword">...</span>
-    <span class="string">'nOverlap'</span>,      nOverlap, <span class="keyword">...</span>
-    <span class="string">'noiseLocation'</span>, <span class="string">'beforeAndAfter'</span>, <span class="keyword">...</span>
-    <span class="string">'noiseDelay'</span>,    0.5, <span class="keyword">...</span>
-    <span class="string">'showClips'</span>,     false);
+  Paper snrLurton: median=-2.7 dB  n=1319
+  Duration: median=6.50 s, range=[1.51 42.50] s
+</pre><h2 id="3">Canonical bsnr estimate</h2><pre class="codeinput">fprintf(<span class="string">'\nComputing canonical bsnr estimate...\n'</span>);
+pCanon                 = struct();
+pCanon.snrType         = <span class="string">'spectrogramSlices'</span>;
+pCanon.useLurton       = true;
+pCanon.noiseLocation   = <span class="string">'beforeAndAfter'</span>;
+pCanon.noiseDelay      = 0.5;
+pCanon.showClips       = false;
 
-configs = {
-    <span class="string">'spectrogram'</span>,        false,  <span class="string">'A. spectrogram, simple'</span>
-    <span class="string">'spectrogramSlices'</span>,  false,  <span class="string">'B. spectrogramSlices, simple'</span>
-    <span class="string">'spectrogram'</span>,        true,   <span class="string">'C. spectrogram, Lurton'</span>
-    <span class="string">'spectrogramSlices'</span>,  true,   <span class="string">'D. spectrogramSlices, Lurton'</span>
+resCanon = snrEstimate(annots, pCanon);
+snrCanon = resCanon.snr;
+
+ok   = isfinite(snrCanon) &amp; isfinite(paperSNR);
+r    = corr(snrCanon(ok), paperSNR(ok));
+bias = mean(snrCanon(ok) - paperSNR(ok));
+fprintf(<span class="string">'  bsnr:  median=%.1f dB  n=%d\n'</span>, median(snrCanon(ok)), sum(ok));
+fprintf(<span class="string">'  Paper: median=%.1f dB\n'</span>, median(paperSNR(ok)));
+fprintf(<span class="string">'  r=%.3f  bias=%+.1f dB\n'</span>, r, bias);
+</pre><pre class="codeoutput">
+Computing canonical bsnr estimate...
+SNR analysis started:  20-Apr-2026 16:47:07
+1319 annotations to process (parallel)
+Progress:
+0          25          50          75         100%
+|----------|-----------|-----------|----------|
+ ###################################################
+SNR analysis completed: 20-Apr-2026 16:47:09
+  bsnr:  median=-4.3 dB  n=1319
+  Paper: median=-2.7 dB
+  r=0.476  bias=-1.0 dB
+</pre><h2 id="4">Sensitivity sweep</h2><p>Four configs illustrating key parameter effects. All use spectrogramSlices, Lurton, merged signal window.</p><pre class="codeinput">configs = {
+    <span class="string">'[40 80], B&amp;A,    annot, delay=0.5'</span>,  [40 80], <span class="string">'beforeAndAfter'</span>, [], 0.5
+    <span class="string">'[40 80], before, 5s,  delay=0.5'</span>,   [40 80], <span class="string">'before'</span>,         5,  0.5
+    <span class="string">'[40 80], before, 20s, delay=0.5'</span>,   [40 80], <span class="string">'before'</span>,         20, 0.5
+    <span class="string">'analyst, B&amp;A,   annot, delay=0.5'</span>,  [],       <span class="string">'beforeAndAfter'</span>, [], 0.5
 };
-nConfigs = size(configs, 1);
-snrResults = cell(nConfigs, 1);
+nC       = size(configs, 1);
+snrSweep = cell(nC, 1);
 
-<span class="keyword">for</span> c = 1:nConfigs
-    p           = baseParams;
-    p.snrType   = configs{c,1};
-    p.useLurton = configs{c,2};
-    fprintf(<span class="string">'Computing %s...\n'</span>, configs{c,3});
-    res = snrEstimate(annots, p);
-    snrResults{c} = res.snr;
+<span class="keyword">for</span> c = 1:nC
+    p               = struct();
+    p.snrType       = <span class="string">'spectrogramSlices'</span>;
+    p.useLurton     = true;
+    p.noiseLocation = configs{c,3};
+    p.noiseDelay    = configs{c,5};
+    p.showClips     = false;
+    <span class="keyword">if</span> ~isempty(configs{c,4})
+        p.noiseDuration_s = configs{c,4};
+    <span class="keyword">end</span>
+    <span class="comment">% Override freq if analyst bounds requested</span>
+    annotsSweep = annots;
+    <span class="keyword">if</span> isempty(configs{c,2})
+        annotsSweep.freq = [chTP.fLow_table1, chTP.fHigh_table1];
+    <span class="keyword">end</span>
+    fprintf(<span class="string">'Computing sweep: %s...\n'</span>, configs{c,1});
+    res = snrEstimate(annotsSweep, p);
+    snrSweep{c} = res.snr;
 <span class="keyword">end</span>
-
-paperSNR = chTP.snrLurton;
-</pre><pre class="codeoutput">Computing A. spectrogram, simple...
-SNR analysis started:  19-Apr-2026 23:47:25
+</pre><pre class="codeoutput">Computing sweep: [40 80], B&amp;A,    annot, delay=0.5...
+SNR analysis started:  20-Apr-2026 16:47:09
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:47:26
-Computing B. spectrogramSlices, simple...
-SNR analysis started:  19-Apr-2026 23:47:26
+SNR analysis completed: 20-Apr-2026 16:47:10
+Computing sweep: [40 80], before, 5s,  delay=0.5...
+SNR analysis started:  20-Apr-2026 16:47:10
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:47:27
-Computing C. spectrogram, Lurton...
-SNR analysis started:  19-Apr-2026 23:47:27
+SNR analysis completed: 20-Apr-2026 16:47:11
+Computing sweep: [40 80], before, 20s, delay=0.5...
+SNR analysis started:  20-Apr-2026 16:47:11
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:47:28
-Computing D. spectrogramSlices, Lurton...
-SNR analysis started:  19-Apr-2026 23:47:28
+SNR analysis completed: 20-Apr-2026 16:47:12
+Computing sweep: analyst, B&amp;A,   annot, delay=0.5...
+SNR analysis started:  20-Apr-2026 16:47:12
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |----------|-----------|-----------|----------|
  ###################################################
-SNR analysis completed: 19-Apr-2026 23:47:29
-</pre><h2 id="4">Summary statistics</h2><pre class="codeinput">allSNR    = [snrResults; {paperSNR}];
-allLabels = [configs(:,3); {<span class="string">'E. paper snrLurton'</span>}];
+SNR analysis completed: 20-Apr-2026 16:47:13
+</pre><h2 id="5">Summary table</h2><pre class="codeinput">allSNR    = [{snrCanon}; snrSweep; {paperSNR}];
+allLabels = [{<span class="string">'canonical ([40 80], B&amp;A, annot dur, delay=0.5)'</span>}; <span class="keyword">...</span>
+              configs(:,1); {<span class="string">'paper snrLurton'</span>}];
 nAll      = numel(allSNR);
 
-fprintf(<span class="string">'\n%-34s  %6s  %6s  %6s  %6s  %6s  %6s\n'</span>, <span class="keyword">...</span>
-    <span class="string">'Configuration'</span>, <span class="string">'n'</span>, <span class="string">'mean'</span>, <span class="string">'median'</span>, <span class="string">'33rd'</span>, <span class="string">'67th'</span>, <span class="string">'NaN'</span>);
-fprintf(<span class="string">'%s\n'</span>, repmat(<span class="string">'-'</span>, 1, 80));
+fprintf(<span class="string">'\n%-48s  %6s  %6s  %6s  %7s  %6s\n'</span>, <span class="keyword">...</span>
+    <span class="string">'Configuration'</span>, <span class="string">'n'</span>, <span class="string">'mean'</span>, <span class="string">'median'</span>, <span class="string">'r'</span>, <span class="string">'bias'</span>);
+fprintf(<span class="string">'%s\n'</span>, repmat(<span class="string">'-'</span>, 1, 84));
 <span class="keyword">for</span> k = 1:nAll
-    s    = allSNR{k};
-    ok   = isfinite(s);
-    fprintf(<span class="string">'%-34s  %6d  %6.1f  %6.1f  %6.1f  %6.1f  %6d\n'</span>, <span class="keyword">...</span>
-        allLabels{k}, sum(ok), mean(s(ok)), median(s(ok)), <span class="keyword">...</span>
-        prctile(s(ok), 33), prctile(s(ok), 67), sum(~ok));
+    s   = allSNR{k};
+    ok2 = isfinite(s) &amp; isfinite(paperSNR);
+    <span class="keyword">if</span> sum(ok2) &gt; 1
+        rv = corr(s(ok2), paperSNR(ok2));
+        bv = mean(s(ok2) - paperSNR(ok2));
+    <span class="keyword">else</span>
+        rv = NaN; bv = NaN;
+    <span class="keyword">end</span>
+    fprintf(<span class="string">'%-48s  %6d  %6.1f  %6.1f  %7.3f  %+6.1f\n'</span>, <span class="keyword">...</span>
+        allLabels{k}, sum(isfinite(s)), mean(s(ok2)), median(s(ok2)), rv, bv);
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">
-Configuration                            n    mean  median    33rd    67th     NaN
---------------------------------------------------------------------------------
-A. spectrogram, simple                1319     0.6     0.5    -0.6     1.7       0
-B. spectrogramSlices, simple          1319     0.5     0.4    -0.5     1.4       0
-C. spectrogram, Lurton                1319    -4.7    -4.8    -8.3    -0.7       0
-D. spectrogramSlices, Lurton          1319    -5.5    -5.3    -8.7    -1.5       0
-E. paper snrLurton                    1319    -3.1    -2.7    -8.0     2.7       0
-</pre><h2 id="5">Correlations with paper snrLurton</h2><pre class="codeinput">fprintf(<span class="string">'\nCorrelation with paper snrLurton:\n'</span>);
-<span class="keyword">for</span> c = 1:nConfigs
-    s  = snrResults{c};
-    ok = isfinite(s) &amp; isfinite(paperSNR);
-    r  = corr(s(ok), paperSNR(ok));
-    fprintf(<span class="string">'  %s: r=%.3f  bias=%+.1f dB\n'</span>, configs{c,3}, r, mean(s(ok)-paperSNR(ok)));
-<span class="keyword">end</span>
-</pre><pre class="codeoutput">
-Correlation with paper snrLurton:
-  A. spectrogram, simple: r=0.177  bias=+3.7 dB
-  B. spectrogramSlices, simple: r=0.183  bias=+3.6 dB
-  C. spectrogram, Lurton: r=0.243  bias=-1.6 dB
-  D. spectrogramSlices, Lurton: r=0.232  bias=-2.4 dB
-</pre><h2 id="6">Figure 1: SNR distributions</h2><pre class="codeinput">edges   = -30 : 2 : 30;
-colours = [0.2 0.5 0.8; 0.8 0.4 0.1; 0.2 0.7 0.5; 0.7 0.3 0.5; 0.4 0.4 0.4];
+Configuration                                          n    mean  median        r    bias
+------------------------------------------------------------------------------------
+canonical ([40 80], B&amp;A, annot dur, delay=0.5)      1319    -4.1    -4.3    0.476    -1.0
+[40 80], B&amp;A,    annot, delay=0.5                   1319    -4.1    -4.3    0.476    -1.0
+[40 80], before, 5s,  delay=0.5                     1318    -2.3    -2.4    0.399    +0.8
+[40 80], before, 20s, delay=0.5                     1318    -6.7    -7.0    0.340    -3.6
+analyst, B&amp;A,   annot, delay=0.5                    1319    -4.1    -4.4    0.419    -1.0
+paper snrLurton                                     1319    -3.1    -2.7    1.000    +0.0
+</pre><h2 id="6">Figures</h2><pre class="codeinput">edges = -25 : 2 : 20;
+cBlue = [0.2 0.5 0.8];
+cGrey = [0.5 0.5 0.5];
 
-fig1 = figure(<span class="string">'Name'</span>, <span class="string">'D-call SNR distributions'</span>, <span class="keyword">...</span>
-    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 420]);
+fig1 = figure(<span class="string">'Name'</span>, <span class="string">'D-call SNR &#8212; canonical estimate'</span>, <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 380]);
 tlo1 = tiledlayout(fig1, 1, 2, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
 title(tlo1, <span class="string">'Antarctic blue whale D-calls &#8212; Casey 2019 (analyst true positives)'</span>, <span class="keyword">...</span>
     <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
 
-<span class="comment">% Left: simple power ratio</span>
 nexttile(tlo1);
 hold <span class="string">on</span>;
-<span class="keyword">for</span> k = [1 2 5]
-    s     = allSNR{k};
-    sPlot = max(s, edges(1));
-    ok    = isfinite(sPlot);
-    histogram(sPlot(ok), edges, <span class="string">'FaceColor'</span>, colours(k,:), <span class="string">'FaceAlpha'</span>, 0.5, <span class="keyword">...</span>
-        <span class="string">'DisplayName'</span>, sprintf(<span class="string">'%s (med=%.1f dB)'</span>, allLabels{k}, median(sPlot(ok))));
-    xline(median(sPlot(ok)), <span class="string">'--'</span>, <span class="string">'Color'</span>, colours(k,:), <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
-        <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
-<span class="keyword">end</span>
+histogram(snrCanon(isfinite(snrCanon)), edges, <span class="keyword">...</span>
+    <span class="string">'FaceColor'</span>, cBlue, <span class="string">'FaceAlpha'</span>, 0.6, <span class="string">'EdgeColor'</span>, <span class="string">'none'</span>, <span class="keyword">...</span>
+    <span class="string">'DisplayName'</span>, sprintf(<span class="string">'bsnr (med=%.1f dB)'</span>, median(snrCanon(isfinite(snrCanon)))));
+histogram(paperSNR(isfinite(paperSNR)), edges, <span class="keyword">...</span>
+    <span class="string">'FaceColor'</span>, cGrey, <span class="string">'FaceAlpha'</span>, 0.5, <span class="string">'EdgeColor'</span>, <span class="string">'none'</span>, <span class="keyword">...</span>
+    <span class="string">'DisplayName'</span>, sprintf(<span class="string">'paper snrLurton (med=%.1f dB)'</span>, median(paperSNR(isfinite(paperSNR)))));
+xline(median(snrCanon(isfinite(snrCanon))), <span class="string">'--'</span>, <span class="string">'Color'</span>, cBlue, <span class="string">'LineWidth'</span>, 1.5, <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+xline(median(paperSNR(isfinite(paperSNR))), <span class="string">'--'</span>, <span class="string">'Color'</span>, cGrey, <span class="string">'LineWidth'</span>, 1.5, <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
 hold <span class="string">off</span>;
 xlabel(<span class="string">'SNR (dB)'</span>); ylabel(<span class="string">'Count'</span>);
-title(<span class="string">'Simple power ratio vs paper Lurton'</span>);
+title(<span class="string">'SNR distributions'</span>);
 legend(<span class="string">'Location'</span>, <span class="string">'northwest'</span>, <span class="string">'FontSize'</span>, 7); grid <span class="string">on</span>;
 
-<span class="comment">% Right: Lurton</span>
 nexttile(tlo1);
+scatter(paperSNR(ok), snrCanon(ok), 5, <span class="string">'filled'</span>, <span class="keyword">...</span>
+    <span class="string">'MarkerFaceAlpha'</span>, 0.15, <span class="string">'MarkerFaceColor'</span>, cBlue);
 hold <span class="string">on</span>;
-<span class="keyword">for</span> k = [3 4 5]
-    s     = allSNR{k};
-    sPlot = max(s, edges(1));
-    ok    = isfinite(sPlot);
-    histogram(sPlot(ok), edges, <span class="string">'FaceColor'</span>, colours(k,:), <span class="string">'FaceAlpha'</span>, 0.5, <span class="keyword">...</span>
-        <span class="string">'DisplayName'</span>, sprintf(<span class="string">'%s (med=%.1f dB)'</span>, allLabels{k}, median(sPlot(ok))));
-    xline(median(sPlot(ok)), <span class="string">'--'</span>, <span class="string">'Color'</span>, colours(k,:), <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
-        <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+lims = [min([paperSNR(ok); snrCanon(ok)]) max([paperSNR(ok); snrCanon(ok)])];
+plot(lims, lims, <span class="string">'k--'</span>, <span class="string">'LineWidth'</span>, 1);
+hold <span class="string">off</span>; axis <span class="string">square</span>;
+text(0.05, 0.95, sprintf(<span class="string">'r = %.3f\nbias = %+.1f dB'</span>, r, bias), <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'normalized'</span>, <span class="string">'VerticalAlignment'</span>, <span class="string">'top'</span>, <span class="string">'FontSize'</span>, 8);
+xlabel(<span class="string">'paper snrLurton (dB)'</span>); ylabel(<span class="string">'bsnr Lurton (dB)'</span>);
+title(<span class="string">'bsnr vs paper (1:1 dashed)'</span>); grid <span class="string">on</span>;
+</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_01.png" alt=""> <h2 id="7">Figure 2: sensitivity sweep (noise window and location)</h2><pre class="codeinput">rVals    = nan(nC, 1);
+biasVals = nan(nC, 1);
+<span class="keyword">for</span> c = 1:nC
+    s   = snrSweep{c};
+    ok2 = isfinite(s) &amp; isfinite(paperSNR);
+    rVals(c)    = corr(s(ok2), paperSNR(ok2));
+    biasVals(c) = mean(s(ok2) - paperSNR(ok2));
 <span class="keyword">end</span>
-hold <span class="string">off</span>;
-xlabel(<span class="string">'SNR (dB)'</span>); ylabel(<span class="string">'Count'</span>);
-title(<span class="string">'Lurton formula vs paper Lurton'</span>);
-legend(<span class="string">'Location'</span>, <span class="string">'northwest'</span>, <span class="string">'FontSize'</span>, 7); grid <span class="string">on</span>;
-</pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_01.png" alt=""> <h2 id="7">Figure 2: bsnr vs paper snrLurton scatter</h2><pre class="codeinput">fig2 = figure(<span class="string">'Name'</span>, <span class="string">'bsnr vs paper snrLurton'</span>, <span class="keyword">...</span>
-    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 420]);
-tlo2 = tiledlayout(fig2, 1, nConfigs, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
-title(tlo2, <span class="string">'bsnr vs paper snrLurton (analyst true positives)'</span>, <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
 
-<span class="keyword">for</span> c = 1:nConfigs
-    nexttile(tlo2);
-    s  = snrResults{c};
-    ok = isfinite(s) &amp; isfinite(paperSNR);
-    scatter(paperSNR(ok), s(ok), 5, <span class="string">'filled'</span>, <span class="keyword">...</span>
-        <span class="string">'MarkerFaceAlpha'</span>, 0.15, <span class="string">'MarkerFaceColor'</span>, colours(c,:));
-    hold <span class="string">on</span>;
-    lims = [min([paperSNR(ok); s(ok)]) max([paperSNR(ok); s(ok)])];
-    plot(lims, lims, <span class="string">'k--'</span>, <span class="string">'LineWidth'</span>, 1);
-    hold <span class="string">off</span>;
-    r    = corr(s(ok), paperSNR(ok));
-    bias = mean(s(ok) - paperSNR(ok));
-    text(0.05, 0.95, sprintf(<span class="string">'r=%.3f  bias=%+.1f dB'</span>, r, bias), <span class="keyword">...</span>
-        <span class="string">'Units'</span>, <span class="string">'normalized'</span>, <span class="string">'VerticalAlignment'</span>, <span class="string">'top'</span>, <span class="string">'FontSize'</span>, 7);
-    xlabel(<span class="string">'paper snrLurton (dB)'</span>); ylabel(<span class="string">'bsnr SNR (dB)'</span>);
-    title(configs{c,3}, <span class="string">'interpreter'</span>, <span class="string">'none'</span>, <span class="string">'FontSize'</span>, 8);
-    grid <span class="string">on</span>;
-<span class="keyword">end</span>
+fig2 = figure(<span class="string">'Name'</span>, <span class="string">'D-call SNR &#8212; sensitivity sweep'</span>, <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 380]);
+tlo2 = tiledlayout(fig2, 1, 2, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
+title(tlo2, <span class="string">'SNR sensitivity to parameter choice (spectrogramSlices, Lurton, merged window)'</span>, <span class="keyword">...</span>
+    <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
+
+x = 1:nC;
+nexttile(tlo2);
+bar(x, rVals, <span class="string">'FaceColor'</span>, cBlue, <span class="string">'FaceAlpha'</span>, 0.7);
+set(gca, <span class="string">'XTick'</span>, x, <span class="string">'XTickLabel'</span>, configs(:,1), <span class="keyword">...</span>
+    <span class="string">'XTickLabelRotation'</span>, 20, <span class="string">'FontSize'</span>, 7);
+ylabel(<span class="string">'r vs paper snrLurton'</span>); title(<span class="string">'Correlation'</span>); grid <span class="string">on</span>; ylim([0 0.6]);
+
+nexttile(tlo2);
+bar(x, biasVals, <span class="string">'FaceColor'</span>, [0.8 0.4 0.1], <span class="string">'FaceAlpha'</span>, 0.7);
+hold <span class="string">on</span>;
+yline(0, <span class="string">'k-'</span>, <span class="string">'LineWidth'</span>, 1);
+hold <span class="string">off</span>;
+set(gca, <span class="string">'XTick'</span>, x, <span class="string">'XTickLabel'</span>, configs(:,1), <span class="keyword">...</span>
+    <span class="string">'XTickLabelRotation'</span>, 20, <span class="string">'FontSize'</span>, 7);
+ylabel(<span class="string">'Bias vs paper snrLurton (dB)'</span>); title(<span class="string">'Bias'</span>); grid <span class="string">on</span>;
 </pre><img vspace="5" hspace="5" src="snr_dcalls_casey2019_02.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_dcalls_casey2019_results.csv'</span>);
-resultsTable = table( <span class="keyword">...</span>
-    annots.t0, annots.duration, annots.freq(:,1), annots.freq(:,2), <span class="keyword">...</span>
-    snrResults{1}, snrResults{2}, snrResults{3}, snrResults{4}, paperSNR, <span class="keyword">...</span>
-    <span class="string">'VariableNames'</span>, {<span class="string">'t0'</span>, <span class="string">'duration_s'</span>, <span class="string">'fLow_Hz'</span>, <span class="string">'fHigh_Hz'</span>, <span class="keyword">...</span>
-    <span class="string">'snr_spectrogram'</span>, <span class="string">'snr_spectrogramSlices'</span>, <span class="keyword">...</span>
-    <span class="string">'snrLurton_spectrogram'</span>, <span class="string">'snrLurton_spectrogramSlices'</span>, <span class="keyword">...</span>
-    <span class="string">'snrLurton_paper'</span>});
+resultsTable = table(annots.t0, annots.duration, <span class="keyword">...</span>
+    annots.freq(:,1), annots.freq(:,2), snrCanon, paperSNR, <span class="keyword">...</span>
+    <span class="string">'VariableNames'</span>, {<span class="string">'t0'</span>,<span class="string">'duration_s'</span>,<span class="string">'fLow_Hz'</span>,<span class="string">'fHigh_Hz'</span>, <span class="keyword">...</span>
+    <span class="string">'snrLurton_bsnr'</span>,<span class="string">'snrLurton_paper'</span>});
 writetable(resultsTable, outFile);
 fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outFile);
-fprintf(<span class="string">'Settings: nfft=%d, nOverlap=%d, noiseLocation=%s, noiseDelay=%.1f\n'</span>, <span class="keyword">...</span>
-    nfft, nOverlap, baseParams.noiseLocation, baseParams.noiseDelay);
 </pre><pre class="codeoutput">
 Results saved to: C:\analysis\bsnr\examples\snr_dcalls_casey2019_results.csv
-Settings: nfft=256, nOverlap=192, noiseLocation=beforeAndAfter, noiseDelay=0.5
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% SNR of Antarctic blue whale D-calls — Casey 2019
 %
 % Estimates SNR for 1319 adjudicated analyst true-positive D-call detections
-% from Miller et al. (2022), using four bsnr configurations spanning two
-% methods (spectrogram, spectrogramSlices) and two formulas (simple power
-% ratio, Lurton). Results are compared against the paper's snrLurton values.
+% from Miller et al. (2022), and compares against the paper's snrLurton
+% values (Data S4, Appendix S4).
 %
-% Exact reproduction of the paper's SNR is not possible from the published
-% annotations alone. The original analysis used max(analyst, detector)
-% duration as the signal window length, which requires the detector output.
-% The published capture history (Appendix S4) also has corrupt tEnd values
-% for 1318/1319 rows; tEnd is reconstructed here from t0 + duration.
-% Correlation with paper snrLurton is r ~ 0.35 using analyst-only duration.
+% The paper applied the Lurton (2010) formula to spectrogramSlices power
+% estimates, using the merged signal window (max of analyst and detector
+% duration) and a fixed frequency band consistent with a 40-80 Hz bandpass
+% filter. A systematic parameter search found the closest reproducible
+% match is r ~ 0.47 — consistent with the paper computing SNR separately
+% for analyst and detector detections then merging, a step that is not
+% reproducible from the published supplemental material alone.
 %
+% bsnr computes mean per-slice band power; the original code used rms of
+% per-slice power, which produces ~3-4 dB higher Lurton SNR estimates.
+% This systematic offset is documented but does not affect rank ordering
+% or the scientific interpretation of relative SNR differences.
+%
+% CANONICAL CONFIGURATION
+%   snrType       = spectrogramSlices
+%   freq          = [40 80] Hz
+%   duration      = max(analyst, detector)  — merged column
+%   noiseLocation = beforeAndAfter
+%   noiseDelay    = 0.5 s
+%   useLurton     = true
+%   nfft          = derived per-annotation (nSlicesTarget = 30)%
 % REFERENCE
 %   Miller, B.S. et al. (2022). Deep Learning Algorithm Outperforms
 %   Experienced Human Observer at Detection of Blue Whale D-calls.
@@ -311,191 +337,203 @@ Settings: nfft=256, nOverlap=192, noiseLocation=beforeAndAfter, noiseDelay=0.5
 %   Recordings: Australian Antarctic Data Centre
 %     https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings
 
-%% Configuration
+%% User configuration
+% Edit the paths below to match your local installation.
+% Recordings are not publicly available; contact aadcwebqueries@aad.gov.au.
 
 wavRoot = 'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019';
 
 captureHistoryFile = fullfile(fileparts(mfilename('fullpath')), ...
     'S4-captureHistory_casey2019MGA_vs_denseNetBmD24_judgedBSM_cut.csv');
 
-% STFT: nfft=256 at 1000 Hz SR gives 0.256 s windows, ~4 Hz resolution.
-% This is the best-matching configuration to the paper's SNR distribution
-% (median within 0.5 dB, 33rd percentile within 1 dB) without requiring
-% the reconciled detector duration.
-nfft     = 256;
-nOverlap = 192;   % 75% overlap
-
 %% Load annotations
 
 fprintf('Loading capture history...\n');
-ch = readtable(captureHistoryFile);
+ch = readtable(captureHistoryFile, 'VariableNamingRule', 'preserve');
 
-% Analyst true positives: verdict==1 (adjudicator confirmed) & detect_t1==1 (analyst detected)
+% Analyst true positives: verdict==1 and analyst detected
 tpMask = ch.verdict == 1 & ch.detect_t1 == 1;
 chTP   = ch(tpMask, :);
 nTP    = height(chTP);
 fprintf('  Analyst true positives: %d / %d\n', nTP, height(ch));
 
-% Build annotation table.
-% tEnd rebuilt from t0+duration — tEnd_table1 is corrupt in Data S4
-% (equals t0 for 1318/1319 rows).
+paperSNR = chTP{:, 'snrLurton'};
+fprintf('  Paper snrLurton: median=%.1f dB  n=%d\n', ...
+    median(paperSNR(isfinite(paperSNR))), sum(isfinite(paperSNR)));
+
+% Merged annotations: max(analyst, detector) duration, freq=[40 80] Hz.
+% tEnd rebuilt from t0 + duration — tEnd_table1 is corrupt in Data S4.
 annots = table();
 annots.soundFolder    = repmat({wavRoot}, nTP, 1);
-annots.t0             = chTP.t0_table1;
-annots.duration       = chTP.duration_table1;
-annots.tEnd           = chTP.t0_table1 + chTP.duration_table1 / 86400;
-annots.freq           = [chTP.fLow_table1, chTP.fHigh_table1];
+annots.t0             = chTP.t0;
+annots.duration       = chTP.duration;
+annots.tEnd           = chTP.t0 + chTP.duration / 86400;
+annots.freq           = repmat([40 80], nTP, 1);
 annots.channel        = ones(nTP, 1);
 annots.classification = repmat({'Bm-D'}, nTP, 1);
 
-fprintf('  Duration: median=%.2f s, range=[%.2f, %.2f] s\n', ...
+fprintf('  Duration: median=%.2f s, range=[%.2f %.2f] s\n', ...
     median(annots.duration), min(annots.duration), max(annots.duration));
-fprintf('  Freq bounds: median [%.0f-%.0f] Hz, range [%.0f-%.0f] Hz\n', ...
-    median(annots.freq(:,1)), median(annots.freq(:,2)), ...
-    min(annots.freq(:,1)),    max(annots.freq(:,2)));
 
-%% Compute SNR — four configurations
+%% Canonical bsnr estimate
 
-baseParams = struct( ...
-    'nfft',          nfft, ...
-    'nOverlap',      nOverlap, ...
-    'noiseLocation', 'beforeAndAfter', ...
-    'noiseDelay',    0.5, ...
-    'showClips',     false);
+fprintf('\nComputing canonical bsnr estimate...\n');
+pCanon                 = struct();
+pCanon.snrType         = 'spectrogramSlices';
+pCanon.useLurton       = true;
+pCanon.noiseLocation   = 'beforeAndAfter';
+pCanon.noiseDelay      = 0.5;
+pCanon.showClips       = false;
+
+resCanon = snrEstimate(annots, pCanon);
+snrCanon = resCanon.snr;
+
+ok   = isfinite(snrCanon) & isfinite(paperSNR);
+r    = corr(snrCanon(ok), paperSNR(ok));
+bias = mean(snrCanon(ok) - paperSNR(ok));
+fprintf('  bsnr:  median=%.1f dB  n=%d\n', median(snrCanon(ok)), sum(ok));
+fprintf('  Paper: median=%.1f dB\n', median(paperSNR(ok)));
+fprintf('  r=%.3f  bias=%+.1f dB\n', r, bias);
+
+%% Sensitivity sweep
+%
+% Four configs illustrating key parameter effects.
+% All use spectrogramSlices, Lurton, merged signal window.
 
 configs = {
-    'spectrogram',        false,  'A. spectrogram, simple'
-    'spectrogramSlices',  false,  'B. spectrogramSlices, simple'
-    'spectrogram',        true,   'C. spectrogram, Lurton'
-    'spectrogramSlices',  true,   'D. spectrogramSlices, Lurton'
+    '[40 80], B&A,    annot, delay=0.5',  [40 80], 'beforeAndAfter', [], 0.5
+    '[40 80], before, 5s,  delay=0.5',   [40 80], 'before',         5,  0.5
+    '[40 80], before, 20s, delay=0.5',   [40 80], 'before',         20, 0.5
+    'analyst, B&A,   annot, delay=0.5',  [],       'beforeAndAfter', [], 0.5
 };
-nConfigs = size(configs, 1);
-snrResults = cell(nConfigs, 1);
+nC       = size(configs, 1);
+snrSweep = cell(nC, 1);
 
-for c = 1:nConfigs
-    p           = baseParams;
-    p.snrType   = configs{c,1};
-    p.useLurton = configs{c,2};
-    fprintf('Computing %s...\n', configs{c,3});
-    res = snrEstimate(annots, p);
-    snrResults{c} = res.snr;
+for c = 1:nC
+    p               = struct();
+    p.snrType       = 'spectrogramSlices';
+    p.useLurton     = true;
+    p.noiseLocation = configs{c,3};
+    p.noiseDelay    = configs{c,5};
+    p.showClips     = false;
+    if ~isempty(configs{c,4})
+        p.noiseDuration_s = configs{c,4};
+    end
+    % Override freq if analyst bounds requested
+    annotsSweep = annots;
+    if isempty(configs{c,2})
+        annotsSweep.freq = [chTP.fLow_table1, chTP.fHigh_table1];
+    end
+    fprintf('Computing sweep: %s...\n', configs{c,1});
+    res = snrEstimate(annotsSweep, p);
+    snrSweep{c} = res.snr;
 end
 
-paperSNR = chTP.snrLurton;
+%% Summary table
 
-%% Summary statistics
-
-allSNR    = [snrResults; {paperSNR}];
-allLabels = [configs(:,3); {'E. paper snrLurton'}];
+allSNR    = [{snrCanon}; snrSweep; {paperSNR}];
+allLabels = [{'canonical ([40 80], B&A, annot dur, delay=0.5)'}; ...
+              configs(:,1); {'paper snrLurton'}];
 nAll      = numel(allSNR);
 
-fprintf('\n%-34s  %6s  %6s  %6s  %6s  %6s  %6s\n', ...
-    'Configuration', 'n', 'mean', 'median', '33rd', '67th', 'NaN');
-fprintf('%s\n', repmat('-', 1, 80));
+fprintf('\n%-48s  %6s  %6s  %6s  %7s  %6s\n', ...
+    'Configuration', 'n', 'mean', 'median', 'r', 'bias');
+fprintf('%s\n', repmat('-', 1, 84));
 for k = 1:nAll
-    s    = allSNR{k};
-    ok   = isfinite(s);
-    fprintf('%-34s  %6d  %6.1f  %6.1f  %6.1f  %6.1f  %6d\n', ...
-        allLabels{k}, sum(ok), mean(s(ok)), median(s(ok)), ...
-        prctile(s(ok), 33), prctile(s(ok), 67), sum(~ok));
+    s   = allSNR{k};
+    ok2 = isfinite(s) & isfinite(paperSNR);
+    if sum(ok2) > 1
+        rv = corr(s(ok2), paperSNR(ok2));
+        bv = mean(s(ok2) - paperSNR(ok2));
+    else
+        rv = NaN; bv = NaN;
+    end
+    fprintf('%-48s  %6d  %6.1f  %6.1f  %7.3f  %+6.1f\n', ...
+        allLabels{k}, sum(isfinite(s)), mean(s(ok2)), median(s(ok2)), rv, bv);
 end
 
-%% Correlations with paper snrLurton
+%% Figures
+%
+edges = -25 : 2 : 20;
+cBlue = [0.2 0.5 0.8];
+cGrey = [0.5 0.5 0.5];
 
-fprintf('\nCorrelation with paper snrLurton:\n');
-for c = 1:nConfigs
-    s  = snrResults{c};
-    ok = isfinite(s) & isfinite(paperSNR);
-    r  = corr(s(ok), paperSNR(ok));
-    fprintf('  %s: r=%.3f  bias=%+.1f dB\n', configs{c,3}, r, mean(s(ok)-paperSNR(ok)));
-end
-
-%% Figure 1: SNR distributions
-
-edges   = -30 : 2 : 30;
-colours = [0.2 0.5 0.8; 0.8 0.4 0.1; 0.2 0.7 0.5; 0.7 0.3 0.5; 0.4 0.4 0.4];
-
-fig1 = figure('Name', 'D-call SNR distributions', ...
-    'Units', 'pixels', 'Position', [50 50 900 420]);
+fig1 = figure('Name', 'D-call SNR — canonical estimate', ...
+    'Units', 'pixels', 'Position', [50 50 900 380]);
 tlo1 = tiledlayout(fig1, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
 title(tlo1, 'Antarctic blue whale D-calls — Casey 2019 (analyst true positives)', ...
     'FontWeight', 'bold');
 
-% Left: simple power ratio
 nexttile(tlo1);
 hold on;
-for k = [1 2 5]
-    s     = allSNR{k};
-    sPlot = max(s, edges(1));
-    ok    = isfinite(sPlot);
-    histogram(sPlot(ok), edges, 'FaceColor', colours(k,:), 'FaceAlpha', 0.5, ...
-        'DisplayName', sprintf('%s (med=%.1f dB)', allLabels{k}, median(sPlot(ok))));
-    xline(median(sPlot(ok)), 'REPLACE_WITH_DASH_DASH', 'Color', colours(k,:), 'LineWidth', 1.5, ...
-        'HandleVisibility', 'off');
-end
+histogram(snrCanon(isfinite(snrCanon)), edges, ...
+    'FaceColor', cBlue, 'FaceAlpha', 0.6, 'EdgeColor', 'none', ...
+    'DisplayName', sprintf('bsnr (med=%.1f dB)', median(snrCanon(isfinite(snrCanon)))));
+histogram(paperSNR(isfinite(paperSNR)), edges, ...
+    'FaceColor', cGrey, 'FaceAlpha', 0.5, 'EdgeColor', 'none', ...
+    'DisplayName', sprintf('paper snrLurton (med=%.1f dB)', median(paperSNR(isfinite(paperSNR)))));
+xline(median(snrCanon(isfinite(snrCanon))), 'REPLACE_WITH_DASH_DASH', 'Color', cBlue, 'LineWidth', 1.5, 'HandleVisibility', 'off');
+xline(median(paperSNR(isfinite(paperSNR))), 'REPLACE_WITH_DASH_DASH', 'Color', cGrey, 'LineWidth', 1.5, 'HandleVisibility', 'off');
 hold off;
 xlabel('SNR (dB)'); ylabel('Count');
-title('Simple power ratio vs paper Lurton');
+title('SNR distributions');
 legend('Location', 'northwest', 'FontSize', 7); grid on;
 
-% Right: Lurton
 nexttile(tlo1);
+scatter(paperSNR(ok), snrCanon(ok), 5, 'filled', ...
+    'MarkerFaceAlpha', 0.15, 'MarkerFaceColor', cBlue);
 hold on;
-for k = [3 4 5]
-    s     = allSNR{k};
-    sPlot = max(s, edges(1));
-    ok    = isfinite(sPlot);
-    histogram(sPlot(ok), edges, 'FaceColor', colours(k,:), 'FaceAlpha', 0.5, ...
-        'DisplayName', sprintf('%s (med=%.1f dB)', allLabels{k}, median(sPlot(ok))));
-    xline(median(sPlot(ok)), 'REPLACE_WITH_DASH_DASH', 'Color', colours(k,:), 'LineWidth', 1.5, ...
-        'HandleVisibility', 'off');
+lims = [min([paperSNR(ok); snrCanon(ok)]) max([paperSNR(ok); snrCanon(ok)])];
+plot(lims, lims, 'kREPLACE_WITH_DASH_DASH', 'LineWidth', 1);
+hold off; axis square;
+text(0.05, 0.95, sprintf('r = %.3f\nbias = %+.1f dB', r, bias), ...
+    'Units', 'normalized', 'VerticalAlignment', 'top', 'FontSize', 8);
+xlabel('paper snrLurton (dB)'); ylabel('bsnr Lurton (dB)');
+title('bsnr vs paper (1:1 dashed)'); grid on;
+
+%% Figure 2: sensitivity sweep (noise window and location)
+
+rVals    = nan(nC, 1);
+biasVals = nan(nC, 1);
+for c = 1:nC
+    s   = snrSweep{c};
+    ok2 = isfinite(s) & isfinite(paperSNR);
+    rVals(c)    = corr(s(ok2), paperSNR(ok2));
+    biasVals(c) = mean(s(ok2) - paperSNR(ok2));
 end
+
+fig2 = figure('Name', 'D-call SNR — sensitivity sweep', ...
+    'Units', 'pixels', 'Position', [50 50 900 380]);
+tlo2 = tiledlayout(fig2, 1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tlo2, 'SNR sensitivity to parameter choice (spectrogramSlices, Lurton, merged window)', ...
+    'FontWeight', 'bold');
+
+x = 1:nC;
+nexttile(tlo2);
+bar(x, rVals, 'FaceColor', cBlue, 'FaceAlpha', 0.7);
+set(gca, 'XTick', x, 'XTickLabel', configs(:,1), ...
+    'XTickLabelRotation', 20, 'FontSize', 7);
+ylabel('r vs paper snrLurton'); title('Correlation'); grid on; ylim([0 0.6]);
+
+nexttile(tlo2);
+bar(x, biasVals, 'FaceColor', [0.8 0.4 0.1], 'FaceAlpha', 0.7);
+hold on;
+yline(0, 'k-', 'LineWidth', 1);
 hold off;
-xlabel('SNR (dB)'); ylabel('Count');
-title('Lurton formula vs paper Lurton');
-legend('Location', 'northwest', 'FontSize', 7); grid on;
-
-%% Figure 2: bsnr vs paper snrLurton scatter
-
-fig2 = figure('Name', 'bsnr vs paper snrLurton', ...
-    'Units', 'pixels', 'Position', [50 50 900 420]);
-tlo2 = tiledlayout(fig2, 1, nConfigs, 'TileSpacing', 'compact', 'Padding', 'compact');
-title(tlo2, 'bsnr vs paper snrLurton (analyst true positives)', 'FontWeight', 'bold');
-
-for c = 1:nConfigs
-    nexttile(tlo2);
-    s  = snrResults{c};
-    ok = isfinite(s) & isfinite(paperSNR);
-    scatter(paperSNR(ok), s(ok), 5, 'filled', ...
-        'MarkerFaceAlpha', 0.15, 'MarkerFaceColor', colours(c,:));
-    hold on;
-    lims = [min([paperSNR(ok); s(ok)]) max([paperSNR(ok); s(ok)])];
-    plot(lims, lims, 'kREPLACE_WITH_DASH_DASH', 'LineWidth', 1);
-    hold off;
-    r    = corr(s(ok), paperSNR(ok));
-    bias = mean(s(ok) - paperSNR(ok));
-    text(0.05, 0.95, sprintf('r=%.3f  bias=%+.1f dB', r, bias), ...
-        'Units', 'normalized', 'VerticalAlignment', 'top', 'FontSize', 7);
-    xlabel('paper snrLurton (dB)'); ylabel('bsnr SNR (dB)');
-    title(configs{c,3}, 'interpreter', 'none', 'FontSize', 8);
-    grid on;
-end
+set(gca, 'XTick', x, 'XTickLabel', configs(:,1), ...
+    'XTickLabelRotation', 20, 'FontSize', 7);
+ylabel('Bias vs paper snrLurton (dB)'); title('Bias'); grid on;
 
 %% Save results
 
 outFile = fullfile(fileparts(mfilename('fullpath')), ...
     'snr_dcalls_casey2019_results.csv');
-resultsTable = table( ...
-    annots.t0, annots.duration, annots.freq(:,1), annots.freq(:,2), ...
-    snrResults{1}, snrResults{2}, snrResults{3}, snrResults{4}, paperSNR, ...
-    'VariableNames', {'t0', 'duration_s', 'fLow_Hz', 'fHigh_Hz', ...
-    'snr_spectrogram', 'snr_spectrogramSlices', ...
-    'snrLurton_spectrogram', 'snrLurton_spectrogramSlices', ...
-    'snrLurton_paper'});
+resultsTable = table(annots.t0, annots.duration, ...
+    annots.freq(:,1), annots.freq(:,2), snrCanon, paperSNR, ...
+    'VariableNames', {'t0','duration_s','fLow_Hz','fHigh_Hz', ...
+    'snrLurton_bsnr','snrLurton_paper'});
 writetable(resultsTable, outFile);
 fprintf('\nResults saved to: %s\n', outFile);
-fprintf('Settings: nfft=%d, nOverlap=%d, noiseLocation=%s, noiseDelay=%.1f\n', ...
-    nfft, nOverlap, baseParams.noiseLocation, baseParams.noiseDelay);
 
 ##### SOURCE END #####
 --></body></html>

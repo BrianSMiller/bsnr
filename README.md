@@ -103,7 +103,7 @@ By default, noise is measured symmetrically around the detection with a 0.5 s ga
 
 ```matlab
 params.noiseLocation   = 'before';   % single window before signal
-params.noiseLocation_s = 25;         % 25 s window (default: annotation duration)
+params.noiseDuration_s = 25;         % 25 s window (default: annotation duration)
 params.noiseDelay      = 1.0;        % gap in seconds (default 0.5)
 ```
 

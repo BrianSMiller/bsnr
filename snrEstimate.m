@@ -51,12 +51,12 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                                    'beforeAndAfter'       (default)
 %                                    'before'
 %                                    'randomBeforeAndAfter'
-%                                  Legacy aliases (use noiseLocation_s instead):
+%                                  Legacy aliases (use noiseDuration_s instead):
 %                                    '25sBefore'            (before, 25 s)
 %                                    '30sBeforeAndAfter'    (beforeAndAfter, 30 s)
-%              .noiseLocation_s    Noise window duration in seconds.
+%              .noiseDuration_s    Noise window duration in seconds.
 %                                  Default: [] (match annotation duration).
-%                                  Example: params.noiseLocation_s = 60
+%                                  Example: params.noiseDuration_s = 60
 %                                  sets a 60 s window regardless of call
 %                                  duration, with placement from noiseLocation.
 %              .freq               Override [lowHz highHz] frequency band.
@@ -640,8 +640,8 @@ end
 if ~isfield(params, 'noiseLocation') || isempty(params.noiseLocation)
     params.noiseLocation = 'beforeAndAfter';
 end
-if ~isfield(params, 'noiseLocation_s') || isempty(params.noiseLocation_s)
-    params.noiseLocation_s = [];   % empty = match annotation duration
+if ~isfield(params, 'noiseDuration_s') || isempty(params.noiseDuration_s)
+    params.noiseDuration_s = [];   % empty = match annotation duration
 end
 if ~isfield(params, 'snrType') || isempty(params.snrType)
     params.snrType = 'spectrogram';
@@ -699,10 +699,10 @@ function [noise, excludeTimes] = buildNoiseWindow(annot, params)
 noise        = annot;
 excludeTimes = [];
 
-% Resolve noise window duration. params.noiseLocation_s sets it explicitly.
+% Resolve noise window duration. params.noiseDuration_s sets it explicitly.
 % Legacy named cases ('25sBefore', '30sBeforeAndAfter') set it implicitly
 % and are mapped to their base strategy. Default: match annotation duration.
-noiseDur_s       = params.noiseLocation_s;
+noiseDur_s       = params.noiseDuration_s;
 noisePlacement   = params.noiseLocation;
 
 switch noisePlacement
