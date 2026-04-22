@@ -129,19 +129,8 @@
 %
 % ROADMAP
 %
-%   bsnr is a working tool in active use, not a finished standard.
-%   Future work includes alignment with the ASA specification for passive
-%   acoustic metadata (detections, recordings, and output), to improve
-%   interoperability with PAMGuard, Raven Pro, and related tools.
-%
-%   Planned features:
-%     - snrType='spectrogramSlicesTrimmed': trim signal window to central
-%       95% of energy in both time (leading/trailing slices) and frequency
-%       (edge PSD bins), then apply identical trim to noise window. Only
-%       active when per-annotation frequency bounds are used; has no effect
-%       with fixed frequency bands. Intended to standardise SNR estimates
-%       across analysts with different annotation box tightness. Not a
-%       defence against non-stationary noise, but no worse than untrimmed.
+%   See todo.md in the repository root, or:
+%   https://github.com/BrianSMiller/bsnr/blob/main/todo.md
 %
 %   Published-data examples with paper comparisons:
 %     snr_dcalls_casey2019.m              — Miller et al. (2022)

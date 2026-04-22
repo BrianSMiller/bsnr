@@ -1,0 +1,418 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>SNR of Antarctic blue whale ABZ calls &#8212; Common Ground (Miller et al. in press)</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-22"><meta name="DC.source" content="snr_abw_casey2019_commonground.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+<link rel="stylesheet" href="bsnr.css">
+</head><body><div class="content"><h1>SNR of Antarctic blue whale ABZ calls &#8212; Common Ground (Miller et al. in press)</h1><!--introduction--><p>Recomputes SNR for all detections in the multi-observer capture history from Miller et al. (in press, Methods in Ecology and Evolution), using bsnr's spectrogramSlices method with calibrated acoustic levels.</p><p>The capture history contains adjudicated detections from five observers:   Observers 1-3 &#8212; human analysts (Raven Pro annotations)   Observer 4    &#8212; Ishmael SCC automated detector (250 Hz recordings)   Observer 5    &#8212; Koogu DNN automated detector (250 Hz recordings)</p><p>For each row, SNR is computed separately for each observer that detected the call, then averaged (nanmean) across observers. The key figure shows SNR as a function of the number of observers with positive detections, split by adjudicated verdict (true/false positive).</p><p>CANONICAL CONFIGURATION   snrType         = spectrogramSlices   freq            = [25 29] Hz  (ABZ unit-A band)   noiseLocation   = beforeAndAfter   noiseDelay      = 1 s   nfft            = 1024  (1000 Hz SR &#8594; 1.024 s window, ~1 Hz resolution)   nOverlap        = 768   (75% overlap, matching annotationSNR default)   calibration     = metaDataCasey2019  (included in examples/)   useLurton       = false  (simple power ratio)</p><p>REFERENCE   Miller, B.S. et al. (in press). Common ground: efficient, consistent,   observer-independent bioacoustic call density estimation with adjudicated   ground truth and capture-recapture detection functions.   Methods in Ecology and Evolution.</p><p>DATA   Capture history: included in examples/ (this script's directory)   Recordings: Australian Antarctic Data Centre     <a href="https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings">https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">Load capture history</a></li><li><a href="#3">Calibration metadata</a></li><li><a href="#4">SNR parameters</a></li><li><a href="#5">Compute SNR per observer</a></li><li><a href="#6">Aggregate SNR &#8212; nanmean across observers per row</a></li><li><a href="#7">Figure: SNR by number of positive observers &times; verdict</a></li><li><a href="#8">Save results</a></li></ul></div><h2 id="1">User configuration</h2><p>Edit the paths below to match your local installation. Recordings are not publicly available; contact <a href="mailto:aadcwebqueries@aad.gov.au">aadcwebqueries@aad.gov.au</a>.</p><pre class="codeinput">wavRoot = <span class="string">'w:\annotatedLibrary\BAFAAL\Casey2019\wav'</span>;
+
+captureHistoryFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+    <span class="string">'MultiObserverCaptureHistory_Casey2019_Bm-Ant-ABZ-calls_analysts123sd_judgedBSM_simpleSnr.csv'</span>);
+</pre><h2 id="2">Load capture history</h2><pre class="codeinput">fprintf(<span class="string">'Loading capture history...\n'</span>);
+ch = readtable(captureHistoryFile, <span class="string">'VariableNamingRule'</span>, <span class="string">'preserve'</span>);
+fprintf(<span class="string">'  Total rows: %d\n'</span>, height(ch));
+
+<span class="comment">% Restrict to adjudicated rows only</span>
+chJ   = ch(logical(ch.judged), :);
+nRows = height(chJ);
+fprintf(<span class="string">'  Judged rows: %d  (true: %d  false: %d)\n'</span>, nRows, <span class="keyword">...</span>
+    sum(chJ.verdict == 1), sum(chJ.verdict == 0));
+</pre><pre class="codeoutput">Loading capture history...
+  Total rows: 10312
+  Judged rows: 1289  (true: 681  false: 608)
+</pre><h2 id="3">Calibration metadata</h2><pre class="codeinput">metadata = metaDataCasey2019();
+</pre><h2 id="4">SNR parameters</h2><pre class="codeinput">p               = struct();
+p.snrType       = <span class="string">'spectrogramSlices'</span>;
+p.useLurton     = false;
+p.noiseLocation = <span class="string">'beforeAndAfter'</span>;
+p.noiseDelay    = 1;
+p.nfft          = 1024;
+p.nOverlap      = floor(1024 * 0.75);  <span class="comment">% 768 &#8212; matches annotationSNR overlap=0.75</span>
+p.freq          = [25 29];
+p.metadata      = metadata;
+p.showClips     = false;
+p.verbose       = false;
+</pre><h2 id="5">Compute SNR per observer</h2><pre class="codeinput">nObs    = 5;
+snrBsnr = nan(nRows, nObs);
+
+<span class="keyword">for</span> obs = 1:nObs
+    fprintf(<span class="string">'Computing SNR for observer %d...\n'</span>, obs);
+
+    obsStr = num2str(obs);
+    detectCol = [<span class="string">'detect_observer'</span> obsStr];
+    t0Col     = [<span class="string">'t0_observer'</span>     obsStr];
+    tEndCol   = [<span class="string">'tEnd_observer'</span>   obsStr];
+    durCol    = [<span class="string">'duration_observer'</span> obsStr];
+
+    <span class="comment">% Build annotation table for rows where this observer detected</span>
+    detMask = logical(chJ.(detectCol));
+    nDet    = sum(detMask);
+    <span class="keyword">if</span> nDet == 0, <span class="keyword">continue</span>; <span class="keyword">end</span>
+
+    annots = table();
+    annots.soundFolder    = repmat({wavRoot}, nDet, 1);
+    annots.t0             = chJ.(t0Col)(detMask);
+    annots.duration       = chJ.(durCol)(detMask);
+    annots.tEnd           = chJ.(tEndCol)(detMask);
+    annots.freq           = repmat(p.freq, nDet, 1);
+    annots.channel        = ones(nDet, 1);
+    annots.classification = repmat({<span class="string">'Bm-Ant-ABZ'</span>}, nDet, 1);
+
+    res = snrEstimate(annots, p);
+
+    <span class="comment">% Store back into full-length vector</span>
+    snrBsnr(detMask, obs) = res.snr;
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">Computing SNR for observer 1...
+Computing SNR for observer 2...
+Computing SNR for observer 3...
+Computing SNR for observer 4...
+Computing SNR for observer 5...
+</pre><h2 id="6">Aggregate SNR &#8212; nanmean across observers per row</h2><pre class="codeinput">chJ.snr_bsnr           = mean(snrBsnr, 2, <span class="string">'omitnan'</span>);
+chJ.numPositiveObs     = sum(chJ{:, strcat(<span class="string">'detect_observer'</span>, string(1:5))}, 2);
+
+fprintf(<span class="string">'\nSNR computed. Finite values: %d / %d rows\n'</span>, <span class="keyword">...</span>
+    sum(isfinite(chJ.snr_bsnr)), nRows);
+fprintf(<span class="string">'bsnr SNR: median=%.1f dB  range=[%.1f %.1f] dB\n'</span>, <span class="keyword">...</span>
+    median(chJ.snr_bsnr(isfinite(chJ.snr_bsnr))), <span class="keyword">...</span>
+    prctile(chJ.snr_bsnr(isfinite(chJ.snr_bsnr)), 5), <span class="keyword">...</span>
+    prctile(chJ.snr_bsnr(isfinite(chJ.snr_bsnr)), 95));
+
+<span class="comment">% Compare against stored SNR from original analysis</span>
+snrPaper = mean(chJ{:, strcat(<span class="string">'snr_observer'</span>, string(1:5))}, 2, <span class="string">'omitnan'</span>);
+ok = isfinite(chJ.snr_bsnr) &amp; isfinite(snrPaper);
+r  = corr(chJ.snr_bsnr(ok), snrPaper(ok));
+fprintf(<span class="string">'Correlation with paper SNR: r=%.3f  bias=%+.1f dB  n=%d\n'</span>, <span class="keyword">...</span>
+    r, mean(chJ.snr_bsnr(ok) - snrPaper(ok)), sum(ok));
+</pre><pre class="codeoutput">
+SNR computed. Finite values: 1289 / 1289 rows
+bsnr SNR: median=1.8 dB  range=[-0.9 5.2] dB
+Correlation with paper SNR: r=0.961  bias=+0.4 dB  n=1289
+</pre><h2 id="7">Figure: SNR by number of positive observers &times; verdict</h2><pre class="codeinput">nPosVals = 1:5;
+verdictLabels = {<span class="string">'False positive'</span>, <span class="string">'True positive'</span>};
+colours = [0.8 0.3 0.2; 0.2 0.5 0.8];
+
+<span class="comment">% Precompute group sizes for proportional width scaling</span>
+maxN = 0;
+<span class="keyword">for</span> v = [0 1]
+    <span class="keyword">for</span> np = nPosVals
+        mask = chJ.numPositiveObs == np &amp; chJ.verdict == v &amp; isfinite(chJ.snr_bsnr);
+        maxN = max(maxN, sum(mask));
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+fig = figure(<span class="string">'Name'</span>, <span class="string">'Common Ground &#8212; SNR by observer agreement'</span>, <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 700 480]);
+ax = axes(fig);
+hold(ax, <span class="string">'on'</span>);
+
+offsets = [-0.0 0.0];
+legHandles = [];
+<span class="keyword">for</span> v = [0 1]
+    col = colours(v+1, :);
+    firstPatch = true;
+    <span class="keyword">for</span> np = nPosVals
+        mask = chJ.numPositiveObs == np &amp; chJ.verdict == v &amp; isfinite(chJ.snr_bsnr);
+        y    = chJ.snr_bsnr(mask);
+        <span class="keyword">if</span> numel(y) &lt; 3, <span class="keyword">continue</span>; <span class="keyword">end</span>
+
+        [f, xi] = ksdensity(y, <span class="string">'Bandwidth'</span>, 1.5);
+        f    = f / max(f) * 0.4 * (numel(y) / maxN);
+        xOff = np + offsets(v+1);
+        xPos = [xOff + f*(-1)^(v+1), fliplr(xOff + zeros(size(f)))];
+        yPos = [xi, fliplr(xi)];
+        h = fill(ax, xPos, yPos, col, <span class="string">'FaceAlpha'</span>, 0.5, <span class="string">'EdgeColor'</span>, col, <span class="keyword">...</span>
+            <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+        <span class="keyword">if</span> firstPatch
+            legHandles(end+1) = h; <span class="comment">%#ok&lt;AGROW&gt;</span>
+            firstPatch = false;
+        <span class="keyword">end</span>
+
+        <span class="comment">% Median line</span>
+        plot(ax, xOff + [-0.15 0.15]*(-1)^(v+1), median(y)*[1 1], <span class="string">'-'</span>, <span class="keyword">...</span>
+            <span class="string">'Color'</span>, col*0.7, <span class="string">'LineWidth'</span>, 2, <span class="string">'HandleVisibility'</span>, <span class="string">'off'</span>);
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+hold(ax, <span class="string">'off'</span>);
+set(ax, <span class="string">'XTick'</span>, nPosVals, <span class="string">'XTickLabel'</span>, string(nPosVals));
+xlabel(ax, <span class="string">'Number of observers with positive detections'</span>);
+ylabel(ax, <span class="string">'SNR (dB re 1 &micro;Pa&sup2;)'</span>);
+title(ax, <span class="string">'Antarctic blue whale ABZ calls &#8212; Casey 2019'</span>);
+
+legend(ax, legHandles, verdictLabels, <span class="string">'Location'</span>, <span class="string">'northwest'</span>);
+grid(ax, <span class="string">'on'</span>); box(ax, <span class="string">'on'</span>);
+</pre><img vspace="5" hspace="5" src="snr_abw_casey2019_commonground_01.png" alt=""> <h2 id="8">Save results</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+    <span class="string">'snr_abw_casey2019_commonground_results.csv'</span>);
+writetable(chJ(:, {<span class="string">'t0'</span>, <span class="string">'verdict'</span>, <span class="string">'judged'</span>, <span class="string">'numPositiveObs'</span>, <span class="string">'snr_bsnr'</span>, <span class="keyword">...</span>
+    <span class="string">'snr_observer1'</span>,<span class="string">'snr_observer2'</span>,<span class="string">'snr_observer3'</span>,<span class="string">'snr_observer4'</span>,<span class="string">'snr_observer5'</span>, <span class="keyword">...</span>
+    <span class="string">'detect_observer1'</span>,<span class="string">'detect_observer2'</span>,<span class="string">'detect_observer3'</span>,<span class="string">'detect_observer4'</span>,<span class="string">'detect_observer5'</span>}), <span class="keyword">...</span>
+    outFile);
+fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outFile);
+</pre><pre class="codeoutput">
+Results saved to: C:\analysis\bsnr\examples\snr_abw_casey2019_commonground_results.csv
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% SNR of Antarctic blue whale ABZ calls — Common Ground (Miller et al. in press)
+%
+% Recomputes SNR for all detections in the multi-observer capture history
+% from Miller et al. (in press, Methods in Ecology and Evolution), using
+% bsnr's spectrogramSlices method with calibrated acoustic levels.
+%
+% The capture history contains adjudicated detections from five observers:
+%   Observers 1-3 — human analysts (Raven Pro annotations)
+%   Observer 4    — Ishmael SCC automated detector (250 Hz recordings)
+%   Observer 5    — Koogu DNN automated detector (250 Hz recordings)
+%
+% For each row, SNR is computed separately for each observer that detected
+% the call, then averaged (nanmean) across observers. The key figure shows
+% SNR as a function of the number of observers with positive detections,
+% split by adjudicated verdict (true/false positive).
+%
+% CANONICAL CONFIGURATION
+%   snrType         = spectrogramSlices
+%   freq            = [25 29] Hz  (ABZ unit-A band)
+%   noiseLocation   = beforeAndAfter
+%   noiseDelay      = 1 s
+%   nfft            = 1024  (1000 Hz SR → 1.024 s window, ~1 Hz resolution)
+%   nOverlap        = 768   (75% overlap, matching annotationSNR default)
+%   calibration     = metaDataCasey2019  (included in examples/)
+%   useLurton       = false  (simple power ratio)
+%
+% REFERENCE
+%   Miller, B.S. et al. (in press). Common ground: efficient, consistent,
+%   observer-independent bioacoustic call density estimation with adjudicated
+%   ground truth and capture-recapture detection functions.
+%   Methods in Ecology and Evolution.
+%
+% DATA
+%   Capture history: included in examples/ (this script's directory)
+%   Recordings: Australian Antarctic Data Centre
+%     https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings
+
+%% User configuration
+% Edit the paths below to match your local installation.
+% Recordings are not publicly available; contact aadcwebqueries@aad.gov.au.
+
+wavRoot = 'w:\annotatedLibrary\BAFAAL\Casey2019\wav';
+
+captureHistoryFile = fullfile(fileparts(mfilename('fullpath')), ...
+    'MultiObserverCaptureHistory_Casey2019_Bm-Ant-ABZ-calls_analysts123sd_judgedBSM_simpleSnr.csv');
+
+%% Load capture history
+
+fprintf('Loading capture history...\n');
+ch = readtable(captureHistoryFile, 'VariableNamingRule', 'preserve');
+fprintf('  Total rows: %d\n', height(ch));
+
+% Restrict to adjudicated rows only
+chJ   = ch(logical(ch.judged), :);
+nRows = height(chJ);
+fprintf('  Judged rows: %d  (true: %d  false: %d)\n', nRows, ...
+    sum(chJ.verdict == 1), sum(chJ.verdict == 0));
+
+%% Calibration metadata
+
+metadata = metaDataCasey2019();
+
+%% SNR parameters
+
+p               = struct();
+p.snrType       = 'spectrogramSlices';
+p.useLurton     = false;
+p.noiseLocation = 'beforeAndAfter';
+p.noiseDelay    = 1;
+p.nfft          = 1024;
+p.nOverlap      = floor(1024 * 0.75);  % 768 — matches annotationSNR overlap=0.75
+p.freq          = [25 29];
+p.metadata      = metadata;
+p.showClips     = false;
+p.verbose       = false;
+
+%% Compute SNR per observer
+
+nObs    = 5;
+snrBsnr = nan(nRows, nObs);
+
+for obs = 1:nObs
+    fprintf('Computing SNR for observer %d...\n', obs);
+
+    obsStr = num2str(obs);
+    detectCol = ['detect_observer' obsStr];
+    t0Col     = ['t0_observer'     obsStr];
+    tEndCol   = ['tEnd_observer'   obsStr];
+    durCol    = ['duration_observer' obsStr];
+
+    % Build annotation table for rows where this observer detected
+    detMask = logical(chJ.(detectCol));
+    nDet    = sum(detMask);
+    if nDet == 0, continue; end
+
+    annots = table();
+    annots.soundFolder    = repmat({wavRoot}, nDet, 1);
+    annots.t0             = chJ.(t0Col)(detMask);
+    annots.duration       = chJ.(durCol)(detMask);
+    annots.tEnd           = chJ.(tEndCol)(detMask);
+    annots.freq           = repmat(p.freq, nDet, 1);
+    annots.channel        = ones(nDet, 1);
+    annots.classification = repmat({'Bm-Ant-ABZ'}, nDet, 1);
+
+    res = snrEstimate(annots, p);
+
+    % Store back into full-length vector
+    snrBsnr(detMask, obs) = res.snr;
+end
+
+%% Aggregate SNR — nanmean across observers per row
+
+chJ.snr_bsnr           = mean(snrBsnr, 2, 'omitnan');
+chJ.numPositiveObs     = sum(chJ{:, strcat('detect_observer', string(1:5))}, 2);
+
+fprintf('\nSNR computed. Finite values: %d / %d rows\n', ...
+    sum(isfinite(chJ.snr_bsnr)), nRows);
+fprintf('bsnr SNR: median=%.1f dB  range=[%.1f %.1f] dB\n', ...
+    median(chJ.snr_bsnr(isfinite(chJ.snr_bsnr))), ...
+    prctile(chJ.snr_bsnr(isfinite(chJ.snr_bsnr)), 5), ...
+    prctile(chJ.snr_bsnr(isfinite(chJ.snr_bsnr)), 95));
+
+% Compare against stored SNR from original analysis
+snrPaper = mean(chJ{:, strcat('snr_observer', string(1:5))}, 2, 'omitnan');
+ok = isfinite(chJ.snr_bsnr) & isfinite(snrPaper);
+r  = corr(chJ.snr_bsnr(ok), snrPaper(ok));
+fprintf('Correlation with paper SNR: r=%.3f  bias=%+.1f dB  n=%d\n', ...
+    r, mean(chJ.snr_bsnr(ok) - snrPaper(ok)), sum(ok));
+
+%% Figure: SNR by number of positive observers × verdict
+
+nPosVals = 1:5;
+verdictLabels = {'False positive', 'True positive'};
+colours = [0.8 0.3 0.2; 0.2 0.5 0.8];
+
+% Precompute group sizes for proportional width scaling
+maxN = 0;
+for v = [0 1]
+    for np = nPosVals
+        mask = chJ.numPositiveObs == np & chJ.verdict == v & isfinite(chJ.snr_bsnr);
+        maxN = max(maxN, sum(mask));
+    end
+end
+
+fig = figure('Name', 'Common Ground — SNR by observer agreement', ...
+    'Units', 'pixels', 'Position', [50 50 700 480]);
+ax = axes(fig);
+hold(ax, 'on');
+
+offsets = [-0.0 0.0];
+legHandles = [];
+for v = [0 1]
+    col = colours(v+1, :);
+    firstPatch = true;
+    for np = nPosVals
+        mask = chJ.numPositiveObs == np & chJ.verdict == v & isfinite(chJ.snr_bsnr);
+        y    = chJ.snr_bsnr(mask);
+        if numel(y) < 3, continue; end
+
+        [f, xi] = ksdensity(y, 'Bandwidth', 1.5);
+        f    = f / max(f) * 0.4 * (numel(y) / maxN);
+        xOff = np + offsets(v+1);
+        xPos = [xOff + f*(-1)^(v+1), fliplr(xOff + zeros(size(f)))];
+        yPos = [xi, fliplr(xi)];
+        h = fill(ax, xPos, yPos, col, 'FaceAlpha', 0.5, 'EdgeColor', col, ...
+            'HandleVisibility', 'off');
+        if firstPatch
+            legHandles(end+1) = h; %#ok<AGROW>
+            firstPatch = false;
+        end
+
+        % Median line
+        plot(ax, xOff + [-0.15 0.15]*(-1)^(v+1), median(y)*[1 1], '-', ...
+            'Color', col*0.7, 'LineWidth', 2, 'HandleVisibility', 'off');
+    end
+end
+
+hold(ax, 'off');
+set(ax, 'XTick', nPosVals, 'XTickLabel', string(nPosVals));
+xlabel(ax, 'Number of observers with positive detections');
+ylabel(ax, 'SNR (dB re 1 µPa²)');
+title(ax, 'Antarctic blue whale ABZ calls — Casey 2019');
+
+legend(ax, legHandles, verdictLabels, 'Location', 'northwest');
+grid(ax, 'on'); box(ax, 'on');
+
+%% Save results
+
+outFile = fullfile(fileparts(mfilename('fullpath')), ...
+    'snr_abw_casey2019_commonground_results.csv');
+writetable(chJ(:, {'t0', 'verdict', 'judged', 'numPositiveObs', 'snr_bsnr', ...
+    'snr_observer1','snr_observer2','snr_observer3','snr_observer4','snr_observer5', ...
+    'detect_observer1','detect_observer2','detect_observer3','detect_observer4','detect_observer5'}), ...
+    outFile);
+fprintf('\nResults saved to: %s\n', outFile);
+
+##### SOURCE END #####
+--></body></html>

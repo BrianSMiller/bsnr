@@ -203,14 +203,7 @@ bsnr/
 
 ## Roadmap
 
-bsnr is a working tool in active use, not a finished standard. Current priorities
-include a Common Ground example (Miller et al., in press, *Methods in Ecology and
-Evolution*) and output table improvements for reproducibility.
-
-Longer-term, we aim to align input and output formats with emerging standards for
-passive acoustic metadata — including the ASA specification for recording and
-detection metadata — to improve interoperability with PAMGuard, Raven Pro, and
-other tools in the bioacoustics ecosystem.
+See [todo.md](todo.md) for planned features and known issues.
 
 ## Acknowledgements
 

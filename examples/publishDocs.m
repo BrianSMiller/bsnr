@@ -19,6 +19,7 @@ scripts = {
     'snr_dcalls_casey2019.m'
     'snr_abw_sorp_library.m'
     'snr_abw_kerguelen2014_castro2024.m'
+    'snr_abw_casey2019_commonground.m'
 };
 
 %% Publish each script

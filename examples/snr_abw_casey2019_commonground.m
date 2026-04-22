@@ -25,8 +25,9 @@
 %   useLurton       = false  (simple power ratio)
 %
 % REFERENCE
-%   Miller, B.S. et al. (in press). Common Ground: Comparing Human and
-%   Automated Detectors of Antarctic Blue Whale Song.
+%   Miller, B.S. et al. (in press). Common ground: efficient, consistent,
+%   observer-independent bioacoustic call density estimation with adjudicated
+%   ground truth and capture-recapture detection functions.
 %   Methods in Ecology and Evolution.
 %
 % DATA
