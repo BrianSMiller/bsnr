@@ -133,12 +133,21 @@
 %   Future work includes alignment with the ASA specification for passive
 %   acoustic metadata (detections, recordings, and output), to improve
 %   interoperability with PAMGuard, Raven Pro, and related tools.
-%     movefile('..\docs\bsnr_gallery.html', '..\docs\index.html')
+%
+%   Planned features:
+%     - snrType='spectrogramSlicesTrimmed': trim signal window to central
+%       95% of energy in both time (leading/trailing slices) and frequency
+%       (edge PSD bins), then apply identical trim to noise window. Only
+%       active when per-annotation frequency bounds are used; has no effect
+%       with fixed frequency bands. Intended to standardise SNR estimates
+%       across analysts with different annotation box tightness. Not a
+%       defence against non-stationary noise, but no worse than untrimmed.
 %
 %   Published-data examples with paper comparisons:
 %     snr_dcalls_casey2019.m              — Miller et al. (2022)
 %     snr_abw_sorp_library.m              — Miller et al. (2021)
 %     snr_abw_kerguelen2014_castro2024.m  — Castro et al. (2024)
+%     snr_abw_casey2019_commonground.m    — Miller et al. (in press)
 %
 % TEST SUITE
 %   run('tests/run_tests.m')
