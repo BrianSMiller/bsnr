@@ -12,7 +12,9 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %   annot  - Scalar struct, struct array, or table of detections.
 %            Required fields per element:
 %              .soundFolder   path to folder of wav files (see wavFolderInfo)
-%              .t0, .tEnd     Matlab datenums for detection start/end
+%              .t0, .tEnd     Detection start/end as MATLAB datenums (double)
+%                             or datetime objects. Datenums are accepted for
+%                             backward compatibility but datetime is preferred.
 %              .duration      detection duration in seconds
 %              .freq          [lowHz highHz] frequency band of detection
 %              .channel       recording channel index
@@ -111,15 +113,23 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %   rmsNoise   RMS noise power (linear)
 %   noiseVar   Variance of noise power (same units as rmsSignal^2)
 %   fileInfo   File info struct from getAudioFromFiles
+%   resultTable  [] for scalar input
 %
 % OUTPUTS - vector input
-%   snr        Table with columns: snr, signalRMSdB, noiseRMSdB, noiseVar
-%              When params.metadata is provided, also includes:
-%              signalBandLevel_dBuPa  Band-integrated signal level (dB re 1 uPa)
-%              noiseBandLevel_dBuPa   Band-integrated noise level  (dB re 1 uPa)
-%              Both are total band power: 10*log10(sum(PSD)*df) integrated
-%              across the annotation frequency band, equivalent to
-%              bandpower(psdCal, f, freq, 'psd') in calibratedPsdExample.m
+%   snr         Table with columns (same as resultTable):
+%   resultTable Table with columns (same as snr, provided for clarity):
+%                 snr            SNR in dB  (Tethys: SNR_dB)
+%                 signalRMSdB    Signal RMS level in dB
+%                 noiseRMSdB     Noise RMS level in dB
+%                 noiseVar       Noise power variance
+%               When params.metadata is provided, also includes:
+%                 signalBandLevel_dBuPa  Calibrated signal level (dB re 1 uPa)
+%                 noiseBandLevel_dBuPa   Calibrated noise level  (dB re 1 uPa)
+%               Tethys field mapping:
+%                 snr_dB  ← resultTable.snr
+%                 ReceivedLevel_dB ← resultTable.signalBandLevel_dBuPa
+%                 Start/End ← annot.t0/tEnd (pass as datetime or datenum)
+%                 MinFreq_Hz/MaxFreq_Hz ← annot.freq(:,1)/annot.freq(:,2)
 %   rmsSignal, rmsNoise, noiseVar, fileInfo are empty ([]) for vector input.
 %
 % Brian Miller, Australian Antarctic Division, 2017.
@@ -157,7 +167,7 @@ end % snrEstimate
 %% Batch dispatcher (serial or parallel depending on count)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [resultTable, rmsSignal, rmsNoise, noiseVar, fileInfo] = ...
+function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = ...
     processBatch(annot, params)
 
 nDet      = numel(annot);
@@ -284,10 +294,10 @@ if params.verbose
     fprintf('SNR analysis completed: %s\n', char(datetime('now')));
 end
 
-snrCol      = snrVec;
+snr         = snrVec;
 signalRMSdB = 10 * log10(sigVec);
 noiseRMSdB  = 10 * log10(noiseVec);
-resultTable = table(snrCol, signalRMSdB, noiseRMSdB, noiseVarVec, ...
+resultTable = table(snr, signalRMSdB, noiseRMSdB, noiseVarVec, ...
     'VariableNames', {'snr', 'signalRMSdB', 'noiseRMSdB', 'noiseVar'});
 
 % When metadata is provided, add calibrated acoustic level columns.
@@ -315,6 +325,7 @@ if ~isempty(params.metadata)
 end
 
 [rmsSignal, rmsNoise, noiseVar, fileInfo] = deal([], [], [], []);
+snr = resultTable;
 
 end
 
@@ -340,6 +351,13 @@ elseif iscell(annot.channel)
 end
 if ~isscalar(annot.channel) || ~isnumeric(annot.channel)
     annot.channel = 1;
+end
+
+% Convert datetime to datenum if needed (datetime preferred; datenum accepted
+% for backward compatibility with annotationSNR-based workflows)
+if isdatetime(annot.t0)
+    annot.t0   = datenum(annot.t0);
+    annot.tEnd = datenum(annot.tEnd);
 end
 
 % duration is optional — compute from t0/tEnd if missing or NaN

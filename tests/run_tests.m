@@ -96,15 +96,17 @@ fprintf('Parallel test %s.\n\n', onOff(runParallel));
 [passed(3), elapsed(3)] = runOne('test_snrEstimate_scalar', @() test_snrEstimate_scalar());
 [passed(4), elapsed(4)] = runOne('test_calibration',          @() test_calibration());
 
-nTests = 6;
 if runPlots
-    nTests = 7;
     [passed(5), elapsed(5)] = runOne('test_plots',                    @() test_plots());
     [passed(6), elapsed(6)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
     [passed(7), elapsed(7)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
+    [passed(8), elapsed(8)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
+    nTests = 8;
 else
     [passed(5), elapsed(5)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
     [passed(6), elapsed(6)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
+    [passed(7), elapsed(7)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
+    nTests = 7;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -114,11 +116,11 @@ end
 if runPlots
     names = {'test_snrMethods', 'test_removeClicks', 'test_snrEstimate_scalar', ...
              'test_calibration', 'test_plots', 'test_snrEstimate_batch', ...
-             'test_snrEstimate_noiseWindows'};
+             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs'};
 else
     names = {'test_snrMethods', 'test_removeClicks', 'test_snrEstimate_scalar', ...
              'test_calibration', 'test_snrEstimate_batch', ...
-             'test_snrEstimate_noiseWindows'};
+             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs'};
 end
 
 fprintf('\n==============================================\n');

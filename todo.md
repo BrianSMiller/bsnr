@@ -9,8 +9,8 @@ bsnr is a working tool in active use, not a finished standard. This file tracks 
 ### `snrType = 'spectrogramSlicesTrimmed'`
 Trim signal window to the central 95% of energy in both time (drop low-energy leading/trailing slices) and frequency (drop low-energy edge PSD bins), then apply identical trim to the noise window. Only active when per-annotation frequency bounds are used — has no effect with fixed frequency bands. Intended to standardise SNR estimates across analysts with different annotation box tightness. Not a defence against non-stationary noise, but no worse than untrimmed.
 
-### `resultTable` and `resolvedParams` outputs from `snrEstimate`
-Return a structured results table and the resolved parameter set (including derived nfft) as additional outputs from `snrEstimate`, to improve reproducibility and downstream processing.
+### `resolvedParams` output from `snrEstimate`
+Return the resolved parameter set (including derived nfft) as an additional output from `snrEstimate`. The result table is already returned as `snr` for batch input.
 
 ### ASA passive acoustic metadata alignment
 Align `snrEstimate` inputs and outputs with the ASA specification for passive acoustic metadata (detections, recordings, and output), to improve interoperability with PAMGuard, Raven Pro, and related tools.
