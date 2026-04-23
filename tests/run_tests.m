@@ -101,12 +101,14 @@ if runPlots
     [passed(6), elapsed(6)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
     [passed(7), elapsed(7)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
     [passed(8), elapsed(8)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
-    nTests = 8;
+    [passed(9), elapsed(9)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
+    nTests = 9;
 else
     [passed(5), elapsed(5)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
     [passed(6), elapsed(6)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
     [passed(7), elapsed(7)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
-    nTests = 7;
+    [passed(8), elapsed(8)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
+    nTests = 8;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -116,11 +118,11 @@ end
 if runPlots
     names = {'test_snrMethods', 'test_removeClicks', 'test_snrEstimate_scalar', ...
              'test_calibration', 'test_plots', 'test_snrEstimate_batch', ...
-             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs'};
+             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs', 'test_trimAnnotation'};
 else
     names = {'test_snrMethods', 'test_removeClicks', 'test_snrEstimate_scalar', ...
              'test_calibration', 'test_snrEstimate_batch', ...
-             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs'};
+             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs', 'test_trimAnnotation'};
 end
 
 fprintf('\n==============================================\n');

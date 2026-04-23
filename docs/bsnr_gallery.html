@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>bsnr_gallery</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-22"><meta name="DC.source" content="bsnr_gallery.m"><style type="text/css">
+      --><title>bsnr_gallery</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-24"><meta name="DC.source" content="bsnr_gallery.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -69,7 +69,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">bsnr Gallery</a></li><li><a href="#2">Path setup</a></li><li><a href="#3">PART 1 &#8212; Synthetic fixtures: concepts and comparisons</a></li><li><a href="#4">1. Noise window strategies</a></li><li><a href="#5">2. Lurton formula vs simple power ratio</a></li><li><a href="#6">3. Calibrated acoustic levels</a></li><li><a href="#7">4. Click removal</a></li><li><a href="#8">5. Duty cycle and mean-power SNR</a></li><li><a href="#9">6. Distribution-based methods &#8212; quantiles and NIST</a></li><li><a href="#10">6a. Quantiles</a></li><li><a href="#11">6b. NIST histogram</a></li><li><a href="#12">7. Ridge and synchrosqueeze &#8212; FM signal</a></li><li><a href="#13">PART 2 &#8212; Real recordings: functional demos</a></li><li><a href="#14">8a. Tonal calls &#8212; ABW A, B, Z</a></li><li><a href="#15">8b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</a></li><li><a href="#16">9. Method comparison &#8212; SNR heatmap</a></li><li><a href="#17">Local helpers</a></li></ul></div><h2 id="1">bsnr Gallery</h2><p>Illustrated reference for the bsnr SNR estimation toolbox.</p><p><b>Part 1</b> illustrates each method on synthetic signals, with every section self-contained: signal generation, SNR estimation, and display in one block. Synthetic signals allow controlled comparison across methods at known SNR.</p><p><b>Part 2</b> demonstrates each method on real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021), with spectrogram parameters matched to the published figures.</p><p>Audio clips (CC-BY 4.0, included in <tt>examples/audio/</tt>): Miller et al. (2021). doi:10.26179/5e6056035c01b</p><p><b>To publish to HTML:</b></p><pre class="language-matlab">cd <span class="string">C:\analysis\bsnr\examples</span>
+</head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">bsnr Gallery</a></li><li><a href="#2">Path setup</a></li><li><a href="#3">PART 1 &#8212; Synthetic fixtures: concepts and comparisons</a></li><li><a href="#4">1. Noise window strategies</a></li><li><a href="#5">2. Lurton formula vs simple power ratio</a></li><li><a href="#6">3. Calibrated acoustic levels</a></li><li><a href="#7">4. Click removal</a></li><li><a href="#8">5. Duty cycle and mean-power SNR</a></li><li><a href="#9">6. Distribution-based methods &#8212; quantiles and NIST</a></li><li><a href="#10">6a. Quantiles</a></li><li><a href="#11">6b. NIST histogram</a></li><li><a href="#12">7. Ridge and synchrosqueeze &#8212; FM signal</a></li><li><a href="#13">8. Annotation trimming</a></li><li><a href="#14">PART 2 &#8212; Real recordings: functional demos</a></li><li><a href="#15">8b. Annotation trimming &#8212; real ABW D-call</a></li><li><a href="#16">9a. Tonal calls &#8212; ABW A, B, Z</a></li><li><a href="#17">9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</a></li><li><a href="#18">10. Method comparison &#8212; SNR heatmap</a></li><li><a href="#19">Local helpers</a></li></ul></div><h2 id="1">bsnr Gallery</h2><p>Illustrated reference for the bsnr SNR estimation toolbox.</p><p><b>Part 1</b> illustrates each method on synthetic signals, with every section self-contained: signal generation, SNR estimation, and display in one block. Synthetic signals allow controlled comparison across methods at known SNR.</p><p><b>Part 2</b> demonstrates each method on real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021), with spectrogram parameters matched to the published figures.</p><p>Audio clips (CC-BY 4.0, included in <tt>examples/audio/</tt>): Miller et al. (2021). doi:10.26179/5e6056035c01b</p><p><b>To publish to HTML:</b></p><pre class="language-matlab">cd <span class="string">C:\analysis\bsnr\examples</span>
 publishDocs
 </pre><pre class="codeinput">close <span class="string">all</span>;
 galleryDir = fileparts(mfilename(<span class="string">'fullpath'</span>));
@@ -377,7 +377,38 @@ fprintf(<span class="string">'  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin;
     snrRidgeVal, snrSSQVal);
 cleanupSRW();
 </pre><pre class="codeoutput">  ridge=27.6 dB  synchrosqueeze=31.9 dB  (per-bin; ~10*log10(nBins) above band average)
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_08.png" alt=""> <h2 id="13">PART 2 &#8212; Real recordings: functional demos</h2><p>Part 2 applies all seven methods to real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips were extracted from DIFAR sonobuoy recordings made near Kerguelen Island by the Australian Antarctic Division.</p><p>Spectrogram parameters are matched to the published figures in Miller et al. (2021) for each call type. The ABW A call band [24&#8211;28 Hz] is too narrow for reliable ridge tracking, so those methods return NaN for that call type and the cells are blank in the comparison heatmap.</p><p>Call types covered:</p><div><ul><li><b>ABW A</b> &#8212; Antarctic blue whale (Bm) A-call: 10 s tonal, [24&#8211;28 Hz]</li><li><b>ABW B</b> &#8212; Bm B-call: 12 s tonal, [20&#8211;28 Hz]</li><li><b>ABW Z</b> &#8212; Bm Z-call: 21 s tonal, [17&#8211;28 Hz]</li><li><b>ABW D</b> &#8212; Bm D-call: 4 s FM downsweep, [44&#8211;72 Hz]</li><li><b>Fin 40Hz</b> &#8212; Fin whale 40 Hz call: 2 s pulsed, [32&#8211;61 Hz]</li><li><b>Fin 20Hz</b> &#8212; Fin whale 20 Hz call: 4 s tonal, [15&#8211;35 Hz]</li></ul></div><pre class="codeinput">callTypes = {
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_08.png" alt=""> <h2 id="13">8. Annotation trimming</h2><p>Analysts often draw annotation boxes with generous time and frequency buffers. <tt>trimAnnotation</tt> removes these margins by trimming to the central 95% of in-band spectral energy, tightening both time and frequency bounds before SNR estimation.</p><p>This section uses a synthetic 200 Hz tone with 1.5s silence on each side and a frequency box wider than the signal band. The trim diagnostic shows the spectrogram with original (blue dashed) and trimmed (red) bounds, plus the per-slice and per-bin energy profiles.</p><pre class="codeinput">[annotTone8, cleanup8] = createTestFixture( <span class="keyword">...</span>
+    <span class="string">'signalRMS'</span>, 1.0, <span class="string">'noiseRMS'</span>, 0.1, <span class="keyword">...</span>
+    <span class="string">'toneFreqHz'</span>, 200, <span class="string">'freq'</span>, [150 250], <span class="string">'durationSec'</span>, 4);
+
+<span class="comment">% Wide annotation: 1.5s margins each side, freq band wider than tone</span>
+annotWide8          = annotTone8;
+annotWide8.t0       = annotTone8.t0   - 1.5/86400;
+annotWide8.tEnd     = annotTone8.tEnd + 1.5/86400;
+annotWide8.duration = (annotWide8.tEnd - annotWide8.t0) * 86400;
+annotWide8.freq     = [100 300];   <span class="comment">% symmetric about 200 Hz tone</span>
+
+<span class="comment">% Trim &#8212; shows diagnostic plot</span>
+trimParams8   = struct(<span class="string">'showPlot'</span>, true);
+annotTrimmed8 = trimAnnotation(annotWide8, trimParams8);
+
+fprintf(<span class="string">'  Original: %.2f s  [%.0f %.0f] Hz\n'</span>, <span class="keyword">...</span>
+    annotWide8.duration, annotWide8.freq(1), annotWide8.freq(2));
+fprintf(<span class="string">'  Trimmed:  %.2f s  [%.0f %.0f] Hz\n'</span>, <span class="keyword">...</span>
+    annotTrimmed8.duration, annotTrimmed8.freq(1), annotTrimmed8.freq(2));
+
+<span class="comment">% Report SNR before and after</span>
+p8         = struct(<span class="string">'snrType'</span>, <span class="string">'spectrogramSlices'</span>, <span class="string">'showClips'</span>, false);
+snrBefore8 = snrEstimate(annotWide8,    p8);
+snrAfter8  = snrEstimate(annotTrimmed8, p8);
+fprintf(<span class="string">'  SNR before trim: %.1f dB\n'</span>, snrBefore8);
+fprintf(<span class="string">'  SNR after trim:  %.1f dB\n'</span>, snrAfter8);
+cleanup8();
+</pre><pre class="codeoutput">  Original: 7.00 s  [100 300] Hz
+  Trimmed:  4.18 s  [197 201] Hz
+  SNR before trim: NaN dB
+  SNR after trim:  26.6 dB
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_09.png" alt=""> <h2 id="14">PART 2 &#8212; Real recordings: functional demos</h2><p>Part 2 applies all seven methods to real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips were extracted from DIFAR sonobuoy recordings made near Kerguelen Island by the Australian Antarctic Division.</p><p>Spectrogram parameters are matched to the published figures in Miller et al. (2021) for each call type. The ABW A call band [24&#8211;28 Hz] is too narrow for reliable ridge tracking, so those methods return NaN for that call type and the cells are blank in the comparison heatmap.</p><p>Call types covered:</p><div><ul><li><b>ABW A</b> &#8212; Antarctic blue whale (Bm) A-call: 10 s tonal, [24&#8211;28 Hz]</li><li><b>ABW B</b> &#8212; Bm B-call: 12 s tonal, [20&#8211;28 Hz]</li><li><b>ABW Z</b> &#8212; Bm Z-call: 21 s tonal, [17&#8211;28 Hz]</li><li><b>ABW D</b> &#8212; Bm D-call: 4 s FM downsweep, [44&#8211;72 Hz]</li><li><b>Fin 40Hz</b> &#8212; Fin whale 40 Hz call: 2 s pulsed, [32&#8211;61 Hz]</li><li><b>Fin 20Hz</b> &#8212; Fin whale 20 Hz call: 4 s tonal, [15&#8211;35 Hz]</li></ul></div><pre class="codeinput">callTypes = {
   <span class="string">'ABW A'</span>    <span class="string">'abw_a'</span>  10   10   [24  28]
   <span class="string">'ABW B'</span>    <span class="string">'abw_b'</span>  13   12   [20  28]
   <span class="string">'ABW Z'</span>    <span class="string">'abw_z'</span>  17   21   [17  28]
@@ -423,15 +454,51 @@ nMethods    = numel(methodNames);
 snrByMethod = nan(nMethods, nCallTypes);
 </pre><pre class="codeoutput">
 6/6 call types available.
-</pre><h2 id="14">8a. Tonal calls &#8212; ABW A, B, Z</h2><p>Three Antarctic blue whale tonal calls covering a range of bandwidths and durations. The narrow [24&#8211;28 Hz] band of the A-call has fewer than 3 FFT bins at the nSlices-derived nfft, so <tt>ridge</tt> and <tt>synchrosqueeze</tt> return NaN for that call type.</p><pre class="codeinput">tonalIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW A'</span>, <span class="string">'ABW B'</span>, <span class="string">'ABW Z'</span>}) &amp; callAvailable);
+</pre><h2 id="15">8b. Annotation trimming &#8212; real ABW D-call</h2><p>The same trimming applied to a real ABW D-call from the IWC-SORP Annotated Library. The original annotation has tight analyst bounds; we extend them to simulate generous buffering, then trim back. This section requires the audio clips in <tt>examples/audio/</tt>.</p><pre class="codeinput">dIdx9 = find(strcmp(callTypes(:,1), <span class="string">'ABW D'</span>), 1);
+<span class="keyword">if</span> ~isempty(dIdx9) &amp;&amp; callAvailable(dIdx9)
+    annotD9 = callAnnots{dIdx9};
+
+    <span class="comment">% Extend to simulate generous box &#8212; use 1s margin to stay within clip</span>
+    marginSec9      = 1.0;
+    annotWide9      = annotD9;
+    annotWide9.t0   = annotD9.t0   - marginSec9/86400;
+    annotWide9.tEnd = annotD9.tEnd + marginSec9/86400;
+    annotWide9.duration = (annotWide9.tEnd - annotWide9.t0) * 86400;
+    annotWide9.freq = [annotD9.freq(1) - 15, annotD9.freq(2) + 15];
+
+    trimParams9   = struct(<span class="string">'showPlot'</span>, true, <span class="string">'trimMethod'</span>, <span class="string">'cumulative'</span>, <span class="keyword">...</span>
+        <span class="string">'timeStartPercentile'</span>, 10, <span class="string">'timeEndPercentile'</span>, 20, <span class="string">'freqPercentile'</span>, 10);
+    annotTrimmed9 = trimAnnotation(annotWide9, trimParams9);
+    <span class="keyword">if</span> ~annotTrimmed9.trimApplied
+        warning(<span class="string">'Section 9: trim not applied &#8212; audio may not cover extended bounds'</span>);
+    <span class="keyword">end</span>
+
+    fprintf(<span class="string">'  Original: %.2f s  [%.0f %.0f] Hz\n'</span>, <span class="keyword">...</span>
+        annotWide9.duration, annotWide9.freq(1), annotWide9.freq(2));
+    fprintf(<span class="string">'  Trimmed:  %.2f s  [%.0f %.0f] Hz\n'</span>, <span class="keyword">...</span>
+        annotTrimmed9.duration, annotTrimmed9.freq(1), annotTrimmed9.freq(2));
+
+    p9         = struct(<span class="string">'snrType'</span>, <span class="string">'spectrogramSlices'</span>, <span class="string">'showClips'</span>, false);
+    snrBefore9 = snrEstimate(annotWide9,    p9);
+    snrAfter9  = snrEstimate(annotTrimmed9, p9);
+    fprintf(<span class="string">'  SNR before trim: %.1f dB\n'</span>, snrBefore9);
+    fprintf(<span class="string">'  SNR after trim:  %.1f dB\n'</span>, snrAfter9);
+<span class="keyword">else</span>
+    fprintf(<span class="string">'9. Real trim: ABW D audio not available &#8212; skipping.\n'</span>);
+<span class="keyword">end</span>
+</pre><pre class="codeoutput">  Original: 6.00 s  [29 87] Hz
+  Trimmed:  2.67 s  [43 66] Hz
+  SNR before trim: -0.5 dB
+  SNR after trim:  5.3 dB
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_10.png" alt=""> <h2 id="16">9a. Tonal calls &#8212; ABW A, B, Z</h2><p>Three Antarctic blue whale tonal calls covering a range of bandwidths and durations. The narrow [24&#8211;28 Hz] band of the A-call has fewer than 3 FFT bins at the nSlices-derived nfft, so <tt>ridge</tt> and <tt>synchrosqueeze</tt> return NaN for that call type.</p><pre class="codeinput">tonalIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW A'</span>, <span class="string">'ABW B'</span>, <span class="string">'ABW Z'</span>}) &amp; callAvailable);
 snrByMethod = drawRealCallFigure(tonalIdx, callTypes, callAnnots, callSP, <span class="keyword">...</span>
-    methodNames, snrByMethod, <span class="string">'8a. Tonal calls &#8212; ABW A, B, Z'</span>);
+    methodNames, snrByMethod, <span class="string">'9a. Tonal calls &#8212; ABW A, B, Z'</span>);
 </pre><pre class="codeoutput">Warning: Fewer than 3 FFT bins in [24.0 28.0] Hz &#8212; cannot track ridge. 
 Warning: Fewer than 3 frequency bins in [24.0 28.0] Hz. 
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_09.png" alt=""> <h2 id="15">8b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</h2><p>A frequency-modulated downsweep (ABW D) and two call types from fin whales. These have wider bands, shorter durations, or pulsed structure, providing a contrast with the narrow tonal calls in 8a.</p><pre class="codeinput">fmIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW D'</span>, <span class="string">'Fin 40Hz'</span>, <span class="string">'Fin 20Hz'</span>}) &amp; callAvailable);
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_11.png" alt=""> <h2 id="17">9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</h2><p>A frequency-modulated downsweep (ABW D) and two call types from fin whales. These have wider bands, shorter durations, or pulsed structure, providing a contrast with the narrow tonal calls in 8a.</p><pre class="codeinput">fmIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW D'</span>, <span class="string">'Fin 40Hz'</span>, <span class="string">'Fin 20Hz'</span>}) &amp; callAvailable);
 snrByMethod = drawRealCallFigure(fmIdx, callTypes, callAnnots, callSP, <span class="keyword">...</span>
-    methodNames, snrByMethod, <span class="string">'8b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz'</span>);
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_10.png" alt=""> <h2 id="16">9. Method comparison &#8212; SNR heatmap</h2><p>SNR estimates (dB, simple power ratio) for all seven methods across all available call types. Ridge and synchrosqueeze report per-bin SNR and are not directly comparable to the band-average methods; they are included for completeness and shown in the same colour scale.</p><pre class="codeinput">colLabels = strrep(callTypes(availableIdx, 1)', <span class="string">' '</span>, <span class="string">'_'</span>);
+    methodNames, snrByMethod, <span class="string">'9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz'</span>);
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_12.png" alt=""> <h2 id="18">10. Method comparison &#8212; SNR heatmap</h2><p>SNR estimates (dB, simple power ratio) for all seven methods across all available call types. Ridge and synchrosqueeze report per-bin SNR and are not directly comparable to the band-average methods; they are included for completeness and shown in the same colour scale.</p><pre class="codeinput">colLabels = strrep(callTypes(availableIdx, 1)', <span class="string">' '</span>, <span class="string">'_'</span>);
 snrTable  = array2table(snrByMethod(:, availableIdx), <span class="keyword">...</span>
     <span class="string">'RowNames'</span>, methodNames, <span class="string">'VariableNames'</span>, colLabels);
 disp(snrTable);
@@ -446,7 +513,7 @@ set(axH, <span class="string">'XTick'</span>, 1:nAvailable, <span class="string"
          <span class="string">'YTick'</span>, 1:nMethods,   <span class="string">'YTickLabel'</span>, methodNames, <span class="keyword">...</span>
          <span class="string">'TickLabelInterpreter'</span>, <span class="string">'none'</span>, <span class="string">'FontSize'</span>, 8);
 xtickangle(axH, 30);
-title(axH, <span class="string">'9. SNR by method and call type (dB)'</span>, <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
+title(axH, <span class="string">'10. SNR by method and call type (dB)'</span>, <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
 <span class="keyword">for</span> row = 1:nMethods
     <span class="keyword">for</span> col = 1:nAvailable
         v = snrByMethod(row, availableIdx(col));
@@ -457,6 +524,7 @@ title(axH, <span class="string">'9. SNR by method and call type (dB)'</span>, <s
         <span class="keyword">end</span>
     <span class="keyword">end</span>
 <span class="keyword">end</span>
+
 
 fprintf(<span class="string">'\n=== gallery complete ===\n'</span>);
 fprintf(<span class="string">'Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b\n'</span>);
@@ -474,7 +542,7 @@ fprintf(<span class="string">'Audio: Miller et al. (2021) doi:10.26179/5e6056035
 
 === gallery complete ===
 Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_11.png" alt=""> <h2 id="17">Local helpers</h2><pre class="codeinput"><span class="keyword">function</span> snrValue = runAndTitle(annot, params, titleStr)
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_13.png" alt=""> <h2 id="19">Local helpers</h2><pre class="codeinput"><span class="keyword">function</span> snrValue = runAndTitle(annot, params, titleStr)
 snrValue = snrEstimate(annot, params);
 <span class="keyword">if</span> istable(snrValue), snrValue = snrValue.snr; <span class="keyword">end</span>
 title(gca, titleStr, <span class="string">'interpreter'</span>, <span class="string">'none'</span>, <span class="string">'FontSize'</span>, 8);
@@ -1066,6 +1134,45 @@ fprintf('  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin; ~10*log10(nBins) abo
     snrRidgeVal, snrSSQVal);
 cleanupSRW();
 
+%% 8. Annotation trimming
+% Analysts often draw annotation boxes with generous time and frequency
+% buffers. |trimAnnotation| removes these margins by trimming to the
+% central 95% of in-band spectral energy, tightening both time and
+% frequency bounds before SNR estimation.
+%
+% This section uses a synthetic 200 Hz tone with 1.5s silence on each
+% side and a frequency box wider than the signal band. The trim diagnostic
+% shows the spectrogram with original (blue dashed) and trimmed (red)
+% bounds, plus the per-slice and per-bin energy profiles.
+
+[annotTone8, cleanup8] = createTestFixture( ...
+    'signalRMS', 1.0, 'noiseRMS', 0.1, ...
+    'toneFreqHz', 200, 'freq', [150 250], 'durationSec', 4);
+
+% Wide annotation: 1.5s margins each side, freq band wider than tone
+annotWide8          = annotTone8;
+annotWide8.t0       = annotTone8.t0   - 1.5/86400;
+annotWide8.tEnd     = annotTone8.tEnd + 1.5/86400;
+annotWide8.duration = (annotWide8.tEnd - annotWide8.t0) * 86400;
+annotWide8.freq     = [100 300];   % symmetric about 200 Hz tone
+
+% Trim — shows diagnostic plot
+trimParams8   = struct('showPlot', true);
+annotTrimmed8 = trimAnnotation(annotWide8, trimParams8);
+
+fprintf('  Original: %.2f s  [%.0f %.0f] Hz\n', ...
+    annotWide8.duration, annotWide8.freq(1), annotWide8.freq(2));
+fprintf('  Trimmed:  %.2f s  [%.0f %.0f] Hz\n', ...
+    annotTrimmed8.duration, annotTrimmed8.freq(1), annotTrimmed8.freq(2));
+
+% Report SNR before and after
+p8         = struct('snrType', 'spectrogramSlices', 'showClips', false);
+snrBefore8 = snrEstimate(annotWide8,    p8);
+snrAfter8  = snrEstimate(annotTrimmed8, p8);
+fprintf('  SNR before trim: %.1f dB\n', snrBefore8);
+fprintf('  SNR after trim:  %.1f dB\n', snrAfter8);
+cleanup8();
+
 %% PART 2 — Real recordings: functional demos
 % Part 2 applies all seven methods to real Antarctic baleen whale recordings
 % from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips
@@ -1131,7 +1238,46 @@ methodNames = {'spectrogram', 'spectrogramSlices', 'ridge', ...
 nMethods    = numel(methodNames);
 snrByMethod = nan(nMethods, nCallTypes);
 
-%% 8a. Tonal calls — ABW A, B, Z
+%% 8b. Annotation trimming — real ABW D-call
+% The same trimming applied to a real ABW D-call from the IWC-SORP
+% Annotated Library. The original annotation has tight analyst bounds;
+% we extend them to simulate generous buffering, then trim back.
+% This section requires the audio clips in |examples/audio/|.
+
+dIdx9 = find(strcmp(callTypes(:,1), 'ABW D'), 1);
+if ~isempty(dIdx9) && callAvailable(dIdx9)
+    annotD9 = callAnnots{dIdx9};
+
+    % Extend to simulate generous box — use 1s margin to stay within clip
+    marginSec9      = 1.0;
+    annotWide9      = annotD9;
+    annotWide9.t0   = annotD9.t0   - marginSec9/86400;
+    annotWide9.tEnd = annotD9.tEnd + marginSec9/86400;
+    annotWide9.duration = (annotWide9.tEnd - annotWide9.t0) * 86400;
+    annotWide9.freq = [annotD9.freq(1) - 15, annotD9.freq(2) + 15];
+
+    trimParams9   = struct('showPlot', true, 'trimMethod', 'cumulative', ...
+        'timeStartPercentile', 10, 'timeEndPercentile', 20, 'freqPercentile', 10);
+    annotTrimmed9 = trimAnnotation(annotWide9, trimParams9);
+    if ~annotTrimmed9.trimApplied
+        warning('Section 9: trim not applied — audio may not cover extended bounds');
+    end
+
+    fprintf('  Original: %.2f s  [%.0f %.0f] Hz\n', ...
+        annotWide9.duration, annotWide9.freq(1), annotWide9.freq(2));
+    fprintf('  Trimmed:  %.2f s  [%.0f %.0f] Hz\n', ...
+        annotTrimmed9.duration, annotTrimmed9.freq(1), annotTrimmed9.freq(2));
+
+    p9         = struct('snrType', 'spectrogramSlices', 'showClips', false);
+    snrBefore9 = snrEstimate(annotWide9,    p9);
+    snrAfter9  = snrEstimate(annotTrimmed9, p9);
+    fprintf('  SNR before trim: %.1f dB\n', snrBefore9);
+    fprintf('  SNR after trim:  %.1f dB\n', snrAfter9);
+else
+    fprintf('9. Real trim: ABW D audio not available — skipping.\n');
+end
+
+%% 9a. Tonal calls — ABW A, B, Z
 % Three Antarctic blue whale tonal calls covering a range of bandwidths and
 % durations. The narrow [24–28 Hz] band of the A-call has fewer than 3 FFT
 % bins at the nSlices-derived nfft, so |ridge| and |synchrosqueeze| return
@@ -1139,18 +1285,18 @@ snrByMethod = nan(nMethods, nCallTypes);
 
 tonalIdx = find(ismember(callTypes(:,1), {'ABW A', 'ABW B', 'ABW Z'}) & callAvailable);
 snrByMethod = drawRealCallFigure(tonalIdx, callTypes, callAnnots, callSP, ...
-    methodNames, snrByMethod, '8a. Tonal calls — ABW A, B, Z');
+    methodNames, snrByMethod, '9a. Tonal calls — ABW A, B, Z');
 
-%% 8b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz
+%% 9b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz
 % A frequency-modulated downsweep (ABW D) and two call types from fin
 % whales. These have wider bands, shorter durations, or pulsed structure,
 % providing a contrast with the narrow tonal calls in 8a.
 
 fmIdx = find(ismember(callTypes(:,1), {'ABW D', 'Fin 40Hz', 'Fin 20Hz'}) & callAvailable);
 snrByMethod = drawRealCallFigure(fmIdx, callTypes, callAnnots, callSP, ...
-    methodNames, snrByMethod, '8b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz');
+    methodNames, snrByMethod, '9b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz');
 
-%% 9. Method comparison — SNR heatmap
+%% 10. Method comparison — SNR heatmap
 % SNR estimates (dB, simple power ratio) for all seven methods across all
 % available call types. Ridge and synchrosqueeze report per-bin SNR and are
 % not directly comparable to the band-average methods; they are included for
@@ -1171,7 +1317,7 @@ set(axH, 'XTick', 1:nAvailable, 'XTickLabel', colLabels, ...
          'YTick', 1:nMethods,   'YTickLabel', methodNames, ...
          'TickLabelInterpreter', 'none', 'FontSize', 8);
 xtickangle(axH, 30);
-title(axH, '9. SNR by method and call type (dB)', 'FontWeight', 'bold');
+title(axH, '10. SNR by method and call type (dB)', 'FontWeight', 'bold');
 for row = 1:nMethods
     for col = 1:nAvailable
         v = snrByMethod(row, availableIdx(col));
@@ -1182,6 +1328,7 @@ for row = 1:nMethods
         end
     end
 end
+
 
 fprintf('\n=== gallery complete ===\n');
 fprintf('Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b\n');

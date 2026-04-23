@@ -105,7 +105,8 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %              .removeClicks       Click suppression parameters:
 %                                    .threshold  (default 3)
 %                                    .power      (default 1000)
-%              .metadata           Recording metadata for calibration.
+%              .calibration        Instrument calibration struct (see metaDataCasey2019).
+%                                 Also accepted as .metadata for backward compatibility.
 %
 % OUTPUTS - scalar input
 %   snr        SNR in dB
@@ -122,7 +123,7 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimate(annot, par
 %                 signalRMSdB    Signal RMS level in dB
 %                 noiseRMSdB     Noise RMS level in dB
 %                 noiseVar       Noise power variance
-%               When params.metadata is provided, also includes:
+%               When params.calibration is provided, also includes:
 %                 signalBandLevel_dBuPa  Calibrated signal level (dB re 1 uPa)
 %                 noiseBandLevel_dBuPa   Calibrated noise level  (dB re 1 uPa)
 %               Tethys field mapping:
@@ -305,7 +306,7 @@ resultTable = table(snr, signalRMSdB, noiseRMSdB, noiseVarVec, ...
 %   timeDomain:  rmsSignal in uPa^2  -> signalLevel = 10*log10(rmsSignal)
 %   spectrogram: rmsSignal in uPa^2/Hz -> signalLevel = 10*log10(rmsSignal*bandwidth)
 % For vector input we use the params from the first annotation as representative.
-if ~isempty(params.metadata)
+if ~isempty(params.calibration)
     if ~isempty(params.freq)
         bandwidth = diff(params.freq);
     elseif isstruct(annot) && isfield(annot(1), 'freq')
@@ -490,34 +491,34 @@ switch params.snrType
     case 'spectrogram'
         [rmsSignal, rmsNoise, noiseVar, spectrogramData] = snrSpectrogram( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
-            params.metadata);
+            params.calibration);
 
     case 'spectrogramSlices'
         [rmsSignal, rmsNoise, noiseVar, slicesData] = snrSpectrogramSlices( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
-            params.metadata);
+            params.calibration);
 
     case 'quantiles'
         [rmsSignal, rmsNoise, noiseVar, quantileThresh, psdCells] = snrQuantiles( ...
-            annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
+            annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.calibration);
 
     case 'nist'
         [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
-            annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.metadata);
+            annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.calibration);
 
     case 'timeDomain'
         [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = ...
-            snrTimeDomain(annot.audio, noise.audio, freq, sampleRate, params.metadata);
+            snrTimeDomain(annot.audio, noise.audio, freq, sampleRate, params.calibration);
 
     case 'ridge'
         [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~, ridgeData] = snrRidge( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
-            params.metadata, params.ridgeParams);
+            params.calibration, params.ridgeParams);
 
     case 'synchrosqueeze'
         [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~, ridgeData] = snrSynchrosqueeze( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
-            params.metadata, params.ridgeParams);
+            params.calibration, params.ridgeParams);
 
     otherwise
         error('snrEstimate:unknownSnrType', ...
@@ -547,7 +548,7 @@ noise.rmsLevel = 10 * log10(rmsNoise);
 
 if params.showClips
     levelUnit = 'dBFS';
-    if ~isempty(params.metadata), levelUnit = 'dB re 1µPa'; end
+    if ~isempty(params.calibration), levelUnit = 'dB re 1µPa'; end
 
     % Gather all method data into one struct for resolveDisplayType
     methodData.spectrogramData  = spectrogramData;
@@ -578,7 +579,7 @@ if params.showClips
                 plotParams.nistThresh = [rmsNoise / diff(freq), rmsSignal / diff(freq)];
             end
             spectroAnnotationAndNoise(annot, noise, soundFolder, plotParams, snr, ...
-                params.metadata);
+                params.calibration);
 
         case 'timeSeries'
             if ~isempty(sigFilt)
@@ -677,8 +678,12 @@ end
 if ~isfield(params, 'showClips') || isempty(params.showClips)
     params.showClips = false;
 end
-if ~isfield(params, 'metadata')
-    params.metadata = [];
+% params.calibration — accept params.metadata as backward-compatible alias
+if isfield(params, 'metadata') && ~isfield(params, 'calibration')
+    params.calibration = params.metadata;
+end
+if ~isfield(params, 'calibration')
+    params.calibration = [];
 end
 if ~isfield(params, 'pauseAfterPlot') || isempty(params.pauseAfterPlot)
     params.pauseAfterPlot = true;

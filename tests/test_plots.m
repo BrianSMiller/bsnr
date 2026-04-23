@@ -296,6 +296,50 @@ for s = 1:nCols
 end
 fprintf('  [PASS] Figure 8 complete\n');
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figure 9: trimAnnotation diagnostic
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('--- Figure 9: trimAnnotation diagnostic ---\n');
+
+% Build a wide annotation (signal with 1.5s noise margins on each side)
+[annotTrim, cleanupTrim] = createTestFixture( ...
+    'signalRMS',   1.0, ...
+    'noiseRMS',    0.1, ...
+    'toneFreqHz',  200, ...
+    'freq',        toneFreq, ...
+    'durationSec', 4, ...
+    'classification', 'trimAnnotation test');
+
+% Extend into noise buffer to create generous analyst-style box
+annotWide          = annotTrim;
+annotWide.t0       = annotTrim.t0   - 1.5/86400;
+annotWide.tEnd     = annotTrim.tEnd + 1.5/86400;
+annotWide.duration = (annotWide.tEnd - annotWide.t0) * 86400;
+annotWide.freq     = [100 300];   % symmetric about 200 Hz tone
+
+% Trim with per-annotation freq (no fixed params.freq)
+trimParams = struct('showPlot', true);
+trimmed = trimAnnotation(annotWide, trimParams);
+fig9 = gcf;  % capture figure produced by plotTrimDiagnostic
+
+fprintf('  Original: %.2f s, [%.0f %.0f] Hz\n', ...
+    annotWide.duration, annotWide.freq(1), annotWide.freq(2));
+fprintf('  Trimmed:  %.2f s, [%.0f %.0f] Hz\n', ...
+    trimmed.duration, trimmed.freq(1), trimmed.freq(2));
+
+cleanupTrim();
+% Verify at least one axes has content
+axList = findobj(fig9, 'Type', 'axes');
+assert(~isempty(axList), 'Figure 9: no axes found — plotTrimDiagnostic may have failed silently');
+hasContent = false;
+for ax = axList'
+    if ~isempty(get(ax, 'Children')), hasContent = true; break; end
+end
+assert(hasContent, 'Figure 9: all axes are empty — check plotTrimDiagnostic');
+fprintf('  [PASS] Figure 9 complete\n');
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Cleanup and summary
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

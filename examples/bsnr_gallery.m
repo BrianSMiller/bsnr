@@ -489,6 +489,45 @@ fprintf('  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin; ~10*log10(nBins) abo
     snrRidgeVal, snrSSQVal);
 cleanupSRW();
 
+%% 8. Annotation trimming
+% Analysts often draw annotation boxes with generous time and frequency
+% buffers. |trimAnnotation| removes these margins by trimming to the
+% central 95% of in-band spectral energy, tightening both time and
+% frequency bounds before SNR estimation.
+%
+% This section uses a synthetic 200 Hz tone with 1.5s silence on each
+% side and a frequency box wider than the signal band. The trim diagnostic
+% shows the spectrogram with original (blue dashed) and trimmed (red)
+% bounds, plus the per-slice and per-bin energy profiles.
+
+[annotTone8, cleanup8] = createTestFixture( ...
+    'signalRMS', 1.0, 'noiseRMS', 0.1, ...
+    'toneFreqHz', 200, 'freq', [150 250], 'durationSec', 4);
+
+% Wide annotation: 1.5s margins each side, freq band wider than tone
+annotWide8          = annotTone8;
+annotWide8.t0       = annotTone8.t0   - 1.5/86400;
+annotWide8.tEnd     = annotTone8.tEnd + 1.5/86400;
+annotWide8.duration = (annotWide8.tEnd - annotWide8.t0) * 86400;
+annotWide8.freq     = [100 300];   % symmetric about 200 Hz tone
+
+% Trim — shows diagnostic plot
+trimParams8   = struct('showPlot', true);
+annotTrimmed8 = trimAnnotation(annotWide8, trimParams8);
+
+fprintf('  Original: %.2f s  [%.0f %.0f] Hz\n', ...
+    annotWide8.duration, annotWide8.freq(1), annotWide8.freq(2));
+fprintf('  Trimmed:  %.2f s  [%.0f %.0f] Hz\n', ...
+    annotTrimmed8.duration, annotTrimmed8.freq(1), annotTrimmed8.freq(2));
+
+% Report SNR before and after
+p8         = struct('snrType', 'spectrogramSlices', 'showClips', false);
+snrBefore8 = snrEstimate(annotWide8,    p8);
+snrAfter8  = snrEstimate(annotTrimmed8, p8);
+fprintf('  SNR before trim: %.1f dB\n', snrBefore8);
+fprintf('  SNR after trim:  %.1f dB\n', snrAfter8);
+cleanup8();
+
 %% PART 2 — Real recordings: functional demos
 % Part 2 applies all seven methods to real Antarctic baleen whale recordings
 % from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips
@@ -554,7 +593,46 @@ methodNames = {'spectrogram', 'spectrogramSlices', 'ridge', ...
 nMethods    = numel(methodNames);
 snrByMethod = nan(nMethods, nCallTypes);
 
-%% 8a. Tonal calls — ABW A, B, Z
+%% 8b. Annotation trimming — real ABW D-call
+% The same trimming applied to a real ABW D-call from the IWC-SORP
+% Annotated Library. The original annotation has tight analyst bounds;
+% we extend them to simulate generous buffering, then trim back.
+% This section requires the audio clips in |examples/audio/|.
+
+dIdx9 = find(strcmp(callTypes(:,1), 'ABW D'), 1);
+if ~isempty(dIdx9) && callAvailable(dIdx9)
+    annotD9 = callAnnots{dIdx9};
+
+    % Extend to simulate generous box — use 1s margin to stay within clip
+    marginSec9      = 1.0;
+    annotWide9      = annotD9;
+    annotWide9.t0   = annotD9.t0   - marginSec9/86400;
+    annotWide9.tEnd = annotD9.tEnd + marginSec9/86400;
+    annotWide9.duration = (annotWide9.tEnd - annotWide9.t0) * 86400;
+    annotWide9.freq = [annotD9.freq(1) - 15, annotD9.freq(2) + 15];
+
+    trimParams9   = struct('showPlot', true, 'trimMethod', 'cumulative', ...
+        'timeStartPercentile', 10, 'timeEndPercentile', 20, 'freqPercentile', 10);
+    annotTrimmed9 = trimAnnotation(annotWide9, trimParams9);
+    if ~annotTrimmed9.trimApplied
+        warning('Section 9: trim not applied — audio may not cover extended bounds');
+    end
+
+    fprintf('  Original: %.2f s  [%.0f %.0f] Hz\n', ...
+        annotWide9.duration, annotWide9.freq(1), annotWide9.freq(2));
+    fprintf('  Trimmed:  %.2f s  [%.0f %.0f] Hz\n', ...
+        annotTrimmed9.duration, annotTrimmed9.freq(1), annotTrimmed9.freq(2));
+
+    p9         = struct('snrType', 'spectrogramSlices', 'showClips', false);
+    snrBefore9 = snrEstimate(annotWide9,    p9);
+    snrAfter9  = snrEstimate(annotTrimmed9, p9);
+    fprintf('  SNR before trim: %.1f dB\n', snrBefore9);
+    fprintf('  SNR after trim:  %.1f dB\n', snrAfter9);
+else
+    fprintf('9. Real trim: ABW D audio not available — skipping.\n');
+end
+
+%% 9a. Tonal calls — ABW A, B, Z
 % Three Antarctic blue whale tonal calls covering a range of bandwidths and
 % durations. The narrow [24–28 Hz] band of the A-call has fewer than 3 FFT
 % bins at the nSlices-derived nfft, so |ridge| and |synchrosqueeze| return
@@ -562,18 +640,18 @@ snrByMethod = nan(nMethods, nCallTypes);
 
 tonalIdx = find(ismember(callTypes(:,1), {'ABW A', 'ABW B', 'ABW Z'}) & callAvailable);
 snrByMethod = drawRealCallFigure(tonalIdx, callTypes, callAnnots, callSP, ...
-    methodNames, snrByMethod, '8a. Tonal calls — ABW A, B, Z');
+    methodNames, snrByMethod, '9a. Tonal calls — ABW A, B, Z');
 
-%% 8b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz
+%% 9b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz
 % A frequency-modulated downsweep (ABW D) and two call types from fin
 % whales. These have wider bands, shorter durations, or pulsed structure,
 % providing a contrast with the narrow tonal calls in 8a.
 
 fmIdx = find(ismember(callTypes(:,1), {'ABW D', 'Fin 40Hz', 'Fin 20Hz'}) & callAvailable);
 snrByMethod = drawRealCallFigure(fmIdx, callTypes, callAnnots, callSP, ...
-    methodNames, snrByMethod, '8b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz');
+    methodNames, snrByMethod, '9b. FM and pulsed calls — ABW D, Fin 40Hz, Fin 20Hz');
 
-%% 9. Method comparison — SNR heatmap
+%% 10. Method comparison — SNR heatmap
 % SNR estimates (dB, simple power ratio) for all seven methods across all
 % available call types. Ridge and synchrosqueeze report per-bin SNR and are
 % not directly comparable to the band-average methods; they are included for
@@ -594,7 +672,7 @@ set(axH, 'XTick', 1:nAvailable, 'XTickLabel', colLabels, ...
          'YTick', 1:nMethods,   'YTickLabel', methodNames, ...
          'TickLabelInterpreter', 'none', 'FontSize', 8);
 xtickangle(axH, 30);
-title(axH, '9. SNR by method and call type (dB)', 'FontWeight', 'bold');
+title(axH, '10. SNR by method and call type (dB)', 'FontWeight', 'bold');
 for row = 1:nMethods
     for col = 1:nAvailable
         v = snrByMethod(row, availableIdx(col));
@@ -605,6 +683,7 @@ for row = 1:nMethods
         end
     end
 end
+
 
 fprintf('\n=== gallery complete ===\n');
 fprintf('Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b\n');
