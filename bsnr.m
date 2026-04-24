@@ -1,4 +1,5 @@
 % bsnr — Bioacoustic SNR Estimation Toolbox
+% Version 0.3.0-beta
 %
 % Estimates signal-to-noise ratio for bioacoustic detections in
 % hydrophone recordings. Accepts time-frequency bounded detections
@@ -15,6 +16,10 @@
 %                           before passing to snrEstimate. Accepts name-value pairs:
 %                             trimAnnotation(annot, 'energyPercentile', 10, 'showPlot', true)
 %   removeClicks          - Suppress impulsive noise (PAMGuard soft amplitude gate)
+%   readTethysDetections  - Convert Tethys Detections XML or struct to bsnr
+%                           annotation array
+%   writeTethysXml        - Write bsnr result table as Tethys-compatible
+%                           Detections XML (no Nilus/server required)
 %
 % SNR METHODS (selected via snrType parameter)
 %   'spectrogram'        - Mean band PSD; simple power ratio or Lurton formula

@@ -687,6 +687,67 @@ end
 fprintf('\n=== gallery complete ===\n');
 fprintf('Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b\n');
 
+%% 11. Tethys round-trip — read, estimate, write
+% Demonstrates reading detections from a bundled Tethys XML file,
+% estimating SNR, and writing results back as Tethys-compatible XML.
+%
+% In a real workflow, replace tethys_example.xml with your own Tethys
+% export or a file from a Tethys server query.
+
+fprintf('\n--- Section 11: Tethys round-trip ---\n');
+
+tethysXml  = fullfile(fileparts(mfilename('fullpath')), 'tethys_example.xml');
+audioDir   = fullfile(fileparts(mfilename('fullpath')), 'audio', 'abw_z');
+
+if ~isfile(tethysXml)
+    fprintf('  tethys_example.xml not found — skipping section 11.\n');
+else
+    % Read detections from Tethys XML
+    % Note: detections use absolute timestamps from Casey 2019;
+    % the bundled audio clip covers a short excerpt so we remap t0 to
+    % match the clip for demonstration purposes.
+    annotsT = readTethysDetections(tethysXml, audioDir);
+
+    % Remap timestamps to match the bundled clip (demo only)
+    sf = wavFolderInfo(audioDir, '', false, false);
+    clipStart = sf(1).startDate;
+    for k = 1:numel(annotsT)
+        offset = (annotsT(k).t0 - annotsT(1).t0) * 86400;  % seconds from first
+        annotsT(k).t0   = clipStart + (17 + offset) / 86400;
+        annotsT(k).tEnd = annotsT(k).t0 + annotsT(k).duration / 86400;
+    end
+
+    fprintf('  Read %d detections from Tethys XML\n', numel(annotsT));
+
+    % Estimate SNR
+    p11 = struct('snrType', 'spectrogramSlices', 'nfft', 512, ...
+        'showClips', false, 'verbose', false);
+    result11 = snrEstimate(annotsT, p11);
+
+    fprintf('  SNR estimates (dB): ');
+    fprintf('%.1f  ', result11.snr);
+    fprintf('\n');
+
+    % Write results back as Tethys XML
+    outXml = fullfile(tempdir, 'bsnr_tethys_results.xml');
+    writeTethysXml(result11, annotsT, ...
+        'project',      'AADC-Casey2019', ...
+        'deploymentId', 'Casey2019_01', ...
+        'software',     'bsnr', ...
+        'outputFile',   outXml);
+    fprintf('  Wrote Tethys results XML to: %s\n', outXml);
+    fprintf('  Fields written: SNR_dB, MinFreq_Hz, MaxFreq_Hz, Duration_s\n');
+
+    % Show summary table
+    fprintf('\n  Detection  SNR_dB  MinFreq  MaxFreq\n');
+    fprintf('  ---------  ------  -------  -------\n');
+    for k = 1:numel(annotsT)
+        fprintf('  %5d      %6.1f  %7.1f  %7.1f\n', ...
+            k, result11.snr(k), annotsT(k).freq(1), annotsT(k).freq(2));
+    end
+end
+
+
 %% Local helpers
 
 function snrValue = runAndTitle(annot, params, titleStr)

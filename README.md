@@ -1,6 +1,6 @@
 # bsnr — Bioacoustic SNR Estimation
 
-**Documentation:** https://briansmiller.github.io/bsnr
+**Version 0.3.0-beta** | **Documentation:** https://briansmiller.github.io/bsnr
 
 MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections from hydrophone recordings. Designed for tonal and frequency-modulated calls (whale song, upcalls, clicks) against broadband ocean noise.
 
@@ -187,6 +187,8 @@ bsnr/
 ├── snrEstimate.m                Public entry point — struct or name-value input
 ├── trimAnnotation.m             Trim annotation bounds to signal energy
 ├── removeClicks.m               Impulsive noise suppression
+├── readTethysDetections.m       Convert Tethys Detections XML/struct to bsnr annotations
+├── writeTethysXml.m             Write bsnr results as Tethys-compatible Detections XML
 ├── run_tests.m                  Test suite runner
 ├── resources/
 │   └── functionSignatures.json  Tab-completion for snrEstimate + trimAnnotation

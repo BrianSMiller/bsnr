@@ -19,17 +19,23 @@ Clone or download the repository, then add it to your MATLAB path:
 addpath('C:\analysis\bsnr', '-begin')
 ```
 
-**Dependencies** — bsnr requires the following packages, all freely available
-on GitHub:
+**Dependencies** — bsnr requires the following packages:
 
-| Package | Purpose | Link |
-|---|---|---|
-| [soundFolder](https://github.com/BrianSMiller/soundFolder) | WAV file indexing and audio loading (`wavFolderInfo`, `getAudioFromFiles`) | required |
-| [annotatedLibrary](https://github.com/BrianSMiller/annotatedLibrary) | Annotation utilities | required |
-| MATLAB Signal Processing Toolbox | `spectrogram`, `designfilt`, `fsst`, `tfridge` | required |
-| MATLAB Parallel Computing Toolbox | Batch parallel processing | optional |
+GitHub repositories (free, open source):
 
-Add all dependencies to your path before running bsnr.
+| Package | Purpose |
+|---|---|
+| [soundFolder](https://github.com/BrianSMiller/soundFolder) | WAV file indexing and audio loading (`wavFolderInfo`, `getAudioFromFiles`) |
+| [annotatedLibrary](https://github.com/BrianSMiller/annotatedLibrary) | Annotation utilities |
+
+MATLAB toolboxes (licensed separately):
+
+| Toolbox | Purpose |
+|---|---|
+| Signal Processing Toolbox | `spectrogram`, `designfilt`, `fsst`, `tfridge` |
+| Parallel Computing Toolbox | Batch parallel processing (optional) |
+
+Add all dependencies to your MATLAB path before running bsnr.
 
 ---
 
@@ -81,6 +87,40 @@ annot.channel     = 1;
 **Common mistake:** forgetting to set `annot.duration`. bsnr uses the duration
 to derive the spectrogram window size (`nfft`). Without it, results may be
 inconsistent across annotations.
+
+### Tethys annotations
+
+If your annotations are stored in a Tethys database or exported as Tethys
+Detections XML, use `readTethysDetections` to convert them to bsnr format:
+
+```matlab
+% From a Tethys XML file
+annots = readTethysDetections('detections.xml', 'C:\data\deployment_01');
+
+% From a struct returned by a Tethys MATLAB client query
+annots = readTethysDetections(tethysResult, soundFolderPath);
+
+% When MinFreq_Hz / MaxFreq_Hz are absent in the Tethys document
+annots = readTethysDetections('detections.xml', soundFolderPath, ...
+    'freqFallback', [10 30]);
+
+% Then estimate SNR as normal
+result = snrEstimate(annots, 'snrType', 'spectrogramSlices', 'nfft', 512);
+```
+
+To write results back as Tethys-compatible XML (e.g. for NOAA NCEI archiving):
+
+```matlab
+writeTethysXml(result, annots, ...
+    'project',      'SORP', ...
+    'deploymentId', 'Casey2019', ...
+    'software',     'bsnr', ...
+    'outputFile',   'snr_results.xml');
+```
+
+`SNR_dB` and `ReceivedLevel_dB` (when calibration is provided) are written
+as native Tethys `Detection.Parameters` fields — no user-defined extensions
+needed.
 
 ---
 

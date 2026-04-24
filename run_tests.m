@@ -109,7 +109,8 @@ if runPlots
     [passed(9), elapsed(9)] = runOne('test_snrEstimate_noiseWindows', verbose, @() test_snrEstimate_noiseWindows());
     [passed(10), elapsed(10)] = runOne('test_snrEstimate_outputs', verbose, @() test_snrEstimate_outputs());
     [passed(11), elapsed(11)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation());
-    nTests = 11;
+[passed(12), elapsed(12)] = runOne('test_tethys',         verbose, @() test_tethys());
+    nTests = 12;
 else
     [passed(7), elapsed(7)] = runOne('test_snrEstimate_batch', verbose, @() test_snrEstimate_batch(runParallel));
     [passed(8), elapsed(8)] = runOne('test_snrEstimate_noiseWindows', verbose, @() test_snrEstimate_noiseWindows());
@@ -126,12 +127,12 @@ if runPlots
     names = {'test_snrMethods', 'test_snrEstimate_scalar', 'test_snrEstimate_correctness', ...
              'test_snrEstimate_methods', 'test_removeClicks', 'test_calibration', ...
              'test_plots', 'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
-             'test_snrEstimate_outputs', 'test_trimAnnotation'};
+             'test_snrEstimate_outputs', 'test_trimAnnotation', 'test_tethys'};
 else
     names = {'test_snrMethods', 'test_snrEstimate_scalar', 'test_snrEstimate_correctness', ...
              'test_snrEstimate_methods', 'test_removeClicks', 'test_calibration', ...
              'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
-             'test_snrEstimate_outputs', 'test_trimAnnotation'};
+             'test_snrEstimate_outputs', 'test_trimAnnotation', 'test_tethys'};
 end
 
 fprintf('\n==============================================\n');
