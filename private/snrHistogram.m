@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
+function [rmsSignal, rmsNoise, noiseVar, methodData] = snrHistogram( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate SNR using a frame-energy histogram method.
 %
@@ -121,7 +121,9 @@ if floor(length(sigFiltered) / frameAdv) < 10
     rmsSignal = mean(sigFiltered.^2)   * calFactor2;
     rmsNoise  = mean(noiseFiltered.^2) * calFactor2;
     noiseVar  = var(noiseFiltered.^2)  * calFactor2^2;
-    histogramData  = struct();
+    methodData.method = 'nist';
+    methodData.sigSlicePowers = [];
+    methodData.noiseSlicePowers = [];
     return
 end
 
@@ -233,13 +235,16 @@ else
     noiseVar = 0;
 end
 
-%% Diagnostic data for plotting
-histogramData.binCentres    = binCentres;
-histogramData.histSmooth    = histSmooth;
-histogramData.histRaw       = histRaw;        % pre-smoothing counts
-histogramData.noisedB       = noisedB;
-histogramData.signaldB      = signaldB;
-histogramData.noiseWidth_dB = noiseWidth_dB;
-histogramData.noisePeakBin  = noisePeakBin;  % for test inspection
+%% Populate methodData
+methodData.method           = 'nist';
+methodData.sigSlicePowers   = [];    % histogram method has no per-slice series
+methodData.noiseSlicePowers = [];
+methodData.binCentres       = binCentres;
+methodData.histSmooth       = histSmooth;
+methodData.histRaw          = histRaw;
+methodData.noisedB          = noisedB;
+methodData.signaldB         = signaldB;
+methodData.noiseWidth_dB    = noiseWidth_dB;
+methodData.noisePeakBin     = noisePeakBin;
 
 end

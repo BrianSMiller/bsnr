@@ -1,18 +1,17 @@
-function [rmsSignal, rmsNoise, noiseVar, q85thresh, psdCells] = snrQuantiles( ...
-    sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
+function [rmsSignal, rmsNoise, noiseVar, methodData] = snrQuantiles( ...
+    sigAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate signal and noise power using quantiles of the spectrogram distribution.
 %
 % Signal power is the mean of cells at or above the 85th percentile of the
 % signal spectrogram; noise power is the mean of cells below that threshold.
-% Both estimates are derived from the signal audio window alone (noiseAudio
-% is accepted for interface consistency but not used).
+% Both estimates are derived from the signal audio window alone — this method
+% requires no separate noise window.
 %
-% This is an experimental method — use spectrogram or timeDomain for
-% production work.
+% Note: this method has a different input signature from other SNR methods
+% (no noiseAudio argument) because it operates on the signal window only.
 %
 % INPUTS
 %   sigAudio    Signal audio samples (column vector)
-%   noiseAudio  Noise audio samples — not used, for interface consistency
 %   nfft        FFT length (samples)
 %   nOverlap    Window overlap (samples)
 %   sampleRate  Sample rate in Hz
@@ -20,56 +19,44 @@ function [rmsSignal, rmsNoise, noiseVar, q85thresh, psdCells] = snrQuantiles( ..
 %   metadata    Calibration metadata struct, or [] for no calibration
 %
 % OUTPUTS
-%   rmsSignal  Mean PSD of high-percentile (top 15%) cells
-%   rmsNoise   Mean PSD of low-percentile (bottom 85%) cells
-%   noiseVar   Variance of low-percentile cells
-%   q85thresh  85th percentile PSD threshold (linear, V^2/Hz or Pa^2/Hz)
-%   psdCells   All in-band PSD cell values (column vector, for histogram display)
+%   rmsSignal   Mean PSD of high-percentile (top 15%) cells
+%   rmsNoise    Mean PSD of low-percentile (bottom 85%) cells
+%   noiseVar    Variance of low-percentile cells
+%   methodData  Struct with fields:
+%                 .method           'quantiles'
+%                 .q85thresh        85th percentile PSD threshold
+%                 .psdCells         all in-band PSD cell values
+%                 .sigSlicePowers   [] (within-window; no slice series)
+%                 .noiseSlicePowers [] (within-window; no noise window)
 
-if nargin < 7, metadata = []; end
+if nargin < 6, metadata = []; end
 
-[rmsSignal, rmsNoise, noiseVar, q85thresh, psdCells] = quantilePower( ...
-    sigAudio, nfft, nOverlap, sampleRate, freq, metadata);
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function [signal, noise, noiseVar, q85thresh, psdCells] = quantilePower(x, window, nOverlap, sampleRate, freq, metadata)
-
-nfft = window;
-if length(x) < window
-    window   = length(x);
+window = nfft;
+if length(sigAudio) < window
+    window   = length(sigAudio);
     nOverlap = 0;
     nfft     = window;
 end
 
-[~, F, sT, P] = spectrogram(x, window, nOverlap, nfft, sampleRate);
+[~, F, T, P] = spectrogram(sigAudio, window, nOverlap, nfft, sampleRate);
 
-% Apply calibration if provided
 if ~isempty(metadata)
-    P = applyCalibration(P, F, sT, metadata);
+    P = applyCalibration(P, F, T, metadata);
 end
 
-specPsd   = P(F >= freq(1) & F <= freq(2), :);
-q85       = quantile(specPsd(:), 0.85);
-sigIx     = specPsd >= q85;
-noiseIx   = specPsd <  q85;
-signal    = mean(specPsd(sigIx));
-noise     = mean(specPsd(noiseIx));
+specPsd  = P(F >= freq(1) & F <= freq(2), :);
+q85      = quantile(specPsd(:), 0.85);
+sigIx    = specPsd >= q85;
+noiseIx  = specPsd <  q85;
+
+rmsSignal = mean(specPsd(sigIx));
+rmsNoise  = mean(specPsd(noiseIx));
 noiseVar  = var( specPsd(noiseIx));
-q85thresh = q85;
-psdCells  = specPsd(:);   % all in-band cells, for histogram display
 
-end
+methodData.method           = 'quantiles';
+methodData.q85thresh        = q85;
+methodData.psdCells         = specPsd(:);
+methodData.sigSlicePowers   = [];
+methodData.noiseSlicePowers = [];
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function specPsd = applyCalibration(specPsd, sF, sT, metadata)
-adVpeakdB       = 10 * log10(1 / metadata.adPeakVolt.^2);
-frontEndGain_dB = interp1(log10(metadata.frontEndFreq_Hz), ...
-    metadata.frontEndGain_dB, log10(sF), 'linear', 'extrap');
-caldB           = metadata.hydroSensitivity_dB + frontEndGain_dB + adVpeakdB;
-caldB(isnan(caldB) | isinf(caldB)) = -1000;
-specPsd         = specPsd ./ repmat(10.^(caldB/10), 1, size(specPsd, 2));
 end

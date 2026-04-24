@@ -2,15 +2,15 @@
 % Test driver for snrEstimate and associated SNR method functions.
 %
 % USAGE
-%   cd C:\analysis\bsnr\tests
+%   cd C:\analysis\bsnr
 %   run_tests
 
 % Add source root and tests folder to FRONT of path so bsnr functions
 % take precedence over any same-named functions in other toolboxes.
-thisDir   = fileparts(mfilename('fullpath'));
-sourceDir = fileparts(thisDir);
-addpath(thisDir,   '-begin');
+sourceDir = fileparts(mfilename('fullpath'));
+testsDir  = fullfile(sourceDir, 'tests');
 addpath(sourceDir, '-begin');
+addpath(testsDir,  '-begin');
 
 % Add longTermRecorders dependency if available and not already on path.
 % This provides getAudioFromFiles, wavFolderInfo, doTimespansOverlap, etc.
@@ -41,15 +41,11 @@ for d = 1:size(deps, 1)
     end
 end
 
-% Tests that call private method functions directly live in private/
-% addpath makes them findable while still giving them private/ access.
-addpath(fullfile(sourceDir, 'private'), '-begin');
-
 % Re-assert bsnr source at path front after adding dependencies.
 % annotatedLibrary may contain stale copies of bsnr files; putting
 % bsnr at the front ensures our versions always win.
-addpath(thisDir,   '-begin');
 addpath(sourceDir, '-begin');
+addpath(testsDir,  '-begin');
 
 % Verify key bsnr functions resolve to our source, not stale copies
 bsnrFns = {'spectroAnnotationAndNoise', 'snrEstimate', 'removeClicks'};
@@ -61,7 +57,7 @@ for fi = 1:numel(bsnrFns)
             bsnrFns{fi}, w, sourceDir);
         % Force it
         addpath(sourceDir, '-begin');
-        addpath(thisDir,   '-begin');
+        addpath(testsDir,  '-begin');
     end
 end
 
@@ -96,10 +92,10 @@ fprintf('Parallel test %s.\n\n', onOff(runParallel));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 [passed(1), elapsed(1)]  = runOne('test_snrMethods',              @() test_snrMethods());
-[passed(2), elapsed(2)]  = runOne('test_snrEstimate_methods',     @() test_snrEstimate_methods());
+[passed(2), elapsed(2)]  = runOne('test_snrEstimate_scalar',      @() test_snrEstimate_scalar());
 [passed(3), elapsed(3)]  = runOne('test_snrEstimate_correctness', @() test_snrEstimate_correctness());
-[passed(4), elapsed(4)]  = runOne('test_removeClicks',            @() test_removeClicks());
-[passed(5), elapsed(5)]  = runOne('test_snrEstimate_scalar',      @() test_snrEstimate_scalar());
+[passed(4), elapsed(4)]  = runOne('test_snrEstimate_methods',     @() test_snrEstimate_methods());
+[passed(5), elapsed(5)]  = runOne('test_removeClicks',            @() test_removeClicks());
 [passed(6), elapsed(6)]  = runOne('test_calibration',             @() test_calibration());
 
 if runPlots
@@ -122,13 +118,13 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if runPlots
-    names = {'test_snrMethods', 'test_snrEstimate_methods', 'test_snrEstimate_correctness', ...
-             'test_removeClicks', 'test_snrEstimate_scalar', 'test_calibration', ...
+    names = {'test_snrMethods', 'test_snrEstimate_scalar', 'test_snrEstimate_correctness', ...
+             'test_snrEstimate_methods', 'test_removeClicks', 'test_calibration', ...
              'test_plots', 'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
              'test_snrEstimate_outputs', 'test_trimAnnotation'};
 else
-    names = {'test_snrMethods', 'test_snrEstimate_methods', 'test_snrEstimate_correctness', ...
-             'test_removeClicks', 'test_snrEstimate_scalar', 'test_calibration', ...
+    names = {'test_snrMethods', 'test_snrEstimate_scalar', 'test_snrEstimate_correctness', ...
+             'test_snrEstimate_methods', 'test_removeClicks', 'test_calibration', ...
              'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
              'test_snrEstimate_outputs', 'test_trimAnnotation'};
 end

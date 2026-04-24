@@ -1,103 +1,83 @@
-function [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = snrTimeDomain( ...
+function [rmsSignal, rmsNoise, noiseVar, methodData] = snrTimeDomain( ...
     sigAudio, noiseAudio, freq, sampleRate, metadata)
 % Estimate signal and noise power by bandpass filtering in the time domain.
 %
 % Both signal and noise are filtered with a bandpass FIR. RMS power is
-% computed from the squared filtered waveforms; noiseVar is the variance
-% of the squared filtered noise waveform. The caller (snrEstimate)
-% applies whichever SNR formula is requested.
+% computed from the squared filtered waveforms.
 %
-% If metadata is provided, rmsSignal/rmsNoise/noiseVar are scaled to
-% calibrated pressure units (µPa²). The calibration assumes a flat
-% frequency response across the annotation band — the frontend gain is
-% evaluated at the band centre frequency. This is consistent with the
-% waveform calibration approach in calibratedPsdExample.m.
-%
-% Calibration formula (scalar, time-domain):
-%   calFactor = adPeakVolt / 10^((hydroSensitivity_dB + gainAtCentre_dB) / 20)
-%   rmsSignal_uPa2 = mean((sigFilt * calFactor).^2) = rmsSignal_wav * calFactor^2
-%
-% Filter design note: the filter is rebuilt on every call. Persistent
-% variable caching is intentionally avoided because it is unreliable
-% inside parfor workers. The design cost is negligible relative to
-% audio I/O.
+% Note: this method operates entirely in the time domain and does not use
+% nfft or nOverlap. The interface is intentionally different from
+% spectrogram-based methods.
 %
 % INPUTS
 %   sigAudio    Signal audio samples (column vector)
 %   noiseAudio  Noise audio samples (column vector)
-%   freq        [lowHz highHz] bandpass cutoff frequencies in Hz.
-%               Both values must be strictly within (0, sampleRate/2).
+%   freq        [lowHz highHz] bandpass cutoff frequencies in Hz
 %   sampleRate  Sample rate in Hz
-%   metadata    (optional) Calibration metadata struct with fields:
-%                 .hydroSensitivity_dB   dB re V/µPa
-%                 .adPeakVolt            ADC peak voltage (V)
-%                 .frontEndFreq_Hz       frequency axis for gain curve
-%                 .frontEndGain_dB       gain at each frequency (dB)
-%               If empty or omitted, output is in WAV (dBFS) units.
+%   metadata    (optional) Calibration metadata struct
 %
 % OUTPUTS
-%   rmsSignal  Mean instantaneous power of filtered signal (WAV or µPa²)
-%   rmsNoise   Mean instantaneous power of filtered noise  (WAV or µPa²)
-%   noiseVar   Variance of instantaneous noise power
-%   sigFilt    Filtered signal waveform (WAV units, for diagnostic plotting)
-%   noiseFilt  Filtered noise waveform  (WAV units, for diagnostic plotting)
+%   rmsSignal   Mean instantaneous power of filtered signal
+%   rmsNoise    Mean instantaneous power of filtered noise
+%   noiseVar    Variance of instantaneous noise power
+%   methodData  Struct with fields:
+%                 .method     'timeDomain'
+%                 .sigFilt    Filtered signal waveform (WAV units)
+%                 .noiseFilt  Filtered noise waveform (WAV units)
+%                 .sigSlicePowers   [] (not applicable for time domain)
+%                 .noiseSlicePowers [] (not applicable for time domain)
 
-if nargin < 5
-    metadata = [];
-end
+if nargin < 5, metadata = []; end
 
-% Filter order: must be large enough that transition bandwidth << passband.
-% Rule: FilterOrder = max(48, round(10 * sampleRate / bandwidth)) gives
-% transition bandwidth ≈ 3.3/N*fs ≈ 0.33 * bandwidth — adequate for most bands.
-% This matters most for narrow bands at high sample rates (e.g. 40 Hz at 12 kHz).
 filterOrder = max(48, round(10 * sampleRate / diff(freq)));
-filterOrder = filterOrder + mod(filterOrder, 2);   % ensure even order
+filterOrder = filterOrder + mod(filterOrder, 2);
 
-% designfilt requires cutoffs strictly within (0, Nyquist).
-% If either cutoff is outside this range, return NaN.
-% If a cutoff equals Nyquist exactly, clamp inward by 1% to avoid failure.
 nyquist = sampleRate / 2;
 if freq(1) <= 0 || freq(2) >= nyquist * 1.01
-    % Clearly out of range — return NaN
-    [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = ...
-        deal(nan, nan, nan, [], []);
+    [rmsSignal, rmsNoise, noiseVar] = deal(nan, nan, nan);
+    methodData = emptyMethodData('timeDomain');
     return
 end
 freqSafe = [max(freq(1), nyquist * 0.01), min(freq(2), nyquist * 0.99)];
+
 try
     d = designfilt('bandpassfir', 'FilterOrder', filterOrder, ...
         'CutoffFrequency1', freqSafe(1), ...
         'CutoffFrequency2', freqSafe(2), ...
         'SampleRate',       sampleRate);
-
     sigFilt   = filtfilt(d, sigAudio);
     noiseFilt = filtfilt(d, noiseAudio);
-
 catch
-    % Filter failed (e.g. audio too short for filter order).
-    % Return NaN silently — the caller handles NaN gracefully.
-    [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = ...
-        deal(nan, nan, nan, [], []);
+    [rmsSignal, rmsNoise, noiseVar] = deal(nan, nan, nan);
+    methodData = emptyMethodData('timeDomain');
     return
 end
 
-% Apply scalar calibration if metadata is provided.
-% Evaluate frontend gain at band centre frequency for a flat-in-band
-% approximation — appropriate when the band is narrow relative to the
-% gain curve variation (consistent with waveform calibration approach).
-calFactor2 = 1;   % default: no calibration (power stays in WAV units)
+calFactor2 = 1;
 if ~isempty(metadata)
-    centreFreq = mean(freq);
+    centreFreq   = mean(freq);
     gainAtCentre = interp1(log10(metadata.frontEndFreq_Hz), ...
         metadata.frontEndGain_dB, log10(centreFreq), 'linear', 'extrap');
-    % calFactor converts WAV amplitude to µPa:
-    % pressure = wavData * adPeakVolt / 10^((sensitivity + gain) / 20)
     calFactor  = metadata.adPeakVolt / 10^((metadata.hydroSensitivity_dB + gainAtCentre) / 20);
-    calFactor2 = calFactor^2;   % power scales as amplitude^2
+    calFactor2 = calFactor^2;
 end
 
 rmsSignal = mean(sigFilt.^2)   * calFactor2;
 rmsNoise  = mean(noiseFilt.^2) * calFactor2;
-noiseVar  = var(noiseFilt.^2)  * calFactor2^2;   % variance scales as amplitude^4
+noiseVar  = var(noiseFilt.^2)  * calFactor2^2;
 
+methodData.method           = 'timeDomain';
+methodData.sigFilt          = sigFilt;
+methodData.noiseFilt        = noiseFilt;
+methodData.sigSlicePowers   = [];
+methodData.noiseSlicePowers = [];
+
+end
+
+function md = emptyMethodData(method)
+md.method           = method;
+md.sigFilt          = [];
+md.noiseFilt        = [];
+md.sigSlicePowers   = [];
+md.noiseSlicePowers = [];
 end

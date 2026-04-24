@@ -187,7 +187,7 @@ fprintf('  [PASS] too-short audio returns scalar\n');
 fprintf('--- snrQuantiles (experimental) ---\n');
 
 [rmsS, rmsN, nVar] = snrQuantiles( ...
-    sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq);
+    sigAudio, nfft, nOverlap, sampleRate, freq);
 
 assert(isfinite(rmsS) && rmsS > 0, 'snrQuantiles: rmsSignal should be positive and finite');
 assert(isfinite(rmsN) && rmsN > 0, 'snrQuantiles: rmsNoise should be positive and finite');
@@ -208,7 +208,7 @@ fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (
 
 fprintf('--- snrTimeDomain ---\n');
 
-[rmsS, rmsN, nVar, sigFilt, noiseFilt] = snrTimeDomain( ...
+[rmsS, rmsN, nVar, tdData] = snrTimeDomain( ...
     sigAudio, noiseAudio, freq, sampleRate);
 
 assert(isfinite(rmsS) && rmsS > 0, 'snrTimeDomain: rmsSignal should be positive and finite');
@@ -216,9 +216,9 @@ assert(isfinite(rmsN) && rmsN > 0, 'snrTimeDomain: rmsNoise should be positive a
 assert(isfinite(nVar) && nVar > 0, 'snrTimeDomain: noiseVar should be positive and finite');
 assert(rmsS > rmsN, ...
     sprintf('snrTimeDomain: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
-assert(~isempty(sigFilt) && length(sigFilt) == length(sigAudio), ...
+assert(~isempty(tdData.sigFilt) && length(tdData.sigFilt) == length(sigAudio), ...
     'snrTimeDomain: sigFilt should match input length on success');
-assert(~isempty(noiseFilt), ...
+assert(~isempty(tdData.noiseFilt), ...
     'snrTimeDomain: noiseFilt should be non-empty on success');
 % snrTimeDomain applies a bandpass FIR, so it measures in-band power.
 % The tone sits entirely in-band (RMS = signalRMS/sqrt(2) for a sine).
@@ -233,13 +233,13 @@ assert(abs(simpleSNR - inBandSNRdB_sine) < 4, ...
     sprintf('snrTimeDomain: simple SNR %.2f dB is >4 dB from in-band true %.2f dB', simpleSNR, inBandSNRdB_sine));
 fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (in-band true=%.2f dB)\n', rmsS, rmsN, simpleSNR, inBandSNRdB_sine);
 
-[rmsS_n, rmsN_n, ~, ~, ~] = snrTimeDomain(noiseOnly, noiseAudio, freq, sampleRate);
+[rmsS_n, rmsN_n, ~] = snrTimeDomain(noiseOnly, noiseAudio, freq, sampleRate);
 assert(isfinite(rmsS_n) && isfinite(rmsN_n), 'snrTimeDomain: noise-only should return finite values');
 fprintf('  [PASS] noise-only: rmsSignal=%.4g, rmsNoise=%.4g\n', rmsS_n, rmsN_n);
 
 % Frequency band straddling Nyquist — designfilt should fail gracefully
 nyquist = sampleRate / 2;
-[rmsS_bad, ~, ~, ~, ~] = snrTimeDomain(sigAudio, noiseAudio, [nyquist*0.9, nyquist*1.1], sampleRate);
+[rmsS_bad] = snrTimeDomain(sigAudio, noiseAudio, [nyquist*0.9, nyquist*1.1], sampleRate);
 assert(isnan(rmsS_bad), 'snrTimeDomain: freq above Nyquist should return NaN without error');
 fprintf('  [PASS] freq above Nyquist returns NaN\n');
 
@@ -250,7 +250,7 @@ fprintf('  [PASS] freq above Nyquist returns NaN\n');
 fprintf('--- snrRidge ---\n');
 
 % (1) Ridge tracks close to the true tone frequency
-[rmsS, rmsN, nVar, ridgeFreq, sliceSnr] = snrRidge( ...
+[rmsS, rmsN, nVar, rdData] = snrRidge( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
 
 assert(isfinite(rmsS) && rmsS > 0, 'snrRidge: rmsSignal should be positive and finite');
@@ -258,8 +258,8 @@ assert(isfinite(rmsN) && rmsN > 0, 'snrRidge: rmsNoise should be positive and fi
 assert(isfinite(nVar) && nVar >= 0, 'snrRidge: noiseVar should be non-negative and finite');
 assert(rmsS > rmsN, ...
     sprintf('snrRidge: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
-assert(length(ridgeFreq) > 1, 'snrRidge: ridgeFreq should be a vector with one entry per time slice');
-ridgeMeanHz = mean(ridgeFreq, 'omitnan');
+assert(length(rdData.ridgeFreq) > 1, 'snrRidge: ridgeFreq should be a vector with one entry per time slice');
+ridgeMeanHz = mean(rdData.ridgeFreq, 'omitnan');
 assert(abs(ridgeMeanHz - toneHz) < 50, ...
     sprintf('snrRidge: mean ridge freq %.1f Hz should be within 50 Hz of tone %.1f Hz', ...
     ridgeMeanHz, toneHz));
@@ -281,14 +281,14 @@ fprintf('  [PASS] high-SNR: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f dB (
 fprintf('  [PASS] mean ridge frequency = %.1f Hz (tone = %.1f Hz)\n', ridgeMeanHz, toneHz);
 
 % (2) Noise-only: rmsSignal should be comparable to rmsNoise
-[rmsS_n, rmsN_n, ~, ~, ~] = snrRidge( ...
+[rmsS_n, rmsN_n] = snrRidge( ...
     noiseOnly, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
 assert(isfinite(rmsS_n) && isfinite(rmsN_n), 'snrRidge: noise-only should return finite values');
 fprintf('  [PASS] noise-only: rmsSignal=%.4g, rmsNoise=%.4g\n', rmsS_n, rmsN_n);
 
 % (3) Custom ridgePenalty and guardBins flow through without error
 ridgeParams = struct('ridgePenalty', 0.5, 'guardBins', 3);
-[rmsS_p, ~, ~, ~, ~] = snrRidge( ...
+[rmsS_p] = snrRidge( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, [], ridgeParams);
 assert(isfinite(rmsS_p), 'snrRidge: custom params should return finite result');
 fprintf('  [PASS] custom ridgePenalty=0.5, guardBins=3 accepted\n');
@@ -301,7 +301,7 @@ clickStart   = round(length(sigAudio)/2);
 clickLen     = round(0.05 * sampleRate);   % 50 ms click
 sigWithClick(clickStart : clickStart+clickLen-1) = 5 * randn(clickLen, 1);
 
-[rmsS_click, rmsN_click, ~, ~, ~] = snrRidge( ...
+[rmsS_click, rmsN_click] = snrRidge( ...
     sigWithClick, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
 assert(isfinite(rmsS_click) && rmsS_click > rmsN_click, ...
     'snrRidge: should remain signal > noise even with transient click injection');
@@ -310,7 +310,7 @@ fprintf('  [PASS] robust to 50 ms click: SNR = %.2f dB\n', ...
 
 % (5) Narrow band that produces fewer than 3 bins returns NaN gracefully
 tinyFreq = [198 202];   % ~2 bins wide at fs=2000 Hz, nfft=512
-[rmsS_nb, ~, ~, ~, ~] = snrRidge( ...
+[rmsS_nb] = snrRidge( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, tinyFreq, []);
 % Either finite (if enough bins) or NaN (if too narrow) — must not error
 assert(isscalar(rmsS_nb), 'snrRidge: narrow band should return scalar without error');
@@ -338,7 +338,7 @@ srwNOverlap = floor(srwNfft * 0.75);
 fprintf('--- snrSynchrosqueeze ---\n');
 
 % (1) High-SNR stationary tone
-[rmsS, rmsN, nVar, ~, ~] = snrSynchrosqueeze( ...
+[rmsS, rmsN, nVar] = snrSynchrosqueeze( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
 
 assert(isfinite(rmsS) && rmsS > 0, 'snrSynchrosqueeze: rmsSignal should be positive and finite');
@@ -354,25 +354,25 @@ fprintf('  [PASS] high-SNR tone: rmsSignal=%.4g > rmsNoise=%.4g, simple SNR=%.2f
     rmsS, rmsN, simpleSNR, ridgeSNRdB);
 
 % (2) Noise-only
-[rmsS_n, rmsN_n, ~, ~, ~] = snrSynchrosqueeze( ...
+[rmsS_n, rmsN_n, ~] = snrSynchrosqueeze( ...
     noiseOnly, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
 assert(isfinite(rmsS_n) && isfinite(rmsN_n), 'snrSynchrosqueeze: noise-only should return finite values');
 fprintf('  [PASS] noise-only: rmsSignal=%.4g, rmsNoise=%.4g\n', rmsS_n, rmsN_n);
 
 % (3) SRW upcall — synchrosqueeze should track the FM sweep
-[rmsS_srw2, rmsN_srw2, ~, ridgeFreq_ssq, ~] = snrSynchrosqueeze( ...
+[rmsS_srw2, rmsN_srw2, ~, ssqData] = snrSynchrosqueeze( ...
     srwSig, srwNoise, srwNfft, srwNOverlap, srwRate, srwFreq, []);
 assert(isfinite(rmsS_srw2) && rmsS_srw2 > rmsN_srw2, ...
     'snrSynchrosqueeze SRW: rmsSignal should exceed rmsNoise');
-ridgeMean_ssq = mean(ridgeFreq_ssq, 'omitnan');
+ridgeMean_ssq = mean(ssqData.ridgeFreq, 'omitnan');
 assert(ridgeMean_ssq >= 80 && ridgeMean_ssq <= 200, ...
     sprintf('snrSynchrosqueeze SRW: mean ridge %.1f Hz should be in [80 198] Hz', ridgeMean_ssq));
 fprintf('  [PASS] SRW upcall: SNR=%.2f dB, mean ridge=%.1f Hz\n', ...
     10*log10(rmsS_srw2/rmsN_srw2), ridgeMean_ssq);
 
 % (4) Compare synchrosqueeze vs ridge for FM signal: both should rank high-SNR > noise-only
-[snrHigh_ssq, ~, ~, ~, ~] = snrSynchrosqueeze(srwSig,   srwNoise, srwNfft, srwNOverlap, srwRate, srwFreq, []);
-[snrLow_ssq,  ~, ~, ~, ~] = snrSynchrosqueeze(srwNoiseOnly, srwNoise, srwNfft, srwNOverlap, srwRate, srwFreq, []);
+[snrHigh_ssq, ~, ~] = snrSynchrosqueeze(srwSig,   srwNoise, srwNfft, srwNOverlap, srwRate, srwFreq, []);
+[snrLow_ssq,  ~, ~] = snrSynchrosqueeze(srwNoiseOnly, srwNoise, srwNfft, srwNOverlap, srwRate, srwFreq, []);
 assert(snrHigh_ssq > snrLow_ssq, ...
     sprintf('snrSynchrosqueeze: SRW signal (%.2g) should exceed noise-only (%.2g)', snrHigh_ssq, snrLow_ssq));
 fprintf('  [PASS] high > noise-only: %.4g > %.4g\n', snrHigh_ssq, snrLow_ssq);
@@ -384,7 +384,7 @@ fprintf('  [PASS] high > noise-only: %.4g > %.4g\n', snrHigh_ssq, snrLow_ssq);
 fprintf('--- snrRidge: SRW upcall (quadratic FM sweep) ---\n');
 
 % (6) Ridge tracks the FM sweep: mean ridge freq should lie within the sweep range
-[rmsS_srw, rmsN_srw, ~, ridgeFreq_srw, ~] = snrRidge( ...
+[rmsS_srw, rmsN_srw, ~, rdDataSrw] = snrRidge( ...
     srwSig, srwNoise, srwNfft, srwNOverlap, srwRate, srwFreq, []);
 
 assert(isfinite(rmsS_srw) && rmsS_srw > 0, ...
@@ -394,15 +394,15 @@ assert(rmsS_srw > rmsN_srw, ...
     rmsS_srw, rmsN_srw));
 
 % Ridge mean should lie within the sweep range [80 198] Hz
-ridgeMean_srw = mean(ridgeFreq_srw, 'omitnan');
+ridgeMean_srw = mean(rdDataSrw.ridgeFreq, 'omitnan');
 assert(ridgeMean_srw >= 80 && ridgeMean_srw <= 200, ...
     sprintf('snrRidge SRW: mean ridge %.1f Hz should be within sweep range [80 198] Hz', ...
     ridgeMean_srw));
 
 % Ridge should be monotonically increasing (upcall sweeps upward)
 % Allow occasional small reversals from noise — check overall trend
-ridgeStart = mean(ridgeFreq_srw(1 : max(1,floor(end/4))),      'omitnan');
-ridgeEnd   = mean(ridgeFreq_srw(max(1,floor(3*end/4)) : end),  'omitnan');
+ridgeStart = mean(rdDataSrw.ridgeFreq(1 : max(1,floor(end/4))),      'omitnan');
+ridgeEnd   = mean(rdDataSrw.ridgeFreq(max(1,floor(3*end/4)) : end),  'omitnan');
 assert(ridgeEnd > ridgeStart, ...
     sprintf('snrRidge SRW: ridge should trend upward (start=%.1f Hz, end=%.1f Hz)', ...
     ridgeStart, ridgeEnd));
@@ -477,7 +477,7 @@ fprintf('  [PASS] noisedB=%.1f dB < signaldB=%.1f dB (separation=%.1f dB)\n', ..
 % (6) Noise-only: rmsSignal should be comparable to rmsNoise (no large exceedance)
 rng(88);
 noiseOnlyH = noiseRMS * randn(length(sigH), 1);
-[rmsS_n, rmsN_n, ~, diagN] = snrHistogram(noiseOnlyH, noiseH, [], [], sampleRate, freq, []);
+[rmsS_n, rmsN_n, ~] = snrHistogram(noiseOnlyH, noiseH, [], [], sampleRate, freq, []);
 assert(isfinite(rmsS_n) && isfinite(rmsN_n), ...
     'snrHistogram: noise-only should return finite values');
 % For noise-only input the 95th percentile of the combined histogram will
@@ -492,8 +492,8 @@ fprintf('  [PASS] noise-only: rmsSignal=%.4g, rmsNoise=%.4g, SNR=%.1f dB\n', ...
 shortH = sigH(1:5);
 [rmsS_sh, rmsN_sh, ~, diagSh] = snrHistogram(shortH, noiseH, [], [], sampleRate, freq, []);
 assert(isscalar(rmsS_sh), 'snrHistogram: too-short audio should return scalar without error');
-assert(isstruct(diagSh) && isempty(fieldnames(diagSh)), ...
-    'snrHistogram: too-short audio should return empty struct for diagData');
+assert(isstruct(diagSh) && ~isfield(diagSh, 'binCentres'), ...
+    'snrHistogram: too-short audio should return struct without binCentres');
 fprintf('  [PASS] too-short audio returns scalar (%.4g) and empty diagData\n', rmsS_sh);
 
 % (8) noiseVar is consistent with rmsNoise scale

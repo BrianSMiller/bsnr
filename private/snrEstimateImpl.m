@@ -53,6 +53,9 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimateImpl(annot,
 %                                    'beforeAndAfter'       (default)
 %                                    'before'
 %                                    'randomBeforeAndAfter'
+%                                  Legacy aliases (use noiseDuration_s instead):
+%                                    '25sBefore'            (before, 25 s)
+%                                    '30sBeforeAndAfter'    (beforeAndAfter, 30 s)
 %              .noiseDuration_s    Noise window duration in seconds.
 %                                  Default: [] (match annotation duration).
 %                                  Example: params.noiseDuration_s = 60
@@ -141,7 +144,7 @@ arguments
     options.nOverlap                    = []
     options.nSlices            double   = 30
     options.noiseDelay         double   = 0.5
-    options.noiseLocation      char     = 'beforeAndAfter'  % 'beforeAndAfter' | 'before' | 'randomBeforeAndAfter'
+    options.noiseLocation      char     = 'beforeAndAfter'
     options.noiseDuration_s             = []
     options.useLurton          logical  = false
     options.showClips          logical  = false
@@ -509,46 +512,37 @@ end
 % Estimate signal and noise power
 %--------------------------------------------------------------------------
 
-sigFilt         = [];
-noiseFilt       = [];
-ridgeFreq       = [];
-quantileThresh  = [];
-psdCells        = [];
-histogramData   = [];
-spectrogramData = [];
-slicesData      = [];
-ridgeData       = [];
-
 switch params.snrType
     case 'spectrogram'
-        [rmsSignal, rmsNoise, noiseVar, spectrogramData] = snrSpectrogram( ...
+        [rmsSignal, rmsNoise, noiseVar, methodData] = snrSpectrogram( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.calibration);
 
     case 'spectrogramSlices'
-        [rmsSignal, rmsNoise, noiseVar, slicesData] = snrSpectrogramSlices( ...
+        [rmsSignal, rmsNoise, noiseVar, methodData] = snrSpectrogramSlices( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.calibration);
 
     case 'quantiles'
-        [rmsSignal, rmsNoise, noiseVar, quantileThresh, psdCells] = snrQuantiles( ...
-            annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.calibration);
+        % quantiles operates on the signal window only — no noise window
+        [rmsSignal, rmsNoise, noiseVar, methodData] = snrQuantiles( ...
+            annot.audio, nfft, nOverlap, sampleRate, freq, params.calibration);
 
     case 'nist'
-        [rmsSignal, rmsNoise, noiseVar, histogramData] = snrHistogram( ...
+        [rmsSignal, rmsNoise, noiseVar, methodData] = snrHistogram( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, params.calibration);
 
     case 'timeDomain'
-        [rmsSignal, rmsNoise, noiseVar, sigFilt, noiseFilt] = ...
+        [rmsSignal, rmsNoise, noiseVar, methodData] = ...
             snrTimeDomain(annot.audio, noise.audio, freq, sampleRate, params.calibration);
 
     case 'ridge'
-        [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~, ridgeData] = snrRidge( ...
+        [rmsSignal, rmsNoise, noiseVar, methodData] = snrRidge( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.calibration, params.ridgeParams);
 
     case 'synchrosqueeze'
-        [rmsSignal, rmsNoise, noiseVar, ridgeFreq, ~, ridgeData] = snrSynchrosqueeze( ...
+        [rmsSignal, rmsNoise, noiseVar, methodData] = snrSynchrosqueeze( ...
             annot.audio, noise.audio, nfft, nOverlap, sampleRate, freq, ...
             params.calibration, params.ridgeParams);
 
@@ -583,12 +577,7 @@ if params.showClips
     if ~isempty(params.calibration), levelUnit = 'dB re 1µPa'; end
 
     % Gather all method data into one struct for resolveDisplayType
-    methodData.spectrogramData  = spectrogramData;
-    methodData.sigSlicePowers   = sliceDataSig(spectrogramData, slicesData, ridgeData);
-    methodData.noiseSlicePowers = sliceDataNoise(spectrogramData, slicesData, ridgeData);
-    methodData.sigFilt          = sigFilt;
-    methodData.histogramData    = histogramData;
-    methodData.psdCells         = psdCells;
+    % methodData is already populated by the method function
 
     displayType = resolveDisplayType(params, params.snrType, methodData);
 
@@ -599,21 +588,26 @@ if params.showClips
     switch displayType
         case 'spectrogram'
             plotParams.snrType = params.snrType;
-            if ~isempty(ridgeFreq),    plotParams.ridgeFreq      = ridgeFreq;       end
+            if isfield(methodData,'ridgeFreq') && ~isempty(methodData.ridgeFreq)
+                plotParams.ridgeFreq = methodData.ridgeFreq; end
             if params.useLurton,       plotParams.noiseVar        = noiseVar;        end
-            if ~isempty(quantileThresh), plotParams.quantileThresh = quantileThresh; end
-            if ~isempty(psdCells),     plotParams.psdCells        = psdCells;        end
+            if isfield(methodData,'q85thresh') && ~isempty(methodData.q85thresh)
+                plotParams.quantileThresh = methodData.q85thresh; end
+            if isfield(methodData,'psdCells') && ~isempty(methodData.psdCells)
+                plotParams.psdCells = methodData.psdCells; end
             if ~isempty(excludeTimes), plotParams.excludeTimes    = excludeTimes;    end
             if ~isempty(params.removeClicks)
                 plotParams.removeClicks = params.removeClicks;
             end
-            if strcmpi(params.snrType, 'nist') && isfield(histogramData, 'binCentres')
+            if strcmpi(params.snrType, 'nist') && isfield(methodData, 'binCentres')
                 plotParams.nistThresh = [rmsNoise / diff(freq), rmsSignal / diff(freq)];
             end
             spectroAnnotationAndNoise(annot, noise, soundFolder, plotParams, snr, ...
                 params.calibration);
 
         case 'timeSeries'
+            sigFilt = [];
+            if isfield(methodData, 'sigFilt'), sigFilt = methodData.sigFilt; end
             if ~isempty(sigFilt)
                 % timeDomain method: per-sample FIR-filtered power
                 clipT0    = noise.t0 - plotParams.pre  / 86400;
@@ -631,11 +625,13 @@ if params.showClips
         case 'histogram'
             switch lower(params.snrType)
                 case 'nist'
-                    plotHistogramSNR(histogramData, snr, ...
+                    plotHistogramSNR(methodData, snr, ...
                         annot.rmsLevel, noise.rmsLevel, levelUnit);
                 case 'quantiles'
-                    plotQuantilesHistogram(psdCells, quantileThresh, snr, ...
-                        annot.rmsLevel, noise.rmsLevel, levelUnit);
+                    if isfield(methodData,'psdCells')
+                        plotQuantilesHistogram(methodData.psdCells, methodData.q85thresh, snr, ...
+                            annot.rmsLevel, noise.rmsLevel, levelUnit);
+                    end
                 otherwise
                     % All other methods: unified slice-power histogram
                     plotBandHistogram(methodData.sigSlicePowers, ...
@@ -655,31 +651,6 @@ end % processOne
 %% Local helpers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function v = sliceDataSig(spectrogramData, slicesData, ridgeData)
-% Extract signal slice powers from whichever method data struct is populated.
-if ~isempty(spectrogramData) && isstruct(spectrogramData) && isfield(spectrogramData, 'signalSlicePowers')
-    v = spectrogramData.signalSlicePowers;
-elseif ~isempty(slicesData) && isstruct(slicesData) && isfield(slicesData, 'sigSlicePowers')
-    v = slicesData.sigSlicePowers;
-elseif ~isempty(ridgeData) && isstruct(ridgeData) && isfield(ridgeData, 'sigSlicePowers')
-    v = ridgeData.sigSlicePowers;
-else
-    v = [];
-end
-end
-
-function v = sliceDataNoise(spectrogramData, slicesData, ridgeData)
-% Extract noise slice powers from whichever method data struct is populated.
-if ~isempty(spectrogramData) && isstruct(spectrogramData) && isfield(spectrogramData, 'noiseSlicePowers')
-    v = spectrogramData.noiseSlicePowers;
-elseif ~isempty(slicesData) && isstruct(slicesData) && isfield(slicesData, 'noiseSlicePowers')
-    v = slicesData.noiseSlicePowers;
-elseif ~isempty(ridgeData) && isstruct(ridgeData) && isfield(ridgeData, 'noiseSlicePowers')
-    v = ridgeData.noiseSlicePowers;
-else
-    v = [];
-end
-end
 
 
 function [noise, excludeTimes] = buildNoiseWindow(annot, params)
@@ -687,11 +658,20 @@ function [noise, excludeTimes] = buildNoiseWindow(annot, params)
 noise        = annot;
 excludeTimes = [];
 
-% Resolve noise window duration.
-% noiseDuration_s sets duration explicitly; default matches annotation duration.
+% Resolve noise window duration. params.noiseDuration_s sets it explicitly.
+% Legacy named cases ('25sBefore', '30sBeforeAndAfter') set it implicitly
+% and are mapped to their base strategy. Default: match annotation duration.
 noiseDur_s       = params.noiseDuration_s;
 noisePlacement   = params.noiseLocation;
 
+switch noisePlacement
+    case '25sBefore'
+        if isempty(noiseDur_s), noiseDur_s = 25; end
+        noisePlacement = 'before';
+    case '30sBeforeAndAfter'
+        if isempty(noiseDur_s), noiseDur_s = 30; end
+        noisePlacement = 'beforeAndAfter';
+end
 
 if isempty(noiseDur_s)
     noiseDur_s = annot.duration;

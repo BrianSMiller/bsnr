@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = snrSynchrosqueeze( ...
+function [rmsSignal, rmsNoise, noiseVar, methodData] = snrSynchrosqueeze( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata, params)
 % Estimate signal and noise power using the Fourier synchrosqueezed transform.
 %
@@ -78,8 +78,8 @@ try
     [noiseSst, ~,  ~] = fsst(noiseAudio, sampleRate, win);
 catch me
     warning('snrSynchrosqueeze:fsstFailed', 'fsst failed: %s', me.message);
-    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = ...
-        deal(nan, nan, nan, nan(1), nan(1), []);
+    [rmsSignal, rmsNoise, noiseVar] = deal(nan, nan, nan);
+    methodData = emptyRidgeData('synchrosqueeze');
     return
 end
 
@@ -106,8 +106,8 @@ fBand    = sF(fIx);
 if isempty(fBand) || size(sigBand, 1) < 3
     warning('snrSynchrosqueeze:bandTooNarrow', ...
         'Fewer than 3 frequency bins in [%.1f %.1f] Hz.', freq(1), freq(2));
-    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = ...
-        deal(nan, nan, nan, nan(size(sT)), nan(size(sT)), []);
+    [rmsSignal, rmsNoise, noiseVar] = deal(nan, nan, nan);
+    methodData = emptyRidgeData('synchrosqueeze');
     return
 end
 
@@ -169,24 +169,20 @@ end
 rmsSignal  = mean(sigSlice,      'omitnan');
 rmsNoise   = mean(noiseSlice,    'omitnan');
 noiseVar   = mean(noiseVarSlice, 'omitnan');
-sliceSnrdB = 10 * log10(sigSlice ./ noiseSlice);
-ridgeData.sigSlicePowers   = sigSlice;
-ridgeData.noiseSlicePowers = noiseSlice;
+
+methodData.method           = 'synchrosqueeze';
+methodData.ridgeFreq        = ridgeFreq;
+methodData.sliceSnrdB       = 10 * log10(sigSlice ./ noiseSlice);
+methodData.sigSlicePowers   = sigSlice;
+methodData.noiseSlicePowers = noiseSlice;
 
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Local helper
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function specPsd = applyCalibration(specPsd, sF, sT, metadata)
-
-adVpeakdB       = 10 * log10(1 / metadata.adPeakVolt.^2);
-frontEndGain_dB = interp1(log10(metadata.frontEndFreq_Hz), ...
-    metadata.frontEndGain_dB, log10(sF), 'linear', 'extrap');
-caldB           = metadata.hydroSensitivity_dB + frontEndGain_dB + adVpeakdB;
-caldB(isnan(caldB) | isinf(caldB)) = -1000;
-calibration     = 10.^(caldB / 10);
-specPsd         = specPsd ./ repmat(calibration(:), 1, size(specPsd, 2));
-
+function md = emptyRidgeData(method)
+md.method           = method;
+md.ridgeFreq        = nan(1);
+md.sliceSnrdB       = nan(1);
+md.sigSlicePowers   = [];
+md.noiseSlicePowers = [];
 end
+

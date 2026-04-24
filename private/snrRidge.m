@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = snrRidge( ...
+function [rmsSignal, rmsNoise, noiseVar, methodData] = snrRidge( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata, params)
 % Estimate signal and noise power by tracking the spectral ridge of a tonal call.
 %
@@ -86,8 +86,8 @@ if isempty(fBand) || size(sigBand, 1) < 3
     warning('snrRidge:bandTooNarrow', ...
         'Fewer than 3 FFT bins in [%.1f %.1f] Hz — cannot track ridge.', ...
         freq(1), freq(2));
-    [rmsSignal, rmsNoise, noiseVar, ridgeFreq, sliceSnrdB, ridgeData] = ...
-        deal(nan, nan, nan, nan(size(sT)), nan(size(sT)), []);
+    [rmsSignal, rmsNoise, noiseVar] = deal(nan, nan, nan);
+    methodData = emptyRidgeData('ridge');
     return
 end
 
@@ -167,11 +167,21 @@ rmsSignal  = mean(sigSlice,   'omitnan');
 rmsNoise   = mean(noiseSlice, 'omitnan');
 noiseVar   = var(noiseSliceN(~isnan(noiseSliceN)));
 
-% Per-slice SNR for diagnostics
-sliceSnrdB = 10 * log10(sigSlice ./ noiseSlice);
-ridgeData.sigSlicePowers   = sigSlice;
-ridgeData.noiseSlicePowers = noiseSlice;
+% Build methodData
+methodData.method           = 'ridge';
+methodData.ridgeFreq        = ridgeFreq;
+methodData.sliceSnrdB       = 10 * log10(sigSlice ./ noiseSlice);
+methodData.sigSlicePowers   = sigSlice;
+methodData.noiseSlicePowers = noiseSlice;
 
+end
+
+function md = emptyRidgeData(method)
+md.method           = method;
+md.ridgeFreq        = nan(1);
+md.sliceSnrdB       = nan(1);
+md.sigSlicePowers   = [];
+md.noiseSlicePowers = [];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -194,16 +204,3 @@ end
 
 end
 
-% -------------------------------------------------------------------------
-
-function specPsd = applyCalibration(specPsd, sF, sT, metadata)
-
-adVpeakdB       = 10 * log10(1 / metadata.adPeakVolt.^2);
-frontEndGain_dB = interp1(log10(metadata.frontEndFreq_Hz), ...
-    metadata.frontEndGain_dB, log10(sF), 'linear', 'extrap');
-caldB           = metadata.hydroSensitivity_dB + frontEndGain_dB + adVpeakdB;
-caldB(isnan(caldB) | isinf(caldB)) = -1000;
-calibration     = 10.^(caldB / 10);
-specPsd         = specPsd ./ repmat(calibration(:), 1, size(specPsd, 2));
-
-end

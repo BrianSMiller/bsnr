@@ -1,4 +1,4 @@
-function [rmsSignal, rmsNoise, noiseVar, spectrogramData] = snrSpectrogram( ...
+function [rmsSignal, rmsNoise, noiseVar, methodData] = snrSpectrogram( ...
     sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, metadata)
 % Estimate signal and noise power from spectrogram cells within a frequency band.
 %
@@ -16,18 +16,24 @@ function [rmsSignal, rmsNoise, noiseVar, spectrogramData] = snrSpectrogram( ...
 %   metadata    Calibration metadata struct, or [] for no calibration
 %
 % OUTPUTS
-%   rmsSignal       Mean signal PSD in band (linear)
-%   rmsNoise        Mean noise PSD in band (linear)
-%   noiseVar        Variance of noise PSD across all cells in band
-%   spectrogramData Struct with per-slice band powers for Lurton display:
-%                     .signalSlicePowers  per-slice total band power, signal window
-%                     .noiseSlicePowers   per-slice total band power, noise window
-%                     .df                 Hz per FFT bin
+%   rmsSignal   Mean signal PSD in band (linear)
+%   rmsNoise    Mean noise PSD in band (linear)
+%   noiseVar    Variance of noise PSD across all cells in band
+%   methodData  Struct with fields:
+%                 .method           'spectrogram'
+%                 .sigSlicePowers   per-slice total band power, signal window
+%                 .noiseSlicePowers per-slice total band power, noise window
+%                 .df               Hz per FFT bin
 
-[rmsSignal, ~, spectrogramData.signalSlicePowers, spectrogramData.df] = ...
+[rmsSignal, ~, sigSlicePowers, df] = ...
     spectrogramPowerAndVariance(sigAudio,   nfft, nOverlap, nfft, sampleRate, freq, metadata);
-[rmsNoise,  noiseVar, spectrogramData.noiseSlicePowers, ~] = ...
+[rmsNoise, noiseVar, noiseSlicePowers, ~] = ...
     spectrogramPowerAndVariance(noiseAudio, nfft, nOverlap, nfft, sampleRate, freq, metadata);
+
+methodData.method           = 'spectrogram';
+methodData.sigSlicePowers   = sigSlicePowers;
+methodData.noiseSlicePowers = noiseSlicePowers;
+methodData.df               = df;
 
 end
 
@@ -54,27 +60,11 @@ if ~isempty(metadata)
     specPsd = applyCalibration(specPsd, sF, sT, metadata);
 end
 
-fIx      = sF >= freqRange(1) & sF <= freqRange(2);
-specPsd  = specPsd(fIx, :);
-df       = sF(2) - sF(1);   % Hz per bin
-
-% Integrate power spectrally: sum(PSD)*df gives total band power per time slice.
-slicePowers = sum(specPsd, 1) * df;   % row vector, one value per time slice
-power       = mean(slicePowers);       % mean total band power
-variance    = var(slicePowers);        % variance of per-slice band power
-
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function specPsd = applyCalibration(specPsd, sF, sT, metadata)
-
-adVpeakdB       = 10 * log10(1 / metadata.adPeakVolt.^2);
-frontEndGain_dB = interp1(log10(metadata.frontEndFreq_Hz), ...
-    metadata.frontEndGain_dB, log10(sF), 'linear', 'extrap');
-caldB           = metadata.hydroSensitivity_dB + frontEndGain_dB + adVpeakdB;
-caldB(isnan(caldB) | isinf(caldB)) = -1000;
-calibration     = 10.^(caldB / 10);
-specPsd         = specPsd ./ repmat(calibration(:), 1, size(specPsd, 2));
+fIx         = sF >= freqRange(1) & sF <= freqRange(2);
+specPsd     = specPsd(fIx, :);
+df          = sF(2) - sF(1);
+slicePowers = sum(specPsd, 1) * df;
+power       = mean(slicePowers);
+variance    = var(slicePowers);
 
 end
