@@ -188,30 +188,30 @@ title(tloLurton, <span class="string">'2. Lurton SNR: spectrogram (top) | slice 
 
     cleanupL();
 <span class="keyword">end</span>
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:43
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:33
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:43
-SNR analysis started:  24-Apr-2026 13:32:43
+SNR analysis completed: 24-Apr-2026 13:44:33
+SNR analysis started:  24-Apr-2026 13:44:33
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:43
-SNR analysis started:  24-Apr-2026 13:32:43
+SNR analysis completed: 24-Apr-2026 13:44:33
+SNR analysis started:  24-Apr-2026 13:44:33
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:43
-SNR analysis started:  24-Apr-2026 13:32:43
+SNR analysis completed: 24-Apr-2026 13:44:33
+SNR analysis started:  24-Apr-2026 13:44:33
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:43
-SNR analysis started:  24-Apr-2026 13:32:43
+SNR analysis completed: 24-Apr-2026 13:44:33
+SNR analysis started:  24-Apr-2026 13:44:33
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:43
-SNR analysis started:  24-Apr-2026 13:32:43
+SNR analysis completed: 24-Apr-2026 13:44:33
+SNR analysis started:  24-Apr-2026 13:44:33
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:43
+SNR analysis completed: 24-Apr-2026 13:44:33
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_02.png" alt=""> <h2 id="6">3. Calibrated acoustic levels</h2><p>When instrument metadata is provided, bsnr converts outputs to calibrated dB re 1 &micro;Pa. SNR is dimensionless and unchanged by calibration; absolute signal and noise levels shift by the calibration offset.</p><p>The reference signal is a 122 dB re 1 &micro;Pa RMS tone at 100 Hz &#8212; the standard DIFAR sonobuoy calibration reference &#8212; in a noise background of 90 dB re 1 &micro;Pa. <tt>createCalibratedTestFixture</tt> models the AAD Kerguelen 2024 hydrophone instrument chain:</p><pre class="language-matlab">Hydrophone <span class="string">sensitivity:</span> <span class="string">-165.9</span> <span class="string">dB</span> <span class="string">re</span> <span class="string">V/&micro;Pa</span>
 ADC <span class="string">peak</span> <span class="string">voltage:</span> <span class="string">1.5</span> <span class="string">V</span> <span class="string">(3 V peak-to-peak, 16-bit)</span>
 Front-<span class="keyword">end</span> gain: ~20 dB <span class="string">flat</span> <span class="string">20&#8211;2000</span> <span class="string">Hz</span>, AC-coupled below <span class="string">5</span> <span class="string">Hz</span>
@@ -237,14 +237,14 @@ paramsCal.metadata = calMetadata;
 runAndTitle(annotCal, paramsCal, <span class="string">'Calibrated (dB re 1 &micro;Pa)'</span>);
 
 cleanupCal();
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:43
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:34
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:44
-SNR analysis started:  24-Apr-2026 13:32:44
+SNR analysis completed: 24-Apr-2026 13:44:34
+SNR analysis started:  24-Apr-2026 13:44:34
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:44
+SNR analysis completed: 24-Apr-2026 13:44:34
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_03.png" alt=""> <h2 id="7">4. Click removal</h2><p>Impulsive noise inflates SNR estimates by raising the measured noise or signal band power. <tt>removeClicks</tt> applies a PAMGuard-style soft amplitude gate: frames exceeding <tt>threshold</tt> &times; median RMS are attenuated by raising the signal envelope to the power <tt>power</tt> (which should be &lt; 1 to suppress rather than amplify; 1000 gives near-complete suppression).</p><p>Synthetic clicks are 5 ms in-band sine bursts at amplitude = 30, spaced 0.5 s apart in the detection window &#8212; well above the removal threshold.</p><p><b>Left:</b> raw spectrogram and inflated SNR. <b>Right:</b> after click removal (threshold = 3, power = 1000) &#8212; the spectrogram shows the cleaned audio and SNR recovers toward the true value.</p><pre class="codeinput">clickFreq    = [150 250];
 clickSR      = 2000;
 clickBufDur  = 5;
@@ -283,14 +283,14 @@ paramsClick.removeClicks = struct(<span class="string">'threshold'</span>, 3, <s
 runAndTitle(annotClicks, paramsClick, <span class="string">'With click removal'</span>);
 
 cleanupClicks();
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:44
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:34
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:44
-SNR analysis started:  24-Apr-2026 13:32:44
+SNR analysis completed: 24-Apr-2026 13:44:34
+SNR analysis started:  24-Apr-2026 13:44:34
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:44
+SNR analysis completed: 24-Apr-2026 13:44:34
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_04.png" alt=""> <h2 id="8">5. Duty cycle and mean-power SNR</h2><p>All mean-power methods (<tt>spectrogram</tt>, <tt>spectrogramSlices</tt>, <tt>timeDomain</tt>) average signal power over the <b>entire</b> annotation window, including any silent gaps. For a pulsed call like the Antarctic minke whale bio-duck, the annotation covers the whole bout rather than individual pulses. The mean power is therefore diluted by the inter-pulse gaps, giving a lower SNR than would be measured on a single pulse.</p><p>This is not a flaw &#8212; it accurately reflects the detection challenge: a passive detector sees the mean energy in its integration window, and a pulsed call is genuinely harder to detect than a continuous one of the same peak level.</p><p>Three panels at the same peak pulse RMS (0.5):</p><div><ul><li><b>Continuous tone</b> &#8212; 100% duty cycle; full power throughout the window.</li><li><b>Pulsed tone, 50% duty cycle</b> &#8212; same peak, half the mean power (~3 dB lower).</li><li><b>Bio-duck bout</b> &#8212; realistic A1 call structure (Dominello &amp; Sirovic 2016):   4 pulses &times; 0.1 s, 0.3 s inter-pulse, 3.1 s inter-series;   ~9% duty cycle, ~10 dB lower SNR than the continuous case.</li></ul></div><p>The <tt>ridge</tt> method (Section 7) is not affected by duty cycle because it measures power at the instantaneous ridge frequency only in slices where the ridge is present, not the window mean.</p><pre class="codeinput">dutyCycleFreq = [150 250];
 dutyCycleSP   = fixtureSP(2000, dutyCycleFreq);
 
@@ -339,18 +339,18 @@ snrBioduck = runAndTitle(annotBioduck, makeParams(<span class="string">'spectrog
 fprintf(<span class="string">'  Expected: continuous=%.1f dB, pulsed~%.1f dB (-3 dB), bio-duck~%.1f dB (-10 dB)\n'</span>, <span class="keyword">...</span>
     snrCont, snrCont-3, snrCont-10);
 cleanupCont(); cleanupPulsed(); cleanupBioduck();
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:45
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:45
-SNR analysis started:  24-Apr-2026 13:32:45
+SNR analysis completed: 24-Apr-2026 13:44:35
+SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:45
-SNR analysis started:  24-Apr-2026 13:32:45
+SNR analysis completed: 24-Apr-2026 13:44:35
+SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:45
+SNR analysis completed: 24-Apr-2026 13:44:35
   Expected: continuous=11.3 dB, pulsed~8.3 dB (-3 dB), bio-duck~1.3 dB (-10 dB)
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_05.png" alt=""> <h2 id="9">6. Distribution-based methods &#8212; quantiles and NIST</h2><p>Both methods estimate SNR from an energy distribution rather than comparing separate signal and noise windows.</p><p><b>Quantiles</b> splits the 2D distribution of spectrogram TF cell PSD values within the signal window: the top 15% of cells by power are treated as signal; the bottom 85% as noise. No separate noise window is needed &#8212; the within-window distribution itself provides the signal/noise separation.</p><p>The <b>NIST method</b> (NIST 1992) computes a 1D histogram of wideband 20 ms frame energies pooled from both the noise and signal windows. It fits a raised cosine to the leftmost histogram peak (the noise mode) and takes the 95th percentile of the residual as the signal level.</p><p>Each method is shown with two display types:</p><div><ul><li><b>Top row &#8212; spectrogram</b> with iso-power contour lines at the estimated   noise and signal PSD thresholds. For <tt>quantiles</tt>, these contours are   literal quantile boundaries of the TF cell distribution.</li></ul></div><div><ul><li><b>Bottom row &#8212; histogram</b> of the underlying energy distribution, with   vertical lines at the estimated noise (red) and signal (green) levels.</li></ul></div><p>The parallel display makes the conceptual relationship visible: <tt>quantiles</tt> uses TF cells from the signal window only (2D distribution over the band); NIST uses scalar frame energies from both windows (1D distribution).</p><p>All three columns use a synthetic Southern Right Whale (SRW) upcall: f(t) = 80 + 118t^2 Hz, 1 s at 1000 Hz. The diagonal TF streak is more illustrative than a stationary tone because iso-power contours follow the call energy regardless of instantaneous frequency.</p><pre class="codeinput">srwFreq   = [75 210];
 srwBufDur = 4;
@@ -386,30 +386,30 @@ title(tloQ, <span class="string">'6a. Quantiles: spectrogram contours (top) | TF
     pQ.displayType  = <span class="string">'histogram'</span>;
     runAndTitle(srwAnnots{k}, pQ, [distConfigs{k,1} <span class="string">' | histogram'</span>]);
 <span class="keyword">end</span>
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:45
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:45
-SNR analysis started:  24-Apr-2026 13:32:45
+SNR analysis completed: 24-Apr-2026 13:44:35
+SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:45
-SNR analysis started:  24-Apr-2026 13:32:45
+SNR analysis completed: 24-Apr-2026 13:44:35
+SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:45
-SNR analysis started:  24-Apr-2026 13:32:45
+SNR analysis completed: 24-Apr-2026 13:44:35
+SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:45
-SNR analysis started:  24-Apr-2026 13:32:45
+SNR analysis completed: 24-Apr-2026 13:44:35
+SNR analysis started:  24-Apr-2026 13:44:35
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:46
-SNR analysis started:  24-Apr-2026 13:32:46
+SNR analysis completed: 24-Apr-2026 13:44:36
+SNR analysis started:  24-Apr-2026 13:44:36
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:46
+SNR analysis completed: 24-Apr-2026 13:44:36
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_06.png" alt=""> <h2 id="11">6b. NIST histogram</h2><pre class="codeinput">figN = figure(<span class="string">'Name'</span>, <span class="string">'NIST histogram'</span>, <span class="keyword">...</span>
     <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 460]);
 tloN = tiledlayout(figN, 2, nDist, <span class="string">'TileSpacing'</span>, <span class="string">'tight'</span>, <span class="string">'Padding'</span>, <span class="string">'tight'</span>);
@@ -427,30 +427,30 @@ title(tloN, <span class="string">'6b. NIST: spectrogram contours (top) | frame-e
 <span class="keyword">end</span>
 
 <span class="keyword">for</span> k = 1:nDist, srwCleanups{k}(); <span class="keyword">end</span>
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:46
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:36
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:46
-SNR analysis started:  24-Apr-2026 13:32:46
+SNR analysis completed: 24-Apr-2026 13:44:36
+SNR analysis started:  24-Apr-2026 13:44:36
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:46
-SNR analysis started:  24-Apr-2026 13:32:46
+SNR analysis completed: 24-Apr-2026 13:44:36
+SNR analysis started:  24-Apr-2026 13:44:36
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:46
-SNR analysis started:  24-Apr-2026 13:32:46
+SNR analysis completed: 24-Apr-2026 13:44:36
+SNR analysis started:  24-Apr-2026 13:44:36
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:46
-SNR analysis started:  24-Apr-2026 13:32:46
+SNR analysis completed: 24-Apr-2026 13:44:36
+SNR analysis started:  24-Apr-2026 13:44:36
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:47
-SNR analysis started:  24-Apr-2026 13:32:47
+SNR analysis completed: 24-Apr-2026 13:44:37
+SNR analysis started:  24-Apr-2026 13:44:37
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:47
+SNR analysis completed: 24-Apr-2026 13:44:37
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_07.png" alt=""> <h2 id="12">7. Ridge and synchrosqueeze &#8212; FM signal</h2><p>The <tt>ridge</tt> method tracks the dominant instantaneous frequency using <tt>tfridge</tt>, measuring signal power from the single FFT bin on the ridge at each time step. <tt>synchrosqueeze</tt> first sharpens the TF representation via the Fourier synchrosqueezed transform (FSST) before ridge tracking.</p><p>Because signal power is concentrated at one bin and noise is averaged across all other in-band bins, per-bin SNR exceeds band-average SNR by approximately 10&middot;log10(nBandBins). This makes ridge/synchrosqueeze systematically higher than the other methods &#8212; they measure a different quantity, not a better one.</p><p>Both are shown on the same SRW upcall used in Section 6. The cyan overlay shows the tracked instantaneous frequency ridge.</p><pre class="codeinput">srwSR  = 1000;  srwFB = [75 210];  srwDur = 1.0;  srwBuf3 = 3;
 [srwSig, ~]    = makeSRWUpcall(srwSR, 0.1);
 rng(11);
@@ -476,14 +476,14 @@ snrSSQVal   = runAndTitle(annotSRW, makeParams(<span class="string">'synchrosque
 fprintf(<span class="string">'  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin; ~10*log10(nBins) above band average)\n'</span>, <span class="keyword">...</span>
     snrRidgeVal, snrSSQVal);
 cleanupSRW();
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:47
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:37
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:47
-SNR analysis started:  24-Apr-2026 13:32:47
+SNR analysis completed: 24-Apr-2026 13:44:37
+SNR analysis started:  24-Apr-2026 13:44:37
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:47
+SNR analysis completed: 24-Apr-2026 13:44:37
   ridge=27.6 dB  synchrosqueeze=31.9 dB  (per-bin; ~10*log10(nBins) above band average)
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_08.png" alt=""> <h2 id="13">8. Annotation trimming</h2><p>Analysts often draw annotation boxes with generous time and frequency buffers. <tt>trimAnnotation</tt> removes these margins by trimming to the central 95% of in-band spectral energy, tightening both time and frequency bounds before SNR estimation.</p><p>This section uses a synthetic 200 Hz tone with 1.5s silence on each side and a frequency box wider than the signal band. The trim diagnostic shows the spectrogram with original (blue dashed) and trimmed (red) bounds, plus the per-slice and per-bin energy profiles.</p><pre class="codeinput">[annotTone8, cleanup8] = createTestFixture( <span class="keyword">...</span>
     <span class="string">'signalRMS'</span>, 1.0, <span class="string">'noiseRMS'</span>, 0.1, <span class="keyword">...</span>
@@ -513,14 +513,14 @@ fprintf(<span class="string">'  SNR after trim:  %.1f dB\n'</span>, snrAfter8);
 cleanup8();
 </pre><pre class="codeoutput">  Original: 7.00 s  [100 300] Hz
   Trimmed:  4.18 s  [197 201] Hz
-SNR analysis started:  24-Apr-2026 13:32:48
+SNR analysis started:  24-Apr-2026 13:44:38
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:48
-SNR analysis started:  24-Apr-2026 13:32:48
+SNR analysis completed: 24-Apr-2026 13:44:38
+SNR analysis started:  24-Apr-2026 13:44:38
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:48
+SNR analysis completed: 24-Apr-2026 13:44:38
   SNR before trim: NaN dB
   SNR after trim:  26.6 dB
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_09.png" alt=""> <h2 id="14">PART 2 &#8212; Real recordings: functional demos</h2><p>Part 2 applies all seven methods to real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips were extracted from DIFAR sonobuoy recordings made near Kerguelen Island by the Australian Antarctic Division.</p><p>Spectrogram parameters are matched to the published figures in Miller et al. (2021) for each call type. The ABW A call band [24&#8211;28 Hz] is too narrow for reliable ridge tracking, so those methods return NaN for that call type and the cells are blank in the comparison heatmap.</p><p>Call types covered:</p><div><ul><li><b>ABW A</b> &#8212; Antarctic blue whale (Bm) A-call: 10 s tonal, [24&#8211;28 Hz]</li><li><b>ABW B</b> &#8212; Bm B-call: 12 s tonal, [20&#8211;28 Hz]</li><li><b>ABW Z</b> &#8212; Bm Z-call: 21 s tonal, [17&#8211;28 Hz]</li><li><b>ABW D</b> &#8212; Bm D-call: 4 s FM downsweep, [44&#8211;72 Hz]</li><li><b>Fin 40Hz</b> &#8212; Fin whale 40 Hz call: 2 s pulsed, [32&#8211;61 Hz]</li><li><b>Fin 20Hz</b> &#8212; Fin whale 20 Hz call: 4 s tonal, [15&#8211;35 Hz]</li></ul></div><pre class="codeinput">callTypes = {
@@ -603,192 +603,192 @@ snrByMethod = nan(nMethods, nCallTypes);
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">  Original: 6.00 s  [29 87] Hz
   Trimmed:  2.67 s  [43 66] Hz
-SNR analysis started:  24-Apr-2026 13:32:48
+SNR analysis started:  24-Apr-2026 13:44:38
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:48
-SNR analysis started:  24-Apr-2026 13:32:48
+SNR analysis completed: 24-Apr-2026 13:44:38
+SNR analysis started:  24-Apr-2026 13:44:38
 1 annotations to process (serial)
 1/1 completed in 0.0 s
-SNR analysis completed: 24-Apr-2026 13:32:48
+SNR analysis completed: 24-Apr-2026 13:44:38
   SNR before trim: -0.5 dB
   SNR after trim:  5.3 dB
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_10.png" alt=""> <h2 id="16">9a. Tonal calls &#8212; ABW A, B, Z</h2><p>Three Antarctic blue whale tonal calls covering a range of bandwidths and durations. The narrow [24&#8211;28 Hz] band of the A-call has fewer than 3 FFT bins at the nSlices-derived nfft, so <tt>ridge</tt> and <tt>synchrosqueeze</tt> return NaN for that call type.</p><pre class="codeinput">tonalIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW A'</span>, <span class="string">'ABW B'</span>, <span class="string">'ABW Z'</span>}) &amp; callAvailable);
 snrByMethod = drawRealCallFigure(tonalIdx, callTypes, callAnnots, callSP, <span class="keyword">...</span>
     methodNames, snrByMethod, <span class="string">'9a. Tonal calls &#8212; ABW A, B, Z'</span>);
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:49
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:39
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:49
-SNR analysis started:  24-Apr-2026 13:32:49
+SNR analysis completed: 24-Apr-2026 13:44:39
+SNR analysis started:  24-Apr-2026 13:44:39
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:49
-SNR analysis started:  24-Apr-2026 13:32:49
+SNR analysis completed: 24-Apr-2026 13:44:39
+SNR analysis started:  24-Apr-2026 13:44:39
 1 annotations to process (serial)
 Warning: Fewer than 3 FFT bins in [24.0 28.0] Hz &#8212; cannot track ridge. 
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:49
-SNR analysis started:  24-Apr-2026 13:32:49
+SNR analysis completed: 24-Apr-2026 13:44:39
+SNR analysis started:  24-Apr-2026 13:44:39
 1 annotations to process (serial)
 Warning: Fewer than 3 frequency bins in [24.0 28.0] Hz. 
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:49
-SNR analysis started:  24-Apr-2026 13:32:49
+SNR analysis completed: 24-Apr-2026 13:44:39
+SNR analysis started:  24-Apr-2026 13:44:39
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:49
-SNR analysis started:  24-Apr-2026 13:32:49
+SNR analysis completed: 24-Apr-2026 13:44:39
+SNR analysis started:  24-Apr-2026 13:44:39
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:49
-SNR analysis started:  24-Apr-2026 13:32:50
+SNR analysis completed: 24-Apr-2026 13:44:40
+SNR analysis started:  24-Apr-2026 13:44:40
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:50
-SNR analysis started:  24-Apr-2026 13:32:50
+SNR analysis completed: 24-Apr-2026 13:44:40
+SNR analysis started:  24-Apr-2026 13:44:40
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:50
-SNR analysis started:  24-Apr-2026 13:32:50
+SNR analysis completed: 24-Apr-2026 13:44:40
+SNR analysis started:  24-Apr-2026 13:44:40
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:50
-SNR analysis started:  24-Apr-2026 13:32:50
+SNR analysis completed: 24-Apr-2026 13:44:40
+SNR analysis started:  24-Apr-2026 13:44:40
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:50
-SNR analysis started:  24-Apr-2026 13:32:50
+SNR analysis completed: 24-Apr-2026 13:44:40
+SNR analysis started:  24-Apr-2026 13:44:40
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:32:51
-SNR analysis started:  24-Apr-2026 13:32:51
+SNR analysis completed: 24-Apr-2026 13:44:41
+SNR analysis started:  24-Apr-2026 13:44:41
 1 annotations to process (serial)
 1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:51
-SNR analysis started:  24-Apr-2026 13:32:51
+SNR analysis completed: 24-Apr-2026 13:44:41
+SNR analysis started:  24-Apr-2026 13:44:41
 1 annotations to process (serial)
 1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:51
-SNR analysis started:  24-Apr-2026 13:32:51
+SNR analysis completed: 24-Apr-2026 13:44:41
+SNR analysis started:  24-Apr-2026 13:44:41
 1 annotations to process (serial)
 1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:52
-SNR analysis started:  24-Apr-2026 13:32:52
+SNR analysis completed: 24-Apr-2026 13:44:42
+SNR analysis started:  24-Apr-2026 13:44:42
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:32:52
-SNR analysis started:  24-Apr-2026 13:32:52
+SNR analysis completed: 24-Apr-2026 13:44:42
+SNR analysis started:  24-Apr-2026 13:44:42
 1 annotations to process (serial)
 1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:52
-SNR analysis started:  24-Apr-2026 13:32:52
+SNR analysis completed: 24-Apr-2026 13:44:43
+SNR analysis started:  24-Apr-2026 13:44:43
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:32:53
-SNR analysis started:  24-Apr-2026 13:32:53
+SNR analysis completed: 24-Apr-2026 13:44:43
+SNR analysis started:  24-Apr-2026 13:44:43
 1 annotations to process (serial)
 1/1 completed in 0.7 s
-SNR analysis completed: 24-Apr-2026 13:32:54
-SNR analysis started:  24-Apr-2026 13:32:54
+SNR analysis completed: 24-Apr-2026 13:44:44
+SNR analysis started:  24-Apr-2026 13:44:44
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:32:54
-SNR analysis started:  24-Apr-2026 13:32:54
+SNR analysis completed: 24-Apr-2026 13:44:44
+SNR analysis started:  24-Apr-2026 13:44:44
 1 annotations to process (serial)
 1/1 completed in 0.5 s
-SNR analysis completed: 24-Apr-2026 13:32:54
-SNR analysis started:  24-Apr-2026 13:32:54
+SNR analysis completed: 24-Apr-2026 13:44:44
+SNR analysis started:  24-Apr-2026 13:44:44
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:32:55
+SNR analysis completed: 24-Apr-2026 13:44:45
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_11.png" alt=""> <h2 id="17">9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</h2><p>A frequency-modulated downsweep (ABW D) and two call types from fin whales. These have wider bands, shorter durations, or pulsed structure, providing a contrast with the narrow tonal calls in 8a.</p><pre class="codeinput">fmIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW D'</span>, <span class="string">'Fin 40Hz'</span>, <span class="string">'Fin 20Hz'</span>}) &amp; callAvailable);
 snrByMethod = drawRealCallFigure(fmIdx, callTypes, callAnnots, callSP, <span class="keyword">...</span>
     methodNames, snrByMethod, <span class="string">'9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz'</span>);
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:56
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:46
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:56
-SNR analysis started:  24-Apr-2026 13:32:56
+SNR analysis completed: 24-Apr-2026 13:44:46
+SNR analysis started:  24-Apr-2026 13:44:46
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:56
-SNR analysis started:  24-Apr-2026 13:32:56
+SNR analysis completed: 24-Apr-2026 13:44:46
+SNR analysis started:  24-Apr-2026 13:44:46
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:56
-SNR analysis started:  24-Apr-2026 13:32:56
+SNR analysis completed: 24-Apr-2026 13:44:46
+SNR analysis started:  24-Apr-2026 13:44:46
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:56
-SNR analysis started:  24-Apr-2026 13:32:56
+SNR analysis completed: 24-Apr-2026 13:44:46
+SNR analysis started:  24-Apr-2026 13:44:46
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:56
-SNR analysis started:  24-Apr-2026 13:32:56
+SNR analysis completed: 24-Apr-2026 13:44:46
+SNR analysis started:  24-Apr-2026 13:44:46
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:56
-SNR analysis started:  24-Apr-2026 13:32:56
+SNR analysis completed: 24-Apr-2026 13:44:47
+SNR analysis started:  24-Apr-2026 13:44:47
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:57
-SNR analysis started:  24-Apr-2026 13:32:57
+SNR analysis completed: 24-Apr-2026 13:44:47
+SNR analysis started:  24-Apr-2026 13:44:47
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:57
-SNR analysis started:  24-Apr-2026 13:32:57
+SNR analysis completed: 24-Apr-2026 13:44:47
+SNR analysis started:  24-Apr-2026 13:44:47
 1 annotations to process (serial)
 1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:57
-SNR analysis started:  24-Apr-2026 13:32:57
-1 annotations to process (serial)
-1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:57
-SNR analysis started:  24-Apr-2026 13:32:57
-1 annotations to process (serial)
-1/1 completed in 0.2 s
-SNR analysis completed: 24-Apr-2026 13:32:58
-SNR analysis started:  24-Apr-2026 13:32:58
+SNR analysis completed: 24-Apr-2026 13:44:47
+SNR analysis started:  24-Apr-2026 13:44:47
 1 annotations to process (serial)
 1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:58
-SNR analysis started:  24-Apr-2026 13:32:58
+SNR analysis completed: 24-Apr-2026 13:44:47
+SNR analysis started:  24-Apr-2026 13:44:47
 1 annotations to process (serial)
 1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:58
-SNR analysis started:  24-Apr-2026 13:32:58
+SNR analysis completed: 24-Apr-2026 13:44:48
+SNR analysis started:  24-Apr-2026 13:44:48
 1 annotations to process (serial)
 1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:58
-SNR analysis started:  24-Apr-2026 13:32:58
-1 annotations to process (serial)
-1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:59
-SNR analysis started:  24-Apr-2026 13:32:59
-1 annotations to process (serial)
-1/1 completed in 0.3 s
-SNR analysis completed: 24-Apr-2026 13:32:59
-SNR analysis started:  24-Apr-2026 13:32:59
+SNR analysis completed: 24-Apr-2026 13:44:48
+SNR analysis started:  24-Apr-2026 13:44:48
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:33:00
-SNR analysis started:  24-Apr-2026 13:33:00
+SNR analysis completed: 24-Apr-2026 13:44:48
+SNR analysis started:  24-Apr-2026 13:44:48
+1 annotations to process (serial)
+1/1 completed in 0.3 s
+SNR analysis completed: 24-Apr-2026 13:44:49
+SNR analysis started:  24-Apr-2026 13:44:49
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:33:00
-SNR analysis started:  24-Apr-2026 13:33:00
+SNR analysis completed: 24-Apr-2026 13:44:49
+SNR analysis started:  24-Apr-2026 13:44:49
 1 annotations to process (serial)
 1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:33:00
-SNR analysis started:  24-Apr-2026 13:33:00
+SNR analysis completed: 24-Apr-2026 13:44:49
+SNR analysis started:  24-Apr-2026 13:44:49
+1 annotations to process (serial)
+1/1 completed in 0.4 s
+SNR analysis completed: 24-Apr-2026 13:44:50
+SNR analysis started:  24-Apr-2026 13:44:50
+1 annotations to process (serial)
+1/1 completed in 0.4 s
+SNR analysis completed: 24-Apr-2026 13:44:50
+SNR analysis started:  24-Apr-2026 13:44:50
+1 annotations to process (serial)
+1/1 completed in 0.4 s
+SNR analysis completed: 24-Apr-2026 13:44:51
+SNR analysis started:  24-Apr-2026 13:44:51
 1 annotations to process (serial)
 1/1 completed in 0.5 s
-SNR analysis completed: 24-Apr-2026 13:33:01
-SNR analysis started:  24-Apr-2026 13:33:01
+SNR analysis completed: 24-Apr-2026 13:44:51
+SNR analysis started:  24-Apr-2026 13:44:51
 1 annotations to process (serial)
-1/1 completed in 0.4 s
-SNR analysis completed: 24-Apr-2026 13:33:01
+1/1 completed in 0.5 s
+SNR analysis completed: 24-Apr-2026 13:44:52
 </pre><img vspace="5" hspace="5" src="bsnr_gallery_12.png" alt=""> <h2 id="18">10. Method comparison &#8212; SNR heatmap</h2><p>SNR estimates (dB, simple power ratio) for all seven methods across all available call types. Ridge and synchrosqueeze report per-bin SNR and are not directly comparable to the band-average methods; they are included for completeness and shown in the same colour scale.</p><pre class="codeinput">colLabels = strrep(callTypes(availableIdx, 1)', <span class="string">' '</span>, <span class="string">'_'</span>);
 snrTable  = array2table(snrByMethod(:, availableIdx), <span class="keyword">...</span>
     <span class="string">'RowNames'</span>, methodNames, <span class="string">'VariableNames'</span>, colLabels);
@@ -931,18 +931,18 @@ sp = struct(<span class="string">'yLims'</span>, [0 sampleRate/2*0.6], <span cla
     <span class="keyword">otherwise</span>,                 sp = struct(<span class="string">'yLims'</span>, [0 100], <span class="string">'pre'</span>, 2, <span class="string">'post'</span>, 2);
 <span class="keyword">end</span>
 <span class="keyword">end</span>
-</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:32:42
+</pre><pre class="codeoutput">SNR analysis started:  24-Apr-2026 13:44:32
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:42
-SNR analysis started:  24-Apr-2026 13:32:42
+SNR analysis completed: 24-Apr-2026 13:44:32
+SNR analysis started:  24-Apr-2026 13:44:32
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:42
-SNR analysis started:  24-Apr-2026 13:32:42
+SNR analysis completed: 24-Apr-2026 13:44:32
+SNR analysis started:  24-Apr-2026 13:44:32
 1 annotations to process (serial)
 1/1 completed in 0.1 s
-SNR analysis completed: 24-Apr-2026 13:32:42
+SNR analysis completed: 24-Apr-2026 13:44:33
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% bsnr Gallery

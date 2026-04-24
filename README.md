@@ -157,11 +157,11 @@ a method, batch processing, and troubleshooting.
 
 **Correct, clear, and consistent** — in that order.
 
-**Correct** — Results match or improve on published methods. Analytical tests verify known SNR values against closed-form solutions. The supplemental reproduction package confirms r = 1.000 against original paper values.
+**Correct** — Analytical tests verify known SNR values against closed-form solutions. Includes comparison with and predominantly faithful reproduction of published SNR estimates.
 
-**Clear** — Self-documenting code with explicit parameter names and tab-completion (`functionSignatures.json`). Diagnostic plots show exactly what was measured. `resolvedParams` records what was actually used. Warnings explain auto-selected values (e.g. derived `nfft`).
+**Clear** — Well-documented code with explicit parameter names and tab-completion. Diagnostic plots show exactly what was measured. `resolvedParams` helps record which parameters were actually used. Warnings explain auto-selected values (e.g. derived `nfft`).
 
-**Consistent** — Shared parameter struct across `snrEstimate` and `trimAnnotation`. Uniform units (dB re 1 µPa when calibrated, dBFS otherwise). Same annotation format in and out. Always returns a result table.
+**Consistent** — Shared conventions across functions make it easier to learn one part and apply that knowledge elsewhere. Where possible, outputs align with Tethys and ASA passive acoustic metadata standards.
 
 ## Running Tests
 
