@@ -7,6 +7,7 @@ MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections fr
 ## Features
 
 - **Seven SNR methods** spanning bioacoustic, speech, and engineering approaches
+- **Annotation trimming** (`trimAnnotation`) — tighten analyst bounds to signal energy before SNR estimation
 - **Three display types** per method — spectrogram, time series, or histogram
 - **Calibrated acoustic levels** (dB re 1 µPa) from instrument metadata
 - **Click removal** for recordings with impulsive interference
@@ -85,7 +86,7 @@ params.displayType = 'histogram';    % signal and noise slice power distribution
 
 ## Calibrated Levels
 
-When `params.metadata` is provided, the output table includes:
+When `params.calibration` is provided, the output table includes:
 
 - `signalBandLevel_dBuPa` — band-integrated signal level (dB re 1 µPa)
 - `noiseBandLevel_dBuPa` — band-integrated noise level (dB re 1 µPa)
@@ -149,7 +150,7 @@ Each script documents the original paper's SNR method, explains the sources of d
 ## Running Tests
 
 ```matlab
-run('C:\analysis\bsnr\tests\run_tests.m')
+run('C:\analysis\bsnr\run_tests.m')
 ```
 
 
@@ -167,25 +168,32 @@ bsnr/
 ├── README.md
 ├── LICENSE
 ├── bsnr.m                       Help/doc entry point
-├── snrEstimate.m                Main entry point (scalar and batch)
-├── snrSpectrogram.m             Spectrogram method
-├── snrSpectrogramSlices.m       Per-slice spectrogram method
-├── snrTimeDomain.m              Time-domain bandpass method
-├── snrRidge.m                   Ridge tracking method
-├── snrSynchrosqueeze.m          Synchrosqueezing method
-├── snrQuantiles.m               Within-window quantile method
-├── snrHistogram.m               Frame energy histogram (NIST STNR)
-├── spectroAnnotationAndNoise.m  Spectrogram display with overlays
-├── plotBandSamplePower.m        Per-sample bandpass power display (timeDomain)
+├── snrEstimate.m                Public entry point — struct or name-value input
+├── trimAnnotation.m             Trim annotation bounds to signal energy
 ├── removeClicks.m               Impulsive noise suppression
+├── run_tests.m                  Test suite runner
+├── resources/
+│   └── functionSignatures.json  Tab-completion for snrEstimate + trimAnnotation
 ├── private/
-│   ├── colorbarFixTickLabel.m   Colorbar tick label decorator (≤/≥ for clipped ranges)
-│   ├── plotBandHistogram.m      Unified signal/noise slice power histogram
+│   ├── snrEstimateImpl.m        Full snrEstimate implementation (arguments block)
+│   ├── snrSpectrogram.m         Spectrogram method
+│   ├── snrSpectrogramSlices.m   Per-slice spectrogram method
+│   ├── snrTimeDomain.m          Time-domain bandpass method
+│   ├── snrRidge.m               Ridge tracking method
+│   ├── snrSynchrosqueeze.m      Synchrosqueezing method
+│   ├── snrQuantiles.m           Within-window quantile method
+│   ├── snrHistogram.m           Frame energy histogram (NIST STNR)
+│   ├── spectroAnnotationAndNoise.m  Spectrogram display with overlays
+│   ├── plotBandSamplePower.m    Per-sample bandpass power display
+│   ├── colorbarFixTickLabel.m   Colorbar tick label decorator
+│   ├── plotBandHistogram.m      Signal/noise slice power histogram
 │   ├── plotBandSlicePower.m     Per-slice band power time series
 │   ├── plotHistogramSNR.m       NIST frame energy histogram
 │   ├── plotLurtonHistogram.m    Lurton histogram wrapper
 │   ├── plotQuantilesHistogram.m Quantiles TF cell histogram
-│   └── resolveDisplayType.m    Display type selection logic
+│   ├── resolveDisplayType.m     Display type selection logic
+│   ├── test_snrMethods.m        Unit tests for internal method functions
+│   └── test_removeClicks.m      Unit tests for removeClicks
 ├── experimental/
 │   └── snrWADA.m                WADA-SNR (Kim & Stern 2008; not yet integrated)
 ├── examples/
@@ -198,7 +206,15 @@ bsnr/
 │   ├── simpleFlatMetadata.m     Flat-response instrument metadata example
 │   └── prepareGalleryAudio.m    Extract gallery audio clips from library
 └── tests/
-    └── run_tests.m                   Test suite
+    ├── test_snrEstimate_methods.m    Full-stack method tests via snrEstimate
+    ├── test_snrEstimate_correctness.m Analytical correctness and invariance tests
+    ├── test_snrEstimate_batch.m      Batch processing tests
+    ├── test_snrEstimate_noiseWindows.m Noise window strategy tests
+    ├── test_snrEstimate_outputs.m    Output format and datetime input tests
+    ├── test_snrEstimate_scalar.m     Scalar input tests
+    ├── test_calibration.m            Calibrated level recovery tests
+    ├── test_trimAnnotation.m         trimAnnotation tests
+    └── test_plots.m                  Visual inspection tests
 ```
 
 ## Roadmap

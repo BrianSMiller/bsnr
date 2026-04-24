@@ -7,33 +7,30 @@
 % When instrument calibration metadata is provided, returns calibrated
 % acoustic levels in dB re 1 µPa.
 %
-% MAIN FUNCTION
-%   snrEstimate           - Estimate SNR for one or more detections
-%
-% SNR METHODS (bioacoustic)
-%   snrSpectrogram        - Mean band PSD; simple power ratio or Lurton formula
-%                           Miller et al. (2021, 2022, 2024)
-%   snrSpectrogramSlices  - Per-slice band power (robust to transients)
-%   snrTimeDomain         - Bandpass FIR, mean instantaneous power
-%   snrRidge              - Dominant ridge tracking for FM calls (per-bin SNR)
-%   snrSynchrosqueeze     - Synchrosqueezed STFT ridge, sharper FM tracking (per-bin SNR)
-%   snrQuantiles          - Within-window percentile estimator (no noise window needed)
-%
-% SNR METHODS (speech/engineering, adapted for bioacoustics)
-%   snrHistogram          - Frame energy histogram; NIST (1992) STNR
-%
-% DISPLAY
-%   spectroAnnotationAndNoise  - Spectrogram with signal/noise overlays
-%   plotBandSamplePower        - Per-sample bandpass power trace (timeDomain method)
-%
-%   Display type is controlled via params.displayType:
-%     'spectrogram'  — TF spectrogram with overlays (default for most methods)
-%     'timeSeries'   — per-slice band power vs time
-%     'histogram'    — signal and noise slice power distributions
-%
-% UTILITIES
+% PUBLIC API
+%   snrEstimate           - Estimate SNR for one or more detections.
+%                           Accepts struct or name-value pairs:
+%                             snrEstimate(annot, 'snrType', 'spectrogramSlices', 'freq', [25 29])
+%   trimAnnotation        - Trim annotation bounds to central signal energy
+%                           before passing to snrEstimate. Accepts name-value pairs:
+%                             trimAnnotation(annot, 'energyPercentile', 10, 'showPlot', true)
 %   removeClicks          - Suppress impulsive noise (PAMGuard soft amplitude gate)
-%   simpleFlatMetadata    - Example calibration metadata struct (flat 20 dB gain)
+%
+% SNR METHODS (selected via snrType parameter)
+%   'spectrogram'        - Mean band PSD; simple power ratio or Lurton formula
+%   'spectrogramSlices'  - Per-slice band power (robust to transients)
+%   'timeDomain'         - Bandpass FIR, mean instantaneous power
+%   'ridge'              - Dominant ridge tracking for FM calls (per-bin SNR)
+%   'synchrosqueeze'     - Synchrosqueezed STFT ridge, sharper FM tracking
+%   'quantiles'          - Within-window percentile estimator (no noise window needed)
+%   'nist'               - Frame energy histogram; NIST (1992) STNR
+%
+%   Method implementations are in private/ and not called directly.
+%
+% DISPLAY (controlled via params.displayType)
+%   'spectrogram'  — TF spectrogram with overlays (default for most methods)
+%   'timeSeries'   — per-slice band power vs time
+%   'histogram'    — signal and noise slice power distributions
 %
 % EXPERIMENTAL (not integrated into snrEstimate)
 %   experimental/snrWADA  - WADA-SNR (Kim & Stern 2008); no noise window required
@@ -41,6 +38,7 @@
 % QUICK START
 %
 %   % Use a pre-extracted Z-call clip included in examples/audio/
+%   % (see trimAnnotation for tightening annotation bounds before SNR estimation)
 %   audioDir = fullfile(fileparts(which('bsnr')), 'examples', 'audio', 'abw_z');
 %   sf = wavFolderInfo(audioDir, '', false, false);
 %
@@ -79,7 +77,7 @@
 %
 % CALIBRATED LEVELS
 %
-%   params.metadata = simpleFlatMetadata();   % or your instrument metadata
+%   params.calibration = metaDataCasey2019();   % or your instrument calibration struct
 %   result = snrEstimate([annot; annot], params);
 %   fprintf('Signal: %.1f dB re 1 uPa\n', result.signalBandLevel_dBuPa(1));
 %
@@ -88,9 +86,9 @@
 %   By default, the noise window is placed symmetrically before and after
 %   the detection with a 0.5 s gap (params.noiseDelay = 0.5). Alternatives:
 %
-%   params.noiseLocation = 'before';      % single window before signal
-%   params.noiseLocation = '25sBefore';   % 25 s window before detection
-%   params.noiseDelay    = 1.0;           % gap in seconds
+%   params.noiseLocation   = 'before';   % single window before signal
+%   params.noiseDuration_s = 25;         % 25 s window (default: annotation duration)
+%   params.noiseDelay      = 1.0;        % gap in seconds
 %
 % BATCH PROCESSING
 %
@@ -139,10 +137,9 @@
 %     snr_abw_casey2019_commonground.m    — Miller et al. (in press)
 %
 % TEST SUITE
-%   run('tests/run_tests.m')
+%   run('run_tests.m')
 %
-% See also snrEstimate, snrSpectrogram, snrTimeDomain, snrRidge,
-%          snrSynchrosqueeze, snrQuantiles, snrHistogram, removeClicks.
+% See also snrEstimate, trimAnnotation, removeClicks.
 
 % Brian Miller, Australian Antarctic Division.
 % https://github.com/BrianSMiller/bsnr

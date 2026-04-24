@@ -256,6 +256,7 @@
       <h3>Features</h3>
       <ul>
         <li>Seven SNR methods</li>
+        <li>Annotation trimming</li>
         <li>Three display types</li>
         <li>Calibrated dB re 1&nbsp;µPa</li>
         <li>Click removal</li>
@@ -276,7 +277,8 @@
     <div>annot.soundFolder = audioDir;  annot.t0 = sf(1).startDate + 17/86400;</div>
     <div>annot.tEnd = annot.t0 + 21/86400;  annot.duration = 21;  annot.freq = [17 28];</div>
     <div>annot.channel = 1;  annot.classification = <span class="str">'ABW Z'</span>;</div>
-    <div>snr = <span class="kw">snrEstimate</span>(annot);</div>
+    <div><span class="comment">% Name-value syntax with tab-completion</span></div>
+    <div>snr = <span class="kw">snrEstimate</span>(annot, <span class="str">'snrType'</span>, <span class="str">'spectrogramSlices'</span>);</div>
     <div><span class="kw">fprintf</span>(<span class="str">'SNR = %.1f dB\n'</span>, snr);</div>
   </div>
 
@@ -347,9 +349,6 @@
         MATLAB R2021b+, Signal Processing Toolbox,
         <a href="https://github.com/BrianSMiller/soundFolder" style="color:var(--accent)">soundFolder</a>,
         <a href="https://github.com/BrianSMiller/annotatedLibrary" style="color:var(--accent)">annotatedLibrary</a>.
-        Calibrated examples additionally require
-        <code style="font-family:var(--mono); font-size:0.8rem">longTermRecorders</code>
-        (contact <a href="mailto:aadcwebqueries@aad.gov.au" style="color:var(--accent)">aadcwebqueries@aad.gov.au</a>).
       </p>
     </div>
 
