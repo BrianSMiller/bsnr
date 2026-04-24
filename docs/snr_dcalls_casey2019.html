@@ -122,19 +122,13 @@ fprintf(<span class="string">'  Paper: median=%.1f dB\n'</span>, median(paperSNR
 fprintf(<span class="string">'  r=%.3f  bias=%+.1f dB\n'</span>, r, bias);
 </pre><pre class="codeoutput">
 Computing canonical bsnr estimate...
-Warning: nfft not set for batch of 1319 annotations. Using median duration (6.50
-s, range 1.51&#150;42.50 s) &#8594; nfft=512, nOverlap=384 at 1000 Hz. 0/1319 annotations
-(0%) shorter than nfft will return NaN. Set params.nfft explicitly for
-reproducible results. 
-SNR analysis started:  24-Apr-2026 09:58:53
+SNR analysis started:  24-Apr-2026 10:40:13
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
-Starting parallel pool (parpool) using the 'Processes' profile ...
-Connected to the parallel pool (number of workers: 31).
 ##################################################
-SNR analysis completed: 24-Apr-2026 09:59:50
+SNR analysis completed: 24-Apr-2026 10:40:14
   bsnr:  median=-4.3 dB  n=1319
   Paper: median=-2.7 dB
   r=0.476  bias=-1.0 dB
@@ -167,53 +161,37 @@ snrSweep = cell(nC, 1);
     snrSweep{c} = res.snr;
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">Computing sweep: [40 80], B&amp;A,    annot, delay=0.5...
-Warning: nfft not set for batch of 1319 annotations. Using median duration (6.50
-s, range 1.51&#150;42.50 s) &#8594; nfft=512, nOverlap=384 at 1000 Hz. 0/1319 annotations
-(0%) shorter than nfft will return NaN. Set params.nfft explicitly for
-reproducible results. 
-SNR analysis started:  24-Apr-2026 09:59:51
+SNR analysis started:  24-Apr-2026 10:40:14
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 24-Apr-2026 09:59:52
+SNR analysis completed: 24-Apr-2026 10:40:15
 Computing sweep: [40 80], before, 5s,  delay=0.5...
-Warning: nfft not set for batch of 1319 annotations. Using median duration (6.50
-s, range 1.51&#150;42.50 s) &#8594; nfft=512, nOverlap=384 at 1000 Hz. 0/1319 annotations
-(0%) shorter than nfft will return NaN. Set params.nfft explicitly for
-reproducible results. 
-SNR analysis started:  24-Apr-2026 09:59:52
+SNR analysis started:  24-Apr-2026 10:40:15
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 24-Apr-2026 09:59:52
+SNR analysis completed: 24-Apr-2026 10:40:16
 Computing sweep: [40 80], before, 20s, delay=0.5...
-Warning: nfft not set for batch of 1319 annotations. Using median duration (6.50
-s, range 1.51&#150;42.50 s) &#8594; nfft=512, nOverlap=384 at 1000 Hz. 0/1319 annotations
-(0%) shorter than nfft will return NaN. Set params.nfft explicitly for
-reproducible results. 
-SNR analysis started:  24-Apr-2026 09:59:53
+SNR analysis started:  24-Apr-2026 10:40:16
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 24-Apr-2026 09:59:53
+SNR analysis completed: 24-Apr-2026 10:40:17
 Computing sweep: analyst, B&amp;A,   annot, delay=0.5...
-Warning: nfft not set for batch of 1319 annotations. Using median duration (6.50
-s, range 1.51&#150;42.50 s) &#8594; nfft=512, nOverlap=384 at 1000 Hz. 0/1319 annotations
-(0%) shorter than nfft will return NaN. Set params.nfft explicitly for
-reproducible results. 
-SNR analysis started:  24-Apr-2026 09:59:53
+SNR analysis started:  24-Apr-2026 10:40:17
 1319 annotations to process (parallel)
 Progress:
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 24-Apr-2026 09:59:54
+SNR analysis completed: 24-Apr-2026 10:40:18
 </pre><h2 id="5">Summary table</h2><pre class="codeinput">allSNR    = [{snrCanon}; snrSweep; {paperSNR}];
 allLabels = [{<span class="string">'canonical ([40 80], B&amp;A, annot dur, delay=0.5)'</span>}; <span class="keyword">...</span>
               configs(:,1); {<span class="string">'paper snrLurton'</span>}];

@@ -41,6 +41,10 @@ for d = 1:size(deps, 1)
     end
 end
 
+% Tests that call private method functions directly live in private/
+% addpath makes them findable while still giving them private/ access.
+addpath(fullfile(sourceDir, 'private'), '-begin');
+
 % Re-assert bsnr source at path front after adding dependencies.
 % annotatedLibrary may contain stale copies of bsnr files; putting
 % bsnr at the front ensures our versions always win.
@@ -91,24 +95,26 @@ fprintf('Parallel test %s.\n\n', onOff(runParallel));
 %% Run tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[passed(1), elapsed(1)] = runOne('test_snrMethods',           @() test_snrMethods());
-[passed(2), elapsed(2)] = runOne('test_removeClicks',         @() test_removeClicks());
-[passed(3), elapsed(3)] = runOne('test_snrEstimate_scalar', @() test_snrEstimate_scalar());
-[passed(4), elapsed(4)] = runOne('test_calibration',          @() test_calibration());
+[passed(1), elapsed(1)]  = runOne('test_snrMethods',              @() test_snrMethods());
+[passed(2), elapsed(2)]  = runOne('test_snrEstimate_methods',     @() test_snrEstimate_methods());
+[passed(3), elapsed(3)]  = runOne('test_snrEstimate_correctness', @() test_snrEstimate_correctness());
+[passed(4), elapsed(4)]  = runOne('test_removeClicks',            @() test_removeClicks());
+[passed(5), elapsed(5)]  = runOne('test_snrEstimate_scalar',      @() test_snrEstimate_scalar());
+[passed(6), elapsed(6)]  = runOne('test_calibration',             @() test_calibration());
 
 if runPlots
-    [passed(5), elapsed(5)] = runOne('test_plots',                    @() test_plots());
-    [passed(6), elapsed(6)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
-    [passed(7), elapsed(7)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
-    [passed(8), elapsed(8)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
-    [passed(9), elapsed(9)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
-    nTests = 9;
+    [passed(7), elapsed(7)] = runOne('test_plots',                    @() test_plots());
+    [passed(8), elapsed(8)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
+    [passed(9), elapsed(9)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
+    [passed(10), elapsed(10)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
+    [passed(11), elapsed(11)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
+    nTests = 11;
 else
-    [passed(5), elapsed(5)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
-    [passed(6), elapsed(6)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
-    [passed(7), elapsed(7)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
-    [passed(8), elapsed(8)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
-    nTests = 8;
+    [passed(7), elapsed(7)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
+    [passed(8), elapsed(8)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
+    [passed(9), elapsed(9)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
+    [passed(10), elapsed(10)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
+    nTests = 10;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -116,13 +122,15 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if runPlots
-    names = {'test_snrMethods', 'test_removeClicks', 'test_snrEstimate_scalar', ...
-             'test_calibration', 'test_plots', 'test_snrEstimate_batch', ...
-             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs', 'test_trimAnnotation'};
+    names = {'test_snrMethods', 'test_snrEstimate_methods', 'test_snrEstimate_correctness', ...
+             'test_removeClicks', 'test_snrEstimate_scalar', 'test_calibration', ...
+             'test_plots', 'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
+             'test_snrEstimate_outputs', 'test_trimAnnotation'};
 else
-    names = {'test_snrMethods', 'test_removeClicks', 'test_snrEstimate_scalar', ...
-             'test_calibration', 'test_snrEstimate_batch', ...
-             'test_snrEstimate_noiseWindows', 'test_snrEstimate_outputs', 'test_trimAnnotation'};
+    names = {'test_snrMethods', 'test_snrEstimate_methods', 'test_snrEstimate_correctness', ...
+             'test_removeClicks', 'test_snrEstimate_scalar', 'test_calibration', ...
+             'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
+             'test_snrEstimate_outputs', 'test_trimAnnotation'};
 end
 
 fprintf('\n==============================================\n');
