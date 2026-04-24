@@ -63,12 +63,12 @@ arguments
     options.noiseDelay           double   = 0.5
     options.noiseDuration_s      double   = []
     options.energyPercentile     double   = 2.5
-    options.timePercentile       double   = -1   % sentinel: inherit from energyPercentile
-    options.freqPercentile       double   = -1   % sentinel: inherit from energyPercentile
-    options.timeStartPercentile  double   = -1   % sentinel: inherit from timePercentile
-    options.timeEndPercentile    double   = -1   % sentinel: inherit from timePercentile
-    options.freqLowPercentile    double   = -1   % sentinel: inherit from freqPercentile
-    options.freqHighPercentile   double   = -1   % sentinel: inherit from freqPercentile
+    options.timePercentile       double   = NaN  % inherit from energyPercentile if not set
+    options.freqPercentile       double   = NaN  % inherit from energyPercentile if not set
+    options.timeStartPercentile  double   = NaN  % inherit from timePercentile if not set
+    options.timeEndPercentile    double   = NaN  % inherit from timePercentile if not set
+    options.freqLowPercentile    double   = NaN  % inherit from freqPercentile if not set
+    options.freqHighPercentile   double   = NaN  % inherit from freqPercentile if not set
     options.minSlices            double   = 5
     options.minBandHz            double   = 1
     options.trimMethod           char     = 'centroid'
@@ -76,12 +76,12 @@ arguments
 end
 
 % Resolve sentinel-defaulted percentile hierarchy
-if options.timePercentile      < 0, options.timePercentile      = options.energyPercentile; end
-if options.freqPercentile      < 0, options.freqPercentile      = options.energyPercentile; end
-if options.timeStartPercentile < 0, options.timeStartPercentile = options.timePercentile;   end
-if options.timeEndPercentile   < 0, options.timeEndPercentile   = options.timePercentile;   end
-if options.freqLowPercentile   < 0, options.freqLowPercentile   = options.freqPercentile;   end
-if options.freqHighPercentile  < 0, options.freqHighPercentile  = options.freqPercentile;   end
+if isnan(options.timePercentile),      options.timePercentile      = options.energyPercentile; end
+if isnan(options.freqPercentile),      options.freqPercentile      = options.energyPercentile; end
+if isnan(options.timeStartPercentile), options.timeStartPercentile = options.timePercentile;   end
+if isnan(options.timeEndPercentile),   options.timeEndPercentile   = options.timePercentile;   end
+if isnan(options.freqLowPercentile),   options.freqLowPercentile   = options.freqPercentile;   end
+if isnan(options.freqHighPercentile),  options.freqHighPercentile  = options.freqPercentile;   end
 
 % Alias options -> params for rest of function
 params = options;

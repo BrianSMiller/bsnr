@@ -135,6 +135,7 @@
   }
 
   .card-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
   .card-grid.cols-1 { grid-template-columns: 1fr; }
 
   .card {
@@ -267,6 +268,33 @@
     </div>
   </section>
 
+
+  <h2>Design philosophy</h2>
+  <div class="card-grid cols-3" style="margin-bottom:3.5rem">
+    <div class="card" style="cursor:default">
+      <div class="card-label">Correct</div>
+      <h3>Results you can trust</h3>
+      <p>Analytical tests verify known SNR values against closed-form solutions.
+         The supplemental reproduction package confirms r&nbsp;=&nbsp;1.000
+         against original paper values.</p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="card-label">Clear</div>
+      <h3>Code that explains itself</h3>
+      <p>Explicit parameter names with tab-completion. Diagnostic plots show
+         exactly what was measured. <code style="font-family:var(--mono);font-size:0.85em">resolvedParams</code>
+         records what was actually used. Warnings explain auto-selected values.</p>
+    </div>
+    <div class="card" style="cursor:default">
+      <div class="card-label">Consistent</div>
+      <h3>One convention throughout</h3>
+      <p>Shared parameters across <code style="font-family:var(--mono);font-size:0.85em">snrEstimate</code>
+         and <code style="font-family:var(--mono);font-size:0.85em">trimAnnotation</code>.
+         Uniform units. Same annotation format in and out.
+         Always returns a result table.</p>
+    </div>
+  </div>
+
   <h2>Quick start</h2>
   <div class="install">
     <div><span class="comment">% Add bsnr and dependencies to path</span></div>
@@ -283,7 +311,16 @@
   </div>
 
   <h2>Documentation</h2>
-  <div class="card-grid cols-1">
+  <div class="card-grid cols-2">
+    <a class="card" href="getting_started.html">
+      <span class="card-arrow">→</span>
+      <div class="card-label">Start here</div>
+      <h3>Getting Started</h3>
+      <p>Installation, your first SNR estimate, building annotation structs,
+         choosing a method, batch processing, calibration, and troubleshooting.</p>
+      <div class="meta"><span>getting_started.md</span></div>
+    </a>
+
     <a class="card" href="bsnr_gallery.html">
       <span class="card-arrow">→</span>
       <div class="card-label">Method gallery</div>

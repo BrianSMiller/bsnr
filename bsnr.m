@@ -105,6 +105,25 @@
 %   resolvedParams captures all parameters after defaults and nfft derivation.
 %   Record it alongside results for reproducibility.
 %
+% DESIGN PHILOSOPHY
+%
+%   Correct, clear, and consistent — in that order.
+%
+%   Correct   Results match or improve on published methods. Analytical
+%             tests verify known SNR values against closed-form solutions.
+%             The supplemental reproduction package confirms r=1.000
+%             against original paper values.
+%
+%   Clear     Self-documenting code with explicit parameter names and
+%             tab-completion. Diagnostic plots show exactly what was
+%             measured. resolvedParams records what was actually used.
+%             Warnings explain auto-selected values.
+%
+%   Consistent  Shared parameter struct across snrEstimate and
+%             trimAnnotation. Uniform units (dB re 1 µPa when calibrated,
+%             dBFS otherwise). Same annotation format in and out.
+%             Always returns a result table.
+%
 % REFERENCES
 %
 %   Simple power ratio (snrType='spectrogram', useLurton=false):

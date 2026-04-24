@@ -147,6 +147,22 @@ Three published-data examples demonstrate bsnr on real datasets and compare agai
 
 Each script documents the original paper's SNR method, explains the sources of discrepancy between the original and bsnr estimates, and provides a consistent bsnr implementation for future use.
 
+## Getting Started
+
+New to bsnr? Read the [Getting Started guide](docs/getting_started.md) —
+installation, your first SNR estimate, building annotation structs, choosing
+a method, batch processing, and troubleshooting.
+
+## Design Philosophy
+
+**Correct, clear, and consistent** — in that order.
+
+**Correct** — Results match or improve on published methods. Analytical tests verify known SNR values against closed-form solutions. The supplemental reproduction package confirms r = 1.000 against original paper values.
+
+**Clear** — Self-documenting code with explicit parameter names and tab-completion (`functionSignatures.json`). Diagnostic plots show exactly what was measured. `resolvedParams` records what was actually used. Warnings explain auto-selected values (e.g. derived `nfft`).
+
+**Consistent** — Shared parameter struct across `snrEstimate` and `trimAnnotation`. Uniform units (dB re 1 µPa when calibrated, dBFS otherwise). Same annotation format in and out. Always returns a result table.
+
 ## Running Tests
 
 ```matlab
