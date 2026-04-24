@@ -92,8 +92,18 @@
 %
 % BATCH PROCESSING
 %
-%   result = snrEstimate(annotTable, params);   % annotTable is a table or struct array
-%   disp(result);                               % returns a result table
+%   result = snrEstimate(annotTable, 'snrType', 'spectrogramSlices');
+%   disp(result);   % returns a result table with snr, signalRMSdB, noiseRMSdB
+%
+% RESOLVED PARAMETERS
+%
+%   [snr, ~, ~, ~, ~, resolvedParams] = snrEstimate(annot);
+%   resolvedParams.nfft     % actual FFT length used (derived if not set explicitly)
+%   resolvedParams.nOverlap % actual overlap used
+%   resolvedParams.snrType  % method used
+%
+%   resolvedParams captures all parameters after defaults and nfft derivation.
+%   Record it alongside results for reproducibility.
 %
 % REFERENCES
 %

@@ -1,4 +1,4 @@
-function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = snrEstimateImpl(annot, options)
+function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo, resolvedParams] = snrEstimateImpl(annot, options)
 % Measure the signal-to-noise ratio (SNR) of one or more acoustic detections.
 %
 % The noise floor is computed from a time segment adjacent to each event,
@@ -189,13 +189,26 @@ end
 %% Dispatch: scalar vs vector
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if numel(annot) > 1
-    [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = ...
-        processBatch(annot, params);
-else
-    [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = ...
-        processOne(annot, params);
+% Resolve nfft before dispatching so resolvedParams reflects actual values used.
+if isempty(params.nfft)
+    try
+        sf = wavFolderInfo(annot(1).soundFolder, '', false, false);
+        sr = sf(1).sampleRate;
+    catch
+        sr = 2000;
+    end
+    durations = [annot.duration];
+    params.nfft    = 2^nextpow2(floor(median(durations) / params.nSlices / 0.75 * sr));
+    params.nOverlap = floor(params.nfft * 0.75);
 end
+if isempty(params.nOverlap)
+    params.nOverlap = floor(params.nfft * 0.75);
+end
+
+% Always use processBatch — handles n=1 and n>1 uniformly.
+% Always returns a result table.
+[snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = processBatch(annot, params);
+resolvedParams = params;   % nfft already resolved above
 
 end % snrEstimate
 
@@ -267,6 +280,11 @@ if useParfor && params.showClips
     warning('snrEstimate:noParallelPlots', ...
         'showClips is not supported in parallel mode and has been disabled.');
     params.showClips = false;
+elseif params.showClips && nDet > 1 && ~params.pauseAfterPlot
+    warning('snrEstimate:plotsClobbered', ...
+        ['showClips=true with %d annotations and pauseAfterPlot=false: ' ...
+         'plots will be overwritten without a chance to inspect them. ' ...
+         'Set pauseAfterPlot=true to pause after each plot.'], nDet);
 end
 
 snrVec      = nan(nDet, 1);
@@ -303,7 +321,7 @@ if useParfor
 
     parfor i = 1:nDet
         [snrVec(i), sigVec(i), noiseVec(i), noiseVarVec(i)] = ...
-            processOne(annot(i), params);                                   %#ok<PFBNS>
+            processAnnotation(annot(i), params);                           %#ok<PFBNS>
         if progTrig(i)
             send(D, i);
         end
@@ -316,7 +334,7 @@ else
     tic;
     for i = 1:nDet
         [snrVec(i), sigVec(i), noiseVec(i), noiseVarVec(i)] = ...
-            processOne(annot(i), params);
+            processAnnotation(annot(i), params);
         if params.verbose && (rem(i, 10) == 0 || i == nDet)
             fprintf(repmat('\b', 1, length(str)));
             str = sprintf('%d/%d completed in %.1f s', i, nDet, toc);
@@ -366,10 +384,10 @@ snr = resultTable;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Single-annotation processor
+%% Single-annotation processor (called by processBatch for each annotation)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = processOne(annot, params)
+function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = processAnnotation(annot, params)
 
 % Unwrap cell-array fields that arise when table2struct converts a
 % single table row — e.g. soundFolder becomes {1x1 cell} not char.
@@ -645,7 +663,7 @@ if params.showClips
     end
 end
 
-end % processOne
+end % processAnnotation
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Local helpers

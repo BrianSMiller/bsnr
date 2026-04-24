@@ -156,7 +156,7 @@ for s = 1:nCols
     nexttile(tlo1);
     p = struct('snrType','spectrogram','showClips',true,'pauseAfterPlot',false,...
         'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(1,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
@@ -175,7 +175,7 @@ for s = 1:nCols
     nexttile(tlo2);
     p = struct('snrType','spectrogramSlices','showClips',true,'pauseAfterPlot',false,...
         'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(2,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
@@ -194,7 +194,7 @@ for s = 1:nCols
     nexttile(tlo3);
     p = struct('snrType','timeDomain','showClips',true,'pauseAfterPlot',false,...
         'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(3,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
@@ -213,7 +213,7 @@ for s = 1:nCols
     nexttile(tlo4);
     p = struct('snrType','ridge','showClips',true,'pauseAfterPlot',false,...
         'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(4,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
@@ -232,7 +232,7 @@ for s = 1:nCols
     nexttile(tlo5);
     p = struct('snrType','synchrosqueeze','showClips',true,'pauseAfterPlot',false,...
         'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(5,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
@@ -251,7 +251,7 @@ for s = 1:nCols
     nexttile(tlo6);
     p = struct('snrType','quantiles','showClips',true,'pauseAfterPlot',false,...
         'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(6,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
@@ -270,7 +270,7 @@ for s = 1:nCols
     nexttile(tlo7);
     p = struct('snrType','spectrogram','useLurton',true,'showClips',true,...
         'pauseAfterPlot',false,'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(7,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
@@ -289,7 +289,7 @@ for s = 1:nCols
     nexttile(tlo8);
     p = struct('snrType','nist','showClips',true,'pauseAfterPlot',false,...
         'plotParams',allSP{s});
-    snr = snrEstimate(allAnnots{s}, p);
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
     snrTable(8,s) = snr;
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);

@@ -37,7 +37,7 @@ try
         delay  = delays(k);
         params = struct('snrType', 'spectrogram', 'showClips', false, ...
             'noiseDelay', delay);
-        snrs(k) = snrEstimate(annot, params);
+        snrs(k) = snrEstimate(annot, params).snr(1);
         assert(isfinite(snrs(k)), ...
             sprintf('noiseDelay=%.1fs: SNR should be finite', delay));
     end
@@ -61,7 +61,8 @@ fprintf('--- noiseDuration=''before'' ---\n');
 try
     params = struct('snrType', 'spectrogram', 'showClips', false, ...
         'noiseLocation', 'before');
-    [snr, rmsS, rmsN] = snrEstimate(annot, params);
+    res2 = snrEstimate(annot, params);
+    snr = res2.snr(1); rmsS = 10^(res2.signalRMSdB(1)/10); rmsN = 10^(res2.noiseRMSdB(1)/10);
     assert(isfinite(snr), 'before: SNR must be finite');
     assert(rmsS > rmsN,   'before: signal must exceed noise');
     fprintf('  [PASS] noiseDuration=before: SNR=%.1f dB\n', snr);
@@ -77,9 +78,9 @@ fprintf('--- noiseDuration=''beforeAndAfter'' equals default ---\n');
     'signalRMS', signalRMS, 'noiseRMS', noiseRMS, ...
     'toneFreqHz', toneFreq, 'freq', freq, 'durationSec', durationSec);
 try
-    snrBA  = snrEstimate(annot, struct('snrType','spectrogram','showClips',false, ...
-        'noiseLocation', 'beforeAndAfter'));
-    snrDef = snrEstimate(annot, struct('snrType','spectrogram','showClips',false));
+    snrBA = snrEstimate(annot, struct('snrType','spectrogram','showClips',false, ...
+        'noiseLocation', 'beforeAndAfter')).snr(1);
+    snrDef = snrEstimate(annot, struct('snrType','spectrogram','showClips',false)).snr(1);
     assert(isfinite(snrBA), 'beforeAndAfter: SNR must be finite');
     assert(abs(snrBA - snrDef) < 0.1, ...
         sprintf('beforeAndAfter should equal default: %.2f vs %.2f dB', snrBA, snrDef));
@@ -103,7 +104,7 @@ try
     annotEdge.tEnd = annot.tEnd - 4/86400;
 
     params = struct('snrType', 'spectrogram', 'showClips', false);
-    [snr] = snrEstimate(annotEdge, params);
+    snr = snrEstimate(annotEdge, params).snr(1);
     % Must not error. SNR may be NaN if noise window is completely outside
     % file, or finite if partially available.
     assert(isnan(snr) || isfinite(snr), ...
@@ -131,7 +132,7 @@ try
     annotEdge.tEnd = annot.tEnd + 4/86400;
 
     params = struct('snrType', 'spectrogram', 'showClips', false);
-    [snr] = snrEstimate(annotEdge, params);
+    snr = snrEstimate(annotEdge, params).snr(1);
     assert(isnan(snr) || isfinite(snr), ...
         'file-end edge: must return finite or NaN without erroring');
     if isfinite(snr)
@@ -152,7 +153,8 @@ fprintf('--- snrType=quantiles (uncalibrated) ---\n');
     'toneFreqHz', toneFreq, 'freq', freq, 'durationSec', durationSec);
 try
     params = struct('snrType', 'quantiles', 'showClips', false);
-    [snr, rmsS, rmsN] = snrEstimate(annot, params);
+    resQ = snrEstimate(annot, params);
+    snr = resQ.snr(1); rmsS = 10^(resQ.signalRMSdB(1)/10); rmsN = 10^(resQ.noiseRMSdB(1)/10);
     assert(isfinite(snr), 'quantiles uncal: SNR must be finite');
     assert(rmsS > rmsN,   'quantiles uncal: signal must exceed noise');
     fprintf('  [PASS] quantiles uncalibrated: SNR=%.1f dB\n', snr);
@@ -161,7 +163,7 @@ try
     [annotNoise, cleanupNoise] = createTestFixture( ...
         'signalRMS', 0, 'noiseRMS', noiseRMS, ...
         'freq', freq, 'durationSec', durationSec);
-    snrNoise = snrEstimate(annotNoise, params);
+    snrNoise = snrEstimate(annotNoise, params).snr(1);
     % quantiles splits the signal window into high (top 15%) vs low (bottom 85%)
     % cells. For pure noise these will still differ, giving SNR > 0 dB.
     % The key property is that noise-only SNR < high-SNR SNR.

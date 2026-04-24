@@ -521,8 +521,8 @@ fprintf('  Trimmed:  %.2f s  [%.0f %.0f] Hz\n', ...
 
 % Report SNR before and after
 p8         = struct('snrType', 'spectrogramSlices', 'showClips', false);
-snrBefore8 = snrEstimate(annotWide8,    p8);
-snrAfter8  = snrEstimate(annotTrimmed8, p8);
+snrBefore8 = snrEstimate(annotWide8,    p8).snr(1);
+snrAfter8  = snrEstimate(annotTrimmed8, p8).snr(1);
 fprintf('  SNR before trim: %.1f dB\n', snrBefore8);
 fprintf('  SNR after trim:  %.1f dB\n', snrAfter8);
 cleanup8();
@@ -623,8 +623,8 @@ if ~isempty(dIdx9) && callAvailable(dIdx9)
         annotTrimmed9.duration, annotTrimmed9.freq(1), annotTrimmed9.freq(2));
 
     p9         = struct('snrType', 'spectrogramSlices', 'showClips', false);
-    snrBefore9 = snrEstimate(annotWide9,    p9);
-    snrAfter9  = snrEstimate(annotTrimmed9, p9);
+    snrBefore9 = snrEstimate(annotWide9,    p9).snr(1);
+    snrAfter9  = snrEstimate(annotTrimmed9, p9).snr(1);
     fprintf('  SNR before trim: %.1f dB\n', snrBefore9);
     fprintf('  SNR after trim:  %.1f dB\n', snrAfter9);
 else
@@ -690,8 +690,7 @@ fprintf('Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b\n');
 %% Local helpers
 
 function snrValue = runAndTitle(annot, params, titleStr)
-snrValue = snrEstimate(annot, params);
-if istable(snrValue), snrValue = snrValue.snr; end
+snrValue = snrEstimate(annot, params).snr(1);
 title(gca, titleStr, 'interpreter', 'none', 'FontSize', 8);
 end
 

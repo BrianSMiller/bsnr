@@ -87,29 +87,34 @@ if isempty(reply), reply = 'n'; end
 runParallel = strcmpi(strtrim(reply), 'y');
 fprintf('Parallel test %s.\n\n', onOff(runParallel));
 
+reply = input('Verbose output? Shows [PASS] lines. [y/N]: ', 's');
+if isempty(reply), reply = 'n'; end
+verbose = strcmpi(strtrim(reply), 'y');
+fprintf('Verbose output %s.\n\n', onOff(verbose));
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Run tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-[passed(1), elapsed(1)]  = runOne('test_snrMethods',              @() test_snrMethods());
-[passed(2), elapsed(2)]  = runOne('test_snrEstimate_scalar',      @() test_snrEstimate_scalar());
-[passed(3), elapsed(3)]  = runOne('test_snrEstimate_correctness', @() test_snrEstimate_correctness());
-[passed(4), elapsed(4)]  = runOne('test_snrEstimate_methods',     @() test_snrEstimate_methods());
-[passed(5), elapsed(5)]  = runOne('test_removeClicks',            @() test_removeClicks());
-[passed(6), elapsed(6)]  = runOne('test_calibration',             @() test_calibration());
+[passed(1), elapsed(1)]  = runOne('test_snrMethods', verbose,              @() test_snrMethods());
+[passed(2), elapsed(2)]  = runOne('test_snrEstimate_scalar', verbose, @() test_snrEstimate_scalar());
+[passed(3), elapsed(3)]  = runOne('test_snrEstimate_correctness', verbose, @() test_snrEstimate_correctness());
+[passed(4), elapsed(4)]  = runOne('test_snrEstimate_methods', verbose, @() test_snrEstimate_methods());
+[passed(5), elapsed(5)]  = runOne('test_removeClicks', verbose, @() test_removeClicks());
+[passed(6), elapsed(6)]  = runOne('test_calibration', verbose, @() test_calibration());
 
 if runPlots
-    [passed(7), elapsed(7)] = runOne('test_plots',                    @() test_plots());
-    [passed(8), elapsed(8)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
-    [passed(9), elapsed(9)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
-    [passed(10), elapsed(10)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
-    [passed(11), elapsed(11)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
+    [passed(7), elapsed(7)] = runOne('test_plots', verbose, @() test_plots());
+    [passed(8), elapsed(8)] = runOne('test_snrEstimate_batch', verbose, @() test_snrEstimate_batch(runParallel));
+    [passed(9), elapsed(9)] = runOne('test_snrEstimate_noiseWindows', verbose, @() test_snrEstimate_noiseWindows());
+    [passed(10), elapsed(10)] = runOne('test_snrEstimate_outputs', verbose, @() test_snrEstimate_outputs());
+    [passed(11), elapsed(11)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation());
     nTests = 11;
 else
-    [passed(7), elapsed(7)] = runOne('test_snrEstimate_batch',        @() test_snrEstimate_batch(runParallel));
-    [passed(8), elapsed(8)] = runOne('test_snrEstimate_noiseWindows', @() test_snrEstimate_noiseWindows());
-    [passed(9), elapsed(9)] = runOne('test_snrEstimate_outputs',      @() test_snrEstimate_outputs());
-    [passed(10), elapsed(10)] = runOne('test_trimAnnotation',           @() test_trimAnnotation());
+    [passed(7), elapsed(7)] = runOne('test_snrEstimate_batch', verbose, @() test_snrEstimate_batch(runParallel));
+    [passed(8), elapsed(8)] = runOne('test_snrEstimate_noiseWindows', verbose, @() test_snrEstimate_noiseWindows());
+    [passed(9), elapsed(9)] = runOne('test_snrEstimate_outputs', verbose, @() test_snrEstimate_outputs());
+    [passed(10), elapsed(10)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation());
     nTests = 10;
 end
 
@@ -130,14 +135,18 @@ else
 end
 
 fprintf('\n==============================================\n');
-fprintf('  Results\n');
-fprintf('==============================================\n');
-for i = 1:nTests
-    if passed(i), status = 'PASS'; else, status = 'FAIL'; end
-    fprintf('  [%s]  %-35s  %.1f s\n', status, names{i}, elapsed(i));
+if ~verbose
+    fprintf('  %d/%d passed\n', sum(passed), nTests);
+else
+    fprintf('  Results\n');
+    fprintf('==============================================\n');
+    for i = 1:nTests
+        if passed(i), status = 'PASS'; else, status = 'FAIL'; end
+        fprintf('  [%s]  %-40s  %.1f s\n', status, names{i}, elapsed(i));
+    end
+    fprintf('----------------------------------------------\n');
+    fprintf('  %d/%d passed\n', sum(passed), nTests);
 end
-fprintf('----------------------------------------------\n');
-fprintf('  %d/%d passed\n', sum(passed), nTests);
 fprintf('==============================================\n');
 
 if ~all(passed)
@@ -148,18 +157,32 @@ end
 %% Local helpers
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [passed, elapsed] = runOne(name, fn)
-fprintf('\nRunning %s...\n', name);
+function [passed, elapsed] = runOne(name, verbose, fn)
+if nargin < 3, fn = verbose; verbose = false; end
+if verbose
+    fprintf('\nRunning %s...\n', name);
+else
+    fprintf('  %-42s', [name '...']);
+end
 tStart = tic;
 try
-    fn();
+    if verbose
+        fn();
+    else
+        evalc('fn()');
+    end
     passed  = true;
     elapsed = toc(tStart);
+    if verbose
+        % individual test already printed [PASS]
+    else
+        fprintf(' %5.1f s  [PASS]\n', elapsed);
+    end
 catch err
     passed  = false;
     elapsed = toc(tStart);
-    fprintf('\n  [FAIL] %s threw an error:\n', name);
-    fprintf('    %s\n', err.message);
+    if ~verbose, fprintf(' %5.1f s  [FAIL]\n', elapsed); end
+    fprintf('    Error: %s\n', err.message);
     if ~isempty(err.stack)
         fprintf('    at %s (line %d)\n', err.stack(1).name, err.stack(1).line);
     end

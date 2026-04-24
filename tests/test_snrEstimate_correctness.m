@@ -54,7 +54,7 @@ fprintf('--- (1) Noise-only SNR ≈ 0 dB ---\n');
 for k = 1:numel(linearMethods)
     m = linearMethods{k};
     p = pBase; p.snrType = m; p.freq = freq;
-    snr0 = snrEstimate(annotLow, p);
+    snr0 = snrEstimate(annotLow, p).snr(1);
     assert(abs(snr0) < tol, ...
         sprintf('%s noise-only: SNR=%.2f dB, expected ≈0', m, snr0));
     fprintf('  [PASS] %s noise-only: %.2f dB\n', m, snr0);
@@ -70,9 +70,9 @@ allMethods = {'spectrogram', 'spectrogramSlices', 'timeDomain', 'quantiles'};
 for k = 1:numel(allMethods)
     m = allMethods{k};
     p = pBase; p.snrType = m; p.freq = freq;
-    snrLow  = snrEstimate(annotLow,  p);
-    snrMed  = snrEstimate(annotMed,  p);
-    snrHigh = snrEstimate(annotHigh, p);
+    snrLow = snrEstimate(annotLow,  p).snr(1);
+    snrMed = snrEstimate(annotMed,  p).snr(1);
+    snrHigh = snrEstimate(annotHigh, p).snr(1);
     assert(snrMed > snrLow, ...
         sprintf('%s: SNR not monotonic: med(%.1f) <= low(%.1f)', m, snrMed, snrLow));
     assert(snrHigh > snrMed, ...
@@ -90,8 +90,8 @@ fprintf('--- (3) SNR invariant to uniform scaling ---\n');
 for k = 1:numel(linearMethods)
     m = linearMethods{k};
     p = pBase; p.snrType = m; p.freq = freq;
-    snrRef   = snrEstimate(annotHigh, p);
-    snrLoud  = snrEstimate(annotLoud, p);
+    snrRef = snrEstimate(annotHigh, p).snr(1);
+    snrLoud = snrEstimate(annotLoud, p).snr(1);
     assert(abs(snrRef - snrLoud) < 1.0, ...
         sprintf('%s scaling invariance: ref=%.2f, loud=%.2f (diff=%.2f)', ...
         m, snrRef, snrLoud, abs(snrRef-snrLoud)));
@@ -107,8 +107,8 @@ fprintf('--- (4) Frequency band selectivity ---\n');
 for k = 1:numel(linearMethods)
     m = linearMethods{k};
     p = pBase; p.snrType = m; p.freq = freq;
-    snrIn  = snrEstimate(annotHigh, p);   % tone at 200 Hz, band [150 250]
-    snrOut = snrEstimate(annotOOB,  p);   % tone at 400 Hz, outside band
+    snrIn = snrEstimate(annotHigh, p).snr(1);   % tone at 200 Hz, band [150 250]
+    snrOut = snrEstimate(annotOOB,  p).snr(1);   % tone at 400 Hz, outside band
     assert(snrIn > snrOut + 5, ...
         sprintf('%s band selectivity: in=%.1f dB, out=%.1f dB (expected in > out+5)', ...
         m, snrIn, snrOut));
@@ -121,8 +121,8 @@ end
 
 fprintf('--- (5) Lurton formula ---\n');
 pLurton = pBase; pLurton.snrType = 'spectrogram'; pLurton.useLurton = true; pLurton.freq = freq;
-snrLurtonNoise = snrEstimate(annotLow,  pLurton);
-snrLurtonHigh  = snrEstimate(annotHigh, pLurton);
+snrLurtonNoise = snrEstimate(annotLow,  pLurton).snr(1);
+snrLurtonHigh = snrEstimate(annotHigh, pLurton).snr(1);
 % Lurton: SNR = 10*log10((S-N)^2/noiseVar). For noise-only S≈N, so SNR << 0.
 % For high SNR S>>N, so Lurton >> simple formula.
 assert(snrLurtonNoise < 0, ...
@@ -139,8 +139,8 @@ fprintf('  [PASS] Lurton: noise-only=%.1f dB, high-SNR=%.1f dB\n', ...
 fprintf('--- (6) noiseDuration_s ---\n');
 pDur1 = pBase; pDur1.snrType = 'spectrogram'; pDur1.freq = freq;
 pDur2 = pBase; pDur2.snrType = 'spectrogram'; pDur2.freq = freq; pDur2.noiseDuration_s = 10;
-snrDur1 = snrEstimate(annotHigh, pDur1);
-snrDur2 = snrEstimate(annotHigh, pDur2);
+snrDur1 = snrEstimate(annotHigh, pDur1).snr(1);
+snrDur2 = snrEstimate(annotHigh, pDur2).snr(1);
 assert(abs(snrDur1 - snrDur2) < tol, ...
     sprintf('noiseDuration_s: default=%.1f dB, 10s=%.1f dB (diff=%.2f)', ...
     snrDur1, snrDur2, abs(snrDur1-snrDur2)));
@@ -159,7 +159,7 @@ inBandSNRdB  = 10 * log10(signalRMS^2 / 2 / noiseRMS^2);   % 17 dB
 for k = 1:2   % spectrogram and spectrogramSlices
     m = linearMethods{k};
     p = pBase; p.snrType = m; p.freq = freq;
-    snrEst = snrEstimate(annotHigh, p);
+    snrEst = snrEstimate(annotHigh, p).snr(1);
     err = abs(snrEst - inBandSNRdB);
     assert(err < 3, ...
         sprintf('%s analytical: estimated=%.2f dB, truth=%.2f dB, err=%.2f dB', ...
@@ -186,8 +186,8 @@ assert(annotTrimmed.duration < annotWide.duration, ...
 
 pPipeline = pBase; pPipeline.snrType = 'spectrogramSlices'; pPipeline.freq = freq;
 pPipeline.noiseLocation = 'before'; pPipeline.noiseDuration_s = 2;
-snrWide    = snrEstimate(annotWide,    pPipeline);
-snrTrimmed = snrEstimate(annotTrimmed, pPipeline);
+snrWide = snrEstimate(annotWide,    pPipeline).snr(1);
+snrTrimmed = snrEstimate(annotTrimmed, pPipeline).snr(1);
 assert(isfinite(snrWide) && isfinite(snrTrimmed), ...
     'both SNRs should be finite');
 assert(snrTrimmed >= snrWide - 1, ...
@@ -203,8 +203,8 @@ pClean  = pBase; pClean.snrType  = 'spectrogram'; pClean.freq = freq;
 pClicks = pBase; pClicks.snrType = 'spectrogram'; pClicks.freq = freq;
 pClicks.removeClicks = struct('threshold', 3, 'power', 1000);
 
-snrClean  = snrEstimate(annotHigh, pClean);
-snrClicks = snrEstimate(annotHigh, pClicks);
+snrClean = snrEstimate(annotHigh, pClean).snr(1);
+snrClicks = snrEstimate(annotHigh, pClicks).snr(1);
 assert(abs(snrClean - snrClicks) < tol, ...
     sprintf('removeClicks on clean signal: clean=%.1f dB, with=%.1f dB', ...
     snrClean, snrClicks));

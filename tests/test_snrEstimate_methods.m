@@ -59,8 +59,8 @@ fprintf('Analytical in-band SNR (PSD): %.1f dB\n\n', inBandSNRdB_psd);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('--- spectrogram ---\n');
 p = pBase; p.snrType = 'spectrogram';
-snrHigh  = snrEstimate(annotHigh,  p);
-snrNoise = snrEstimate(annotNoise, p);
+snrHigh = snrEstimate(annotHigh,  p).snr(1);
+snrNoise = snrEstimate(annotNoise, p).snr(1);
 assert(isfinite(snrHigh),  'spectrogram: high-SNR should be finite');
 assert(isfinite(snrNoise), 'spectrogram: noise-only should be finite');
 assert(snrHigh > snrNoise + 10, ...
@@ -74,8 +74,8 @@ fprintf('  [PASS] high=%.1f dB, noise=%.1f dB (truth=%.1f dB)\n', snrHigh, snrNo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('--- spectrogramSlices ---\n');
 p = pBase; p.snrType = 'spectrogramSlices';
-snrHigh  = snrEstimate(annotHigh,  p);
-snrNoise = snrEstimate(annotNoise, p);
+snrHigh = snrEstimate(annotHigh,  p).snr(1);
+snrNoise = snrEstimate(annotNoise, p).snr(1);
 assert(isfinite(snrHigh) && isfinite(snrNoise), 'spectrogramSlices: must be finite');
 assert(snrHigh > snrNoise + 10, ...
     sprintf('spectrogramSlices: high (%.1f) should exceed noise (%.1f) by >10 dB', snrHigh, snrNoise));
@@ -88,8 +88,8 @@ fprintf('  [PASS] high=%.1f dB, noise=%.1f dB (truth=%.1f dB)\n', snrHigh, snrNo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('--- timeDomain ---\n');
 p = pBase; p.snrType = 'timeDomain';
-snrHigh  = snrEstimate(annotHigh,  p);
-snrNoise = snrEstimate(annotNoise, p);
+snrHigh = snrEstimate(annotHigh,  p).snr(1);
+snrNoise = snrEstimate(annotNoise, p).snr(1);
 % timeDomain: bandpass FIR, same in-band SNR reference as PSD methods
 assert(isfinite(snrHigh) && isfinite(snrNoise), 'timeDomain: must be finite');
 assert(snrHigh > snrNoise + 10, ...
@@ -103,8 +103,8 @@ fprintf('  [PASS] high=%.1f dB, noise=%.1f dB (truth=%.1f dB)\n', snrHigh, snrNo
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('--- ridge ---\n');
 p = pBase; p.snrType = 'ridge';
-snrHigh  = snrEstimate(annotHigh,  p);
-snrNoise = snrEstimate(annotNoise, p);
+snrHigh = snrEstimate(annotHigh,  p).snr(1);
+snrNoise = snrEstimate(annotNoise, p).snr(1);
 % Ridge: per-bin geometry, nBandBins = bw/(Nyquist/nfft)
 assert(isfinite(snrHigh) && isfinite(snrNoise), 'ridge: must be finite');
 assert(snrHigh > snrNoise + 10, ...
@@ -119,8 +119,8 @@ fprintf('  [PASS] high=%.1f dB, noise=%.1f dB\n', snrHigh, snrNoise);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('--- synchrosqueeze ---\n');
 p = pBase; p.snrType = 'synchrosqueeze';
-snrHigh  = snrEstimate(annotHigh,  p);
-snrNoise = snrEstimate(annotNoise, p);
+snrHigh = snrEstimate(annotHigh,  p).snr(1);
+snrNoise = snrEstimate(annotNoise, p).snr(1);
 assert(isfinite(snrHigh) && isfinite(snrNoise), 'synchrosqueeze: must be finite');
 assert(snrHigh > snrNoise + 10, ...
     sprintf('synchrosqueeze: high (%.1f) should exceed noise (%.1f) by >10 dB', snrHigh, snrNoise));
@@ -131,8 +131,8 @@ fprintf('  [PASS] high=%.1f dB, noise=%.1f dB\n', snrHigh, snrNoise);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('--- quantiles ---\n');
 p = pBase; p.snrType = 'quantiles';
-snrHigh  = snrEstimate(annotHigh,  p);
-snrNoise = snrEstimate(annotNoise, p);
+snrHigh = snrEstimate(annotHigh,  p).snr(1);
+snrNoise = snrEstimate(annotNoise, p).snr(1);
 assert(isfinite(snrHigh) && isfinite(snrNoise), 'quantiles: must be finite');
 assert(snrHigh > snrNoise, ...
     sprintf('quantiles: high (%.1f) should exceed noise (%.1f)', snrHigh, snrNoise));
@@ -146,8 +146,8 @@ fprintf('  [PASS] high=%.1f dB, noise=%.1f dB (analytical noise≈6.39 dB)\n', s
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fprintf('--- nist (histogram) ---\n');
 p = pBase; p.snrType = 'nist';
-snrHigh  = snrEstimate(annotLong,       p);
-snrNoise = snrEstimate(annotLongNoise,  p);
+snrHigh = snrEstimate(annotLong,       p).snr(1);
+snrNoise = snrEstimate(annotLongNoise,  p).snr(1);
 assert(isfinite(snrHigh) && isfinite(snrNoise), 'nist: must be finite');
 assert(snrHigh > snrNoise + 5, ...
     sprintf('nist: high (%.1f) should exceed noise (%.1f) by >5 dB', snrHigh, snrNoise));
@@ -185,7 +185,7 @@ srwAnnot.channel     = 1;
 
 for m = {'ridge', 'synchrosqueeze'}
     p = struct('snrType', m{1}, 'showClips', false, 'verbose', false);
-    snrSRW = snrEstimate(srwAnnot, p);
+    snrSRW = snrEstimate(srwAnnot, p).snr(1);
     assert(isfinite(snrSRW) && snrSRW > 5, ...
         sprintf('%s SRW upcall: SNR=%.1f dB, expected >5 dB', m{1}, snrSRW));
     fprintf('  [PASS] %s SRW upcall: %.1f dB\n', m{1}, snrSRW);
