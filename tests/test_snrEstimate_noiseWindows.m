@@ -6,8 +6,8 @@ function test_snrEstimate_noiseWindows()
 %
 % Tests:
 %   1. noiseDelay gap — 0s vs 0.5s vs 1.0s gap (0.5s is now the default)
-%   2. noiseDuration='before' — noise measured only before detection
-%   3. noiseDuration='beforeAndAfter' — symmetric (default); must equal params default
+%   2. noiseLocation='before' — noise measured only before detection
+%   3. noiseLocation='beforeAndAfter' — symmetric (default); must equal params default
 %   4. Edge: detection at file start — noise window truncated, should not error
 %   5. Edge: detection at file end   — noise window truncated, should not error
 %   6. snrType='quantiles' uncalibrated
@@ -60,7 +60,7 @@ fprintf('--- noiseDuration=''before'' ---\n');
     'toneFreqHz', toneFreq, 'freq', freq, 'durationSec', durationSec);
 try
     params = struct('snrType', 'spectrogram', 'showClips', false, ...
-        'noiseDuration', 'before');
+        'noiseLocation', 'before');
     [snr, rmsS, rmsN] = snrEstimate(annot, params);
     assert(isfinite(snr), 'before: SNR must be finite');
     assert(rmsS > rmsN,   'before: signal must exceed noise');
@@ -78,7 +78,7 @@ fprintf('--- noiseDuration=''beforeAndAfter'' equals default ---\n');
     'toneFreqHz', toneFreq, 'freq', freq, 'durationSec', durationSec);
 try
     snrBA  = snrEstimate(annot, struct('snrType','spectrogram','showClips',false, ...
-        'noiseDuration','beforeAndAfter'));
+        'noiseLocation', 'beforeAndAfter'));
     snrDef = snrEstimate(annot, struct('snrType','spectrogram','showClips',false));
     assert(isfinite(snrBA), 'beforeAndAfter: SNR must be finite');
     assert(abs(snrBA - snrDef) < 0.1, ...

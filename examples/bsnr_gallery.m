@@ -512,8 +512,7 @@ annotWide8.duration = (annotWide8.tEnd - annotWide8.t0) * 86400;
 annotWide8.freq     = [100 300];   % symmetric about 200 Hz tone
 
 % Trim — shows diagnostic plot
-trimParams8   = struct('showPlot', true);
-annotTrimmed8 = trimAnnotation(annotWide8, trimParams8);
+annotTrimmed8 = trimAnnotation(annotWide8, 'showPlot', true);
 
 fprintf('  Original: %.2f s  [%.0f %.0f] Hz\n', ...
     annotWide8.duration, annotWide8.freq(1), annotWide8.freq(2));
@@ -611,9 +610,9 @@ if ~isempty(dIdx9) && callAvailable(dIdx9)
     annotWide9.duration = (annotWide9.tEnd - annotWide9.t0) * 86400;
     annotWide9.freq = [annotD9.freq(1) - 15, annotD9.freq(2) + 15];
 
-    trimParams9   = struct('showPlot', true, 'trimMethod', 'cumulative', ...
+    annotTrimmed9 = trimAnnotation(annotWide9, 'showPlot', true, ...
+        'trimMethod', 'cumulative', ...
         'timeStartPercentile', 10, 'timeEndPercentile', 20, 'freqPercentile', 10);
-    annotTrimmed9 = trimAnnotation(annotWide9, trimParams9);
     if ~annotTrimmed9.trimApplied
         warning('Section 9: trim not applied — audio may not cover extended bounds');
     end

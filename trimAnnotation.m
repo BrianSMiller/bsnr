@@ -1,85 +1,90 @@
-function annotsTrimmed = trimAnnotation(annots, params)
+function annotsTrimmed = trimAnnotation(annots, options)
 % Trim annotation bounds to the central energy of each detection.
 %
 % For each annotation, loads the signal audio and computes a spectrogram.
 % Leading/trailing time slices and edge frequency bins that fall below the
-% energy percentile threshold are trimmed. The same trim is applied to the
-% noise window bounds.
+% energy percentile threshold are trimmed.
 %
 % Trimming is intended to standardise SNR estimates across analysts with
 % different annotation box tightness. It is only meaningful when frequency
-% bounds vary per-annotation; if params.freq is set (fixed band), frequency
+% bounds vary per-annotation; if freq is set (fixed band), frequency
 % trimming is skipped.
 %
+% USAGE
+%   annotsTrimmed = trimAnnotation(annots)
+%   annotsTrimmed = trimAnnotation(annots, 'trimMethod', 'cumulative')
+%   annotsTrimmed = trimAnnotation(annots, 'energyPercentile', 10, 'showPlot', true)
+%
 % INPUTS
-%   annots  - Annotation table or struct array (same format as snrEstimate)
-%   params  - Parameter struct (shared with snrEstimate). Relevant fields:
-%               .freq             Fixed frequency band [lo hi] Hz. If set,
-%                                 frequency trimming is skipped.
-%               .nfft             FFT length in samples. If empty, derived
-%                                 per-annotation from nSlices.
-%               .nOverlap         FFT overlap in samples. Default: floor(nfft*0.75)
-%               .nSlices          Target slices for nfft derivation. Default: 30
-%               .noiseLocation    Noise placement (default: 'beforeAndAfter')
-%               .noiseDelay       Gap in seconds (default: 0.5)
-%               .noiseDuration_s  Noise window duration in seconds.
-%                                 Default: [] (match annotation duration)
-%               .energyPercentile Trim threshold percentile. Default: 2.5
-%                                 Applied to all edges unless overridden.
-%               .timePercentile   Sets both time edges. Default: energyPercentile
-%               .freqPercentile   Sets both freq edges. Default: energyPercentile
-%               .timeStartPercentile  Leading time edge. Default: timePercentile
-%               .timeEndPercentile    Trailing time edge. Default: timePercentile
-%               .freqLowPercentile    Low freq edge. Default: freqPercentile
-%               .freqHighPercentile   High freq edge. Default: freqPercentile
-%               .minSlices        Minimum slices after time trim. Default: 5
-%               .minBandHz        Minimum bandwidth after freq trim (Hz).
-%                                 Default: 1 Hz. If trimmed band is narrower,
-%                                 freq trim is skipped for that annotation.
-%               .trimMethod       Trimming method for both time and frequency.
-%                                 Default: 'centroid'
-%                                 'centroid' — expand symmetrically outward from
-%                                   the energy centroid. Best for calls centred
-%                                   within the annotation box (most common case).
-%                                 'cumulative' — trim low-energy edges using
-%                                   forward cumulative sum. Better for asymmetric
-%                                   calls (e.g. FM sweeps with one-sided buffers).
-%               .showPlot         Show diagnostic plot. Default: false
+%   annots               - Annotation table or struct array
+%
+% NAME-VALUE OPTIONS
+%   freq                 - Fixed frequency band [lo hi] Hz. If set,
+%                          frequency trimming is skipped. Default: []
+%   nfft                 - FFT length in samples. Default: [] (derived from nSlices)
+%   nOverlap             - FFT overlap in samples. Default: floor(nfft*0.75)
+%   nSlices              - Target time slices for nfft derivation. Default: 30
+%   noiseLocation        - Noise window placement. Default: 'beforeAndAfter'
+%   noiseDelay           - Gap between signal and noise window (s). Default: 0.5
+%   noiseDuration_s      - Noise window duration (s). Default: [] (match signal)
+%   energyPercentile     - Trim threshold percentile for all edges. Default: 2.5
+%                          (trims to central 95% of energy)
+%   timePercentile       - Sets both time edges. Default: energyPercentile
+%   freqPercentile       - Sets both freq edges. Default: energyPercentile
+%   timeStartPercentile  - Leading time edge only. Default: timePercentile
+%   timeEndPercentile    - Trailing time edge only. Default: timePercentile
+%   freqLowPercentile    - Low freq edge only. Default: freqPercentile
+%   freqHighPercentile   - High freq edge only. Default: freqPercentile
+%   minSlices            - Minimum slices after time trim. Default: 5
+%   minBandHz            - Minimum bandwidth after freq trim (Hz). Default: 1
+%   trimMethod           - 'centroid' (default) or 'cumulative'
+%                          'centroid'   expand symmetrically from energy centroid;
+%                                       best for calls centred in the box.
+%                          'cumulative' trim low-energy edges via cumulative sum;
+%                                       better for asymmetric FM calls.
+%   showPlot             - Show diagnostic plot. Default: false
 %
 % OUTPUTS
-%   annotsTrimmed - Annotation table with updated t0, tEnd, duration, freq
-%                   columns. A 'trimApplied' logical column is added.
+%   annotsTrimmed - Same type as annots with updated t0, tEnd, duration,
+%                   freq fields and a trimApplied logical column/field.
 %
-% NOTE: Trimming operates on raw (uncalibrated) power. Calibration is not
-% needed since trimming is based on relative energy within the annotation.
+% NOTE: Trimming uses raw (uncalibrated) power — calibration is not needed
+% since trim is based on relative energy within the annotation window.
 %
 % See also snrEstimate, plotTrimDiagnostic
 
-if nargin < 2 || isempty(params)
-    params = struct();
+arguments
+    annots
+    options.freq                 double   = []
+    options.nfft                 double   = []
+    options.nOverlap             double   = []
+    options.nSlices              double   = 30
+    options.noiseLocation        char     = 'beforeAndAfter'
+    options.noiseDelay           double   = 0.5
+    options.noiseDuration_s      double   = []
+    options.energyPercentile     double   = 2.5
+    options.timePercentile       double   = -1   % sentinel: inherit from energyPercentile
+    options.freqPercentile       double   = -1   % sentinel: inherit from energyPercentile
+    options.timeStartPercentile  double   = -1   % sentinel: inherit from timePercentile
+    options.timeEndPercentile    double   = -1   % sentinel: inherit from timePercentile
+    options.freqLowPercentile    double   = -1   % sentinel: inherit from freqPercentile
+    options.freqHighPercentile   double   = -1   % sentinel: inherit from freqPercentile
+    options.minSlices            double   = 5
+    options.minBandHz            double   = 1
+    options.trimMethod           char     = 'centroid'
+    options.showPlot             logical  = false
 end
 
-% Apply defaults shared with snrEstimate
-if ~isfield(params, 'freq')          || isempty(params.freq),          params.freq          = []; end
-if ~isfield(params, 'nfft')          || isempty(params.nfft),          params.nfft          = []; end
-if ~isfield(params, 'nOverlap')      || isempty(params.nOverlap),      params.nOverlap      = []; end
-if ~isfield(params, 'nSlices')       || isempty(params.nSlices),       params.nSlices       = 30; end
-if ~isfield(params, 'noiseLocation') || isempty(params.noiseLocation), params.noiseLocation = 'beforeAndAfter'; end
-if ~isfield(params, 'noiseDelay')    || isempty(params.noiseDelay),    params.noiseDelay    = 0.5; end
-if ~isfield(params, 'noiseDuration_s'),                                params.noiseDuration_s = []; end
-if ~isfield(params, 'energyPercentile') || isempty(params.energyPercentile), params.energyPercentile = 2.5; end
-% Per-axis percentiles override energyPercentile if set.
-% timePercentile/freqPercentile set both ends; per-edge params override further.
-if ~isfield(params, 'timePercentile')      || isempty(params.timePercentile),      params.timePercentile      = params.energyPercentile; end
-if ~isfield(params, 'freqPercentile')      || isempty(params.freqPercentile),      params.freqPercentile      = params.energyPercentile; end
-if ~isfield(params, 'timeStartPercentile') || isempty(params.timeStartPercentile), params.timeStartPercentile = params.timePercentile; end
-if ~isfield(params, 'timeEndPercentile')   || isempty(params.timeEndPercentile),   params.timeEndPercentile   = params.timePercentile; end
-if ~isfield(params, 'freqLowPercentile')   || isempty(params.freqLowPercentile),   params.freqLowPercentile   = params.freqPercentile; end
-if ~isfield(params, 'freqHighPercentile')  || isempty(params.freqHighPercentile),  params.freqHighPercentile  = params.freqPercentile; end
-if ~isfield(params, 'minSlices')     || isempty(params.minSlices),     params.minSlices     = 5; end
-if ~isfield(params, 'minBandHz')     || isempty(params.minBandHz),     params.minBandHz     = 1; end
-if ~isfield(params, 'showPlot')      || isempty(params.showPlot),      params.showPlot      = false; end
-if ~isfield(params, 'trimMethod')    || isempty(params.trimMethod),    params.trimMethod    = 'centroid'; end
+% Resolve sentinel-defaulted percentile hierarchy
+if options.timePercentile      < 0, options.timePercentile      = options.energyPercentile; end
+if options.freqPercentile      < 0, options.freqPercentile      = options.energyPercentile; end
+if options.timeStartPercentile < 0, options.timeStartPercentile = options.timePercentile;   end
+if options.timeEndPercentile   < 0, options.timeEndPercentile   = options.timePercentile;   end
+if options.freqLowPercentile   < 0, options.freqLowPercentile   = options.freqPercentile;   end
+if options.freqHighPercentile  < 0, options.freqHighPercentile  = options.freqPercentile;   end
+
+% Alias options -> params for rest of function
+params = options;
 
 fixedFreq = ~isempty(params.freq);
 

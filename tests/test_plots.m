@@ -320,8 +320,7 @@ annotWide.duration = (annotWide.tEnd - annotWide.t0) * 86400;
 annotWide.freq     = [100 300];   % symmetric about 200 Hz tone
 
 % Trim with per-annotation freq (no fixed params.freq)
-trimParams = struct('showPlot', true);
-trimmed = trimAnnotation(annotWide, trimParams);
+trimmed = trimAnnotation(annotWide, 'showPlot', true);
 fig9 = gcf;  % capture figure produced by plotTrimDiagnostic
 
 fprintf('  Original: %.2f s, [%.0f %.0f] Hz\n', ...

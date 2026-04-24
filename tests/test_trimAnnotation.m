@@ -39,12 +39,12 @@ annotWide.t0   = annotTone.t0   - marginSec/86400;
 annotWide.tEnd = annotTone.tEnd + marginSec/86400;
 annotWide.duration = (annotWide.tEnd - annotWide.t0) * 86400;
 
-params = struct('freq', freq, 'showPlot', false);
+% params passed as name-value pairs directly to trimAnnotation
 
 %% (1) Trimmed bounds within original bounds
 
 fprintf('--- (1) Trimmed bounds within original bounds ---\n');
-trimmed = trimAnnotation(annotWide, params);
+trimmed = trimAnnotation(annotWide, 'freq', freq, 'showPlot', false);
 assert(trimmed.t0   >= annotWide.t0,   'Trimmed t0 should be >= original t0');
 assert(trimmed.tEnd <= annotWide.tEnd, 'Trimmed tEnd should be <= original tEnd');
 assert(trimmed.duration <= annotWide.duration, 'Trimmed duration should be <= original');
@@ -63,8 +63,7 @@ fprintf('  [PASS] duration reduced: %.2f s -> %.2f s (target ~4s)\n', ...
 %% (3) Fixed params.freq suppresses frequency trimming
 
 fprintf('--- (3) Fixed freq suppresses frequency trimming ---\n');
-paramsFixed = struct('freq', freq, 'showPlot', false);
-trimmedFixed = trimAnnotation(annotWide, paramsFixed);
+trimmedFixed = trimAnnotation(annotWide, 'freq', freq, 'showPlot', false);
 assert(isequal(trimmedFixed.freq, freq), ...
     'Fixed params.freq: annotation freq should be unchanged');
 fprintf('  [PASS] fixed freq unchanged: [%.0f %.0f] Hz\n', freq(1), freq(2));
@@ -74,8 +73,7 @@ fprintf('  [PASS] fixed freq unchanged: [%.0f %.0f] Hz\n', freq(1), freq(2));
 fprintf('--- (4) Per-annotation freq allows frequency trimming ---\n');
 annotPerFreq      = annotWide;
 annotPerFreq.freq = [100 300];  % symmetric about 200 Hz tone, wider than actual [150 250]
-paramsPerFreq     = struct('showPlot', false);  % no fixed freq
-trimmedPerFreq    = trimAnnotation(annotPerFreq, paramsPerFreq);
+trimmedPerFreq    = trimAnnotation(annotPerFreq, 'showPlot', false);
 % Trimmed freq should be tighter than original wide bounds
 assert(trimmedPerFreq.freq(1) >= annotPerFreq.freq(1), ...
     'Trimmed fLow should be >= original fLow');
@@ -91,7 +89,7 @@ fprintf('--- (5) Very short annotation: graceful skip ---\n');
 annotShort          = annotWide;
 annotShort.duration = 0.05;
 annotShort.tEnd     = annotShort.t0 + annotShort.duration / 86400;
-trimmedShort = trimAnnotation(annotShort, params);
+trimmedShort = trimAnnotation(annotShort, 'freq', freq, 'showPlot', false);
 % Should return without error, bounds unchanged
 assert(trimmedShort.t0   == annotShort.t0,   'Short annot: t0 should be unchanged');
 assert(trimmedShort.tEnd == annotShort.tEnd, 'Short annot: tEnd should be unchanged');
@@ -109,12 +107,12 @@ fprintf('  [PASS] trimApplied present\n');
 
 fprintf('--- (7) Output type matches input type ---\n');
 % Struct input -> struct output
-trimmedStruct = trimAnnotation(annotWide, params);
+trimmedStruct = trimAnnotation(annotWide, 'freq', freq, 'showPlot', false);
 assert(isstruct(trimmedStruct), 'Struct input should give struct output');
 
 % Table input -> table output
 annotTable = struct2table(annotWide);
-trimmedTable = trimAnnotation(annotTable, params);
+trimmedTable = trimAnnotation(annotTable, 'freq', freq, 'showPlot', false);
 assert(istable(trimmedTable), 'Table input should give table output');
 fprintf('  [PASS] struct->struct, table->table\n');
 
@@ -134,7 +132,7 @@ snrParams = struct('snrType', 'spectrogramSlices', 'showClips', false, ...
     'noiseDelay', 0.5, 'nfft', 128, 'nOverlap', 96, 'verbose', false);
 
 annotWideTable = struct2table(repmat(annotWide, 2, 1));
-trimmedTable8  = trimAnnotation(annotWideTable, params);
+trimmedTable8  = trimAnnotation(annotWideTable, 'freq', freq, 'showPlot', false);
 
 resAfter = snrEstimate(trimmedTable8, snrParams);
 

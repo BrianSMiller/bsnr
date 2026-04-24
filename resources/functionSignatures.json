@@ -1,0 +1,50 @@
+{
+  "_schemaVersion": "1.0.0",
+  "snrEstimate": {
+    "inputs": [
+      {"name": "annot",             "kind": "required",  "type": ["any"],                                                              "purpose": "Annotation struct, struct array, or table"},
+      {"name": "snrType",           "kind": "namevalue", "type": ["char", "choices={'spectrogram','spectrogramSlices','timeDomain','ridge','synchrosqueeze','quantiles','nist'}"], "purpose": "SNR method"},
+      {"name": "freq",              "kind": "namevalue", "type": ["double"],                                                           "purpose": "Frequency band [lo hi] Hz"},
+      {"name": "nfft",              "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "FFT length in samples"},
+      {"name": "nOverlap",          "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "FFT overlap in samples"},
+      {"name": "nSlices",           "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Target time slices (used to derive nfft)"},
+      {"name": "noiseDelay",        "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Gap between signal and noise windows (s)"},
+      {"name": "noiseLocation",     "kind": "namevalue", "type": ["char", "choices={'beforeAndAfter','before','randomBeforeAndAfter'}"],"purpose": "Noise window placement strategy"},
+      {"name": "noiseDuration_s",   "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Noise window duration (s); default matches annotation"},
+      {"name": "useLurton",         "kind": "namevalue", "type": ["logical", "scalar"],                                                "purpose": "Use Lurton (2010) SNR formula"},
+      {"name": "showClips",         "kind": "namevalue", "type": ["logical", "scalar"],                                                "purpose": "Plot signal/noise spectrogram"},
+      {"name": "pauseAfterPlot",    "kind": "namevalue", "type": ["logical", "scalar"],                                                "purpose": "Pause after each plot"},
+      {"name": "verbose",           "kind": "namevalue", "type": ["logical", "scalar"],                                                "purpose": "Print progress output"},
+      {"name": "calibration",       "kind": "namevalue", "type": ["any"],                                                              "purpose": "Instrument calibration struct"},
+      {"name": "removeClicks",      "kind": "namevalue", "type": ["any"],                                                              "purpose": "Click suppression params struct"},
+      {"name": "ridgeParams",       "kind": "namevalue", "type": ["struct"],                                                           "purpose": "Ridge/synchrosqueeze params"},
+      {"name": "resampleRate",      "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Resample audio to this rate (Hz)"},
+      {"name": "parallelThreshold", "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Min annotations to trigger parfor"},
+      {"name": "plotParams",        "kind": "namevalue", "type": ["any"],                                                              "purpose": "Display parameter overrides struct"},
+      {"name": "displayType",       "kind": "namevalue", "type": ["char", "choices={'spectrogram','timeSeries','histogram'}"],          "purpose": "Plot display type"}
+    ]
+  },
+  "trimAnnotation": {
+    "inputs": [
+      {"name": "annots",               "kind": "required",  "type": ["any"],                                                              "purpose": "Annotation struct, struct array, or table"},
+      {"name": "freq",                 "kind": "namevalue", "type": ["double"],                                                           "purpose": "Fixed frequency band [lo hi] Hz"},
+      {"name": "nfft",                 "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "FFT length in samples"},
+      {"name": "nOverlap",             "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "FFT overlap in samples"},
+      {"name": "nSlices",              "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Target time slices"},
+      {"name": "energyPercentile",     "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Trim threshold percentile (all edges); default 2.5"},
+      {"name": "timePercentile",       "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Both time edges"},
+      {"name": "freqPercentile",       "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Both freq edges"},
+      {"name": "timeStartPercentile",  "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Leading time edge only"},
+      {"name": "timeEndPercentile",    "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Trailing time edge only"},
+      {"name": "freqLowPercentile",    "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Low freq edge only"},
+      {"name": "freqHighPercentile",   "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "High freq edge only"},
+      {"name": "minSlices",            "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Minimum slices after time trim"},
+      {"name": "minBandHz",            "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Minimum bandwidth after freq trim (Hz)"},
+      {"name": "trimMethod",           "kind": "namevalue", "type": ["char", "choices={'centroid','cumulative'}"],                        "purpose": "Trim method"},
+      {"name": "showPlot",             "kind": "namevalue", "type": ["logical", "scalar"],                                                "purpose": "Show diagnostic plot"},
+      {"name": "noiseLocation",        "kind": "namevalue", "type": ["char", "choices={'beforeAndAfter','before','randomBeforeAndAfter'}"],"purpose": "Noise window placement"},
+      {"name": "noiseDelay",           "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Gap between signal and noise (s)"},
+      {"name": "noiseDuration_s",      "kind": "namevalue", "type": ["double", "scalar"],                                                 "purpose": "Noise window duration (s)"}
+    ]
+  }
+}
