@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>SNR of Antarctic blue whale ABZ calls &#8212; Common Ground (Miller et al. in press)</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-24"><meta name="DC.source" content="snr_abw_casey2019_commonground.m"><style type="text/css">
+      --><title>SNR of Antarctic blue whale ABZ calls &#8212; Common Ground (Miller et al. in press)</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-27"><meta name="DC.source" content="snr_abw_casey2019_commonground.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -129,10 +129,32 @@ snrBsnr = nan(nRows, nObs);
     snrBsnr(detMask, obs) = res.snr;
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">Computing SNR for observer 1...
+ (parallel)
+0          25          50          75         100%
+|-----------|-----------|-----------|------------|
+##################################################
 Computing SNR for observer 2...
+ (parallel)
+0          25          50          75         100%
+|-----------|-----------|-----------|------------|
+##################################################
 Computing SNR for observer 3...
+SNR analysis started:  27-Apr-2026 07:55:23
+1167 annotations to process (parallel)
+0          25          50          75         100%
+|-----------|-----------|-----------|------------|
+##################################################
+SNR analysis completed: 27-Apr-2026 07:55:25
 Computing SNR for observer 4...
+ (parallel)
+0          25          50          75         100%
+|-----------|-----------|-----------|------------|
+##################################################
 Computing SNR for observer 5...
+ (parallel)
+0          25          50          75         100%
+|-----------|-----------|-----------|------------|
+##################################################
 </pre><h2 id="6">Aggregate SNR &#8212; nanmean across observers per row</h2><pre class="codeinput">chJ.snr_bsnr           = mean(snrBsnr, 2, <span class="string">'omitnan'</span>);
 chJ.numPositiveObs     = sum(chJ{:, strcat(<span class="string">'detect_observer'</span>, string(1:5))}, 2);
 

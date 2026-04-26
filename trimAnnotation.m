@@ -73,6 +73,7 @@ arguments
     options.minBandHz            double   = 1
     options.trimMethod           char     = 'centroid'
     options.showPlot             logical  = false
+    options.parallelThreshold    double   = 100
 end
 
 % Resolve sentinel-defaulted percentile hierarchy
@@ -98,6 +99,30 @@ else
 end
 nAnnot = numel(annotStruct);
 
+% Parallel processing — same threshold logic as snrEstimate
+% Use parallel if above threshold, or if a pool is already running
+useParfor = nAnnot >= params.parallelThreshold || ...
+    (~isempty(ver('parallel')) && ~isempty(gcp('nocreate')));
+if useParfor && params.showPlot
+    warning('trimAnnotation:noParallelPlots', ...
+        'showPlot is not supported in parallel mode and has been disabled.');
+    params.showPlot = false;
+end
+if useParfor && isempty(gcp('nocreate'))
+    parpool('Processes', max(1, feature('numcores') - 1));
+end
+
+if nAnnot < 10
+    showCounter = false; showTimes = false;
+elseif nAnnot < params.parallelThreshold * 10
+    showCounter = true;  showTimes = false;
+else
+    showCounter = true;  showTimes = true;
+end
+if showTimes
+    fprintf('Trim started: %s — %d annotations\n', char(datetime('now')), nAnnot);
+end
+
 % Pre-allocate output fields
 t0New       = [annotStruct.t0]';
 tEndNew     = [annotStruct.tEnd]';
@@ -105,8 +130,9 @@ durNew      = [annotStruct.duration]';
 freqNew     = reshape([annotStruct.freq], 2, nAnnot)';
 trimApplied = false(nAnnot, 1);
 
-for i = 1:nAnnot
-    annot = annotStruct(i);
+if useParfor
+    parfor i = 1:nAnnot
+        annot = annotStruct(i);  %#ok<PFBNS>
 
     % Unwrap cell fields from table2struct
     if iscell(annot.soundFolder), annot.soundFolder = annot.soundFolder{1}; end
@@ -154,7 +180,7 @@ for i = 1:nAnnot
 
         [sigAudio, ~, ~] = getAudioFromFiles(sf, annot.t0, annot.tEnd);
         if isempty(sigAudio) || length(sigAudio) < nfft
-            continue
+            error('bsnr:skip', '');
         end
 
         %% Build signal spectrogram
@@ -162,7 +188,7 @@ for i = 1:nAnnot
 
         % Band mask
         fMask = f >= freq(1) & f <= freq(2);
-        if sum(fMask) < 2, continue; end
+        if sum(fMask) < 2, error('bsnr:skip', ''); end
 
         psdBand = psd(fMask, :);   % [nFreqBins x nSlices]
 
@@ -315,9 +341,236 @@ for i = 1:nAnnot
         end
 
     catch
-        % On any error, leave annotation unchanged
-        continue
+        % On any error or skip, leave annotation unchanged
     end
+    end  % parfor/for
+
+else
+    str = '';
+    tStart = tic;
+    for i = 1:nAnnot
+        annot = annotStruct(i);
+
+    % Unwrap cell fields from table2struct
+    if iscell(annot.soundFolder), annot.soundFolder = annot.soundFolder{1}; end
+    if iscell(annot.t0),          annot.t0          = annot.t0{1};          end
+    if iscell(annot.tEnd),        annot.tEnd        = annot.tEnd{1};        end
+    if iscell(annot.freq),        annot.freq        = annot.freq{1};        end
+
+    % Convert datetime to datenum
+    if isdatetime(annot.t0)
+        annot.t0   = datenum(annot.t0);
+        annot.tEnd = datenum(annot.tEnd);
+    end
+
+    if ~isfield(annot,'duration') || ~isfinite(annot.duration)
+        annot.duration = (annot.tEnd - annot.t0) * 86400;
+    end
+
+    % Frequency band for this annotation
+    if fixedFreq
+        freq = params.freq;
+    else
+        freq = annot.freq;
+    end
+
+    % nfft resolved after loading audio (sampleRate needed)
+    % Placeholder — actual nfft set below after wavFolderInfo call
+    nfft     = params.nfft;
+    nOverlap = params.nOverlap;
+
+    try
+        %% Load signal audio
+        sf = wavFolderInfo(annot.soundFolder, '', false, false);
+        sampleRate = sf(1).sampleRate;
+
+        % Resolve nfft now that sampleRate is known
+        overlap = 0.75;
+        if ~isempty(nfft)
+            if isempty(nOverlap)
+                nOverlap = floor(nfft * overlap);
+            end
+        else
+            nfft     = 2^nextpow2(floor(annot.duration / params.nSlices / overlap * sampleRate));
+            nOverlap = floor(nfft * overlap);
+        end
+
+        [sigAudio, ~, ~] = getAudioFromFiles(sf, annot.t0, annot.tEnd);
+        if isempty(sigAudio) || length(sigAudio) < nfft
+            error('bsnr:skip', '');
+        end
+
+        %% Build signal spectrogram
+        [~, f, t, psd] = spectrogram(sigAudio, nfft, nOverlap, nfft, sampleRate);
+
+        % Band mask
+        fMask = f >= freq(1) & f <= freq(2);
+        if sum(fMask) < 2, error('bsnr:skip', ''); end
+
+        psdBand = psd(fMask, :);   % [nFreqBins x nSlices]
+
+        %% Time trim — cumulative energy across slices
+        sliceEnergy  = sum(psdBand, 1);                     % [1 x nSlices]
+        cumFwd       = cumsum(sliceEnergy);
+        totalEnergy  = cumFwd(end);
+        if strcmp(params.trimMethod, 'centroid')
+            % Centroid-based symmetric time trim
+            centroidSlice = round(sum((1:numel(sliceEnergy)) .* sliceEnergy) / totalEnergy);
+            centroidSlice = max(1, min(numel(sliceEnergy), centroidSlice));
+            firstSlice = centroidSlice;
+            lastSlice  = centroidSlice;
+            tStartPct  = (params.timeStartPercentile + params.timeEndPercentile) / 2;
+            while true
+                if sum(sliceEnergy(firstSlice:lastSlice)) / totalEnergy >= (1 - 2*tStartPct/100)
+                    break;
+                end
+                canLow  = firstSlice > 1;
+                canHigh = lastSlice  < numel(sliceEnergy);
+                if ~canLow && ~canHigh, break; end
+                if canLow,  lowE  = sliceEnergy(firstSlice - 1); else, lowE  = 0; end
+                if canHigh, highE = sliceEnergy(lastSlice  + 1); else, highE = 0; end
+                if lowE >= highE && canLow
+                    firstSlice = firstSlice - 1;
+                elseif canHigh
+                    lastSlice = lastSlice + 1;
+                else
+                    firstSlice = firstSlice - 1;
+                end
+            end
+        else
+            % Cumulative time trim
+            threshStart  = params.timeStartPercentile / 100 * totalEnergy;
+            threshEnd    = params.timeEndPercentile   / 100 * totalEnergy;
+            firstSlice   = find(cumFwd >= threshStart,              1, 'first');
+            lastSlice    = find(cumFwd >= totalEnergy - threshEnd,  1, 'first');
+        end
+
+        % Enforce minimum slices
+        if isempty(firstSlice), firstSlice = 1; end
+        if isempty(lastSlice),  lastSlice  = numel(sliceEnergy); end
+        if (lastSlice - firstSlice + 1) < params.minSlices
+            firstSlice = 1;
+            lastSlice  = numel(sliceEnergy);
+        end
+
+        % Convert slice indices to time offsets
+        tSlices       = t;
+        t0Offset      = tSlices(firstSlice);
+        tEndOffset    = tSlices(lastSlice);
+        newT0         = annot.t0   + t0Offset / 86400;
+        newTEnd       = annot.tEnd - (t(end) - tEndOffset) / 86400;
+        newDur        = (newTEnd - newT0) * 86400;
+
+        %% Frequency trim (only when using per-annotation bounds)
+        % Operates on the time-trimmed PSD so silent margins don't
+        % contaminate the frequency energy profile.
+        newFreq = freq;
+        if ~fixedFreq
+            psdTrimmed  = psdBand(:, firstSlice:lastSlice);   % time-trimmed
+            binEnergy   = sum(psdTrimmed, 2);                  % [nFreqBins x 1]
+            totalFE     = sum(binEnergy);
+
+            fThreshLow  = params.freqLowPercentile  / 100 * totalFE;
+            fThreshHigh = params.freqHighPercentile / 100 * totalFE;
+            if strcmp(params.trimMethod, 'centroid')
+                % Centroid-based symmetric expansion:
+                % grow outward from energy centroid until band captures
+                % central (1 - 2*percentile)% of energy. Produces
+                % symmetric bounds for symmetric call spectra.
+                centroidBin = round(sum((1:numel(binEnergy))' .* binEnergy) / totalFE);
+                centroidBin = max(1, min(numel(binEnergy), centroidBin));
+                firstBin = centroidBin;
+                lastBin  = centroidBin;
+                while true
+                    if sum(binEnergy(firstBin:lastBin)) / totalFE >= (1 - (params.freqLowPercentile + params.freqHighPercentile)/100)
+                        break;
+                    end
+                    canLow  = firstBin > 1;
+                    canHigh = lastBin  < numel(binEnergy);
+                    if ~canLow && ~canHigh, break; end
+                    if canLow,  lowE  = binEnergy(firstBin - 1); else, lowE  = 0; end
+                    if canHigh, highE = binEnergy(lastBin  + 1); else, highE = 0; end
+                    if lowE >= highE && canLow
+                        firstBin = firstBin - 1;
+                    elseif canHigh
+                        lastBin = lastBin + 1;
+                    else
+                        firstBin = firstBin - 1;
+                    end
+                end
+            else
+                % Cumulative (default): trim low-energy edges using
+                % forward cumulative sum. May be asymmetric if call
+                % energy is not centred in the annotation band.
+                cumFreqFwd = cumsum(binEnergy);
+                firstBin   = find(cumFreqFwd >= fThreshLow,            1, 'first');
+                lastBin    = find(cumFreqFwd >= totalFE - fThreshHigh, 1, 'first');
+                if isempty(firstBin), firstBin = 1; end
+                if isempty(lastBin),  lastBin  = numel(binEnergy); end
+            end
+
+            fBand       = f(fMask);
+            trimmedBand = fBand(lastBin) - fBand(firstBin);
+            if trimmedBand >= params.minBandHz
+                newFreq = [fBand(firstBin), fBand(lastBin)];
+            end
+        end
+
+        %% Store trimmed bounds
+        t0New(i)       = newT0;
+        tEndNew(i)     = newTEnd;
+        durNew(i)      = newDur;
+        freqNew(i,:)   = newFreq;
+        trimApplied(i) = true;
+
+        %% Update noise window bounds
+        % Noise is placed relative to trimmed signal bounds.
+        % Noise duration matches trimmed signal duration unless explicitly set.
+        if ~isempty(params.noiseDuration_s)
+            noiseDur = params.noiseDuration_s;
+        else
+            noiseDur = newDur;
+        end
+
+        %% Optional diagnostic plot
+        if params.showPlot
+            % Quick SNR from audio already in memory — use margins as noise
+            nSig     = length(sigAudio);
+            idx1     = max(1,    round(t(firstSlice)*sampleRate));
+            idx2     = min(nSig, round(t(lastSlice) *sampleRate)+1);
+            noiseAudio = [sigAudio(1:idx1); sigAudio(idx2:nSig)];
+            if length(noiseAudio) < nfft, noiseAudio = sigAudio; end
+            [rmsS, rmsN] = snrSpectrogramSlices(sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, []);
+            snrBefore = 10*log10(rmsS / rmsN);
+            trimIdx1  = max(1,    round(t(firstSlice)*sampleRate)+1);
+            trimIdx2  = min(nSig, round(t(lastSlice) *sampleRate));
+            trimAudio = sigAudio(trimIdx1:trimIdx2);
+            if length(trimAudio) >= nfft
+                [rmsS2, rmsN2] = snrSpectrogramSlices(trimAudio, noiseAudio, nfft, nOverlap, sampleRate, newFreq, []);
+                snrAfter = 10*log10(rmsS2 / rmsN2);
+            else
+                snrAfter = [];
+            end
+            plotTrimDiagnostic(sigAudio, psd, f, t, freq, newFreq, ...
+                firstSlice, lastSlice, fMask, firstBin, lastBin, ...
+                annot, newT0, newTEnd, sampleRate, nfft, nOverlap, fixedFreq, ...
+                snrBefore, snrAfter);
+        end
+
+        catch
+            % On any error or skip, leave annotation unchanged
+        end
+        if showCounter && (rem(i, max(1, floor(nAnnot/20))) == 0 || i == nAnnot)
+            fprintf(repmat('\b', 1, length(str)));
+            str = sprintf('%d/%d (%.1f s)', i, nAnnot, toc(tStart));
+            fprintf('%s', str);
+        end
+    end  % for
+    if showCounter, fprintf('\n'); end
+end  % if useParfor
+
+if showTimes
+    fprintf('Trim completed: %s\n', char(datetime('now')));
 end
 
 %% Rebuild output as same type as input

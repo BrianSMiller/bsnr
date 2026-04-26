@@ -149,7 +149,7 @@ arguments
     options.useLurton          logical  = false
     options.showClips          logical  = false
     options.pauseAfterPlot     logical  = true
-    options.verbose            logical  = true
+    options.verbose            logical  = false
     options.calibration                 = []
     options.metadata                    = []
     options.removeClicks                = []
@@ -220,7 +220,10 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = ...
     processBatch(annot, params)
 
 nDet      = numel(annot);
-useParfor = nDet >= params.parallelThreshold;
+% Use parallel if above threshold, or if a pool is already running
+% (no point leaving idle workers unused).
+useParfor = nDet >= params.parallelThreshold || ...
+    (~isempty(ver('parallel')) && ~isempty(gcp('nocreate')));
 
 %--------------------------------------------------------------------------
 % Resolve nfft/nOverlap at the batch level before any processing begins.
@@ -292,15 +295,33 @@ sigVec      = nan(nDet, 1);
 noiseVec    = nan(nDet, 1);
 noiseVarVec = nan(nDet, 1);
 
+% Verbosity tiers — scale output to expected duration:
+%   small  (nDet < 10)                       : silent
+%   medium (10 <= nDet < 10x parThresh)      : progress counter n/N
+%   large  (nDet >= 10x parallelThreshold)   : timestamps + progress bar
+% verbose=true forces all output; verbose=false suppresses all output.
 if params.verbose
+    showTimes   = true;
+    showCounter = true;
+elseif nDet < 10
+    showTimes   = false;
+    showCounter = false;
+elseif nDet < params.parallelThreshold * 10
+    showTimes   = false;
+    showCounter = true;
+else
+    showTimes   = true;
+    showCounter = true;
+end
+
+if showTimes
     fprintf('SNR analysis started:  %s\n', char(datetime('now')));
     fprintf('%d annotations to process', nDet);
 end
 
 if useParfor
-    if params.verbose
+    if showTimes || showCounter
         fprintf(' (parallel)\n');
-        fprintf('Progress:\n');
         fprintf('0          25          50          75         100%%\n');
         fprintf('|-----------|-----------|-----------|------------|\n');
     end
@@ -309,15 +330,12 @@ if useParfor
         parpool('Processes', max(1, feature('numcores') - 1));
     end
 
-    if params.verbose
-        D        = parallel.pool.DataQueue;
+    D        = parallel.pool.DataQueue;
+    if showTimes || showCounter
         afterEach(D, @(~) fprintf('#'));
-        progTrig = false(nDet, 1);
-        progTrig(unique(round(linspace(1, nDet, 50)))) = true;
-    else
-        D        = parallel.pool.DataQueue;
-        progTrig = false(nDet, 1);
     end
+    progTrig = false(nDet, 1);
+    progTrig(unique(round(linspace(1, nDet, 50)))) = true;
 
     parfor i = 1:nDet
         [snrVec(i), sigVec(i), noiseVec(i), noiseVarVec(i)] = ...
@@ -326,25 +344,25 @@ if useParfor
             send(D, i);
         end
     end
-    if params.verbose, fprintf('\n'); end
+    if showTimes || showCounter, fprintf('\n'); end
 
 else
-    if params.verbose, fprintf(' (serial)\n'); end
+    if showTimes, fprintf(' (serial)\n'); end
     str = '';
-    tic;
+    tStart = tic;
     for i = 1:nDet
         [snrVec(i), sigVec(i), noiseVec(i), noiseVarVec(i)] = ...
             processAnnotation(annot(i), params);
-        if params.verbose && (rem(i, 10) == 0 || i == nDet)
+        if showCounter && (rem(i, max(1, floor(nDet/20))) == 0 || i == nDet)
             fprintf(repmat('\b', 1, length(str)));
-            str = sprintf('%d/%d completed in %.1f s', i, nDet, toc);
+            str = sprintf('%d/%d (%.1f s)', i, nDet, toc(tStart));
             fprintf('%s', str);
         end
     end
-    if params.verbose, fprintf('\n'); end
+    if showCounter, fprintf('\n'); end
 end
 
-if params.verbose
+if showTimes
     fprintf('SNR analysis completed: %s\n', char(datetime('now')));
 end
 

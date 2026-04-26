@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Example Tethys Detections XML for bsnr.
-  
-  Contains 5 Antarctic blue whale Z-call detections from Casey Station 2019,
-  formatted to the Tethys 3.x Detections schema. This file demonstrates
-  the readTethysDetections / writeTethysXml round-trip workflow.
 
-  Note: Start/End times are relative to the bundled example audio clip
-  (examples/audio/abw_z/). In a real deployment these would be absolute
-  UTC datetimes matching your WAV file timestamps.
+  A single Antarctic blue whale Z-call detection from Casey Station 2019,
+  formatted to the Tethys 3.x Detections schema. This file demonstrates
+  the readTethysDetections / writeTethysXml workflow.
+
+  In a real workflow this file would come from a Tethys server query or
+  export, with Start/End times matching your WAV file timestamps.
 
   See: Miller et al. (2022), Remote Sensing in Ecology and Conservation.
        https://doi.org/10.1002/rse2.297
@@ -30,8 +29,8 @@
   <UserID>BSMiller</UserID>
 
   <Effort>
-    <Start>2019-03-01T00:00:00</Start>
-    <End>2019-11-30T23:59:59</End>
+    <Start>2019-04-12T03:17:00</Start>
+    <End>2019-04-12T03:17:21</End>
     <Kind>
       <Call>Z</Call>
       <SpeciesId>
@@ -45,50 +44,6 @@
     <Detection>
       <Start>2019-04-12T03:17:00</Start>
       <End>2019-04-12T03:17:21</End>
-      <Parameters>
-        <Subtype>ABW Z</Subtype>
-        <MinFreq_Hz>17.0</MinFreq_Hz>
-        <MaxFreq_Hz>28.0</MaxFreq_Hz>
-        <Duration_s>21.0</Duration_s>
-      </Parameters>
-    </Detection>
-
-    <Detection>
-      <Start>2019-04-12T03:19:45</Start>
-      <End>2019-04-12T03:20:06</End>
-      <Parameters>
-        <Subtype>ABW Z</Subtype>
-        <MinFreq_Hz>17.0</MinFreq_Hz>
-        <MaxFreq_Hz>28.0</MaxFreq_Hz>
-        <Duration_s>21.0</Duration_s>
-      </Parameters>
-    </Detection>
-
-    <Detection>
-      <Start>2019-04-12T03:22:30</Start>
-      <End>2019-04-12T03:22:51</End>
-      <Parameters>
-        <Subtype>ABW Z</Subtype>
-        <MinFreq_Hz>17.0</MinFreq_Hz>
-        <MaxFreq_Hz>28.0</MaxFreq_Hz>
-        <Duration_s>21.0</Duration_s>
-      </Parameters>
-    </Detection>
-
-    <Detection>
-      <Start>2019-04-12T03:25:15</Start>
-      <End>2019-04-12T03:25:36</End>
-      <Parameters>
-        <Subtype>ABW Z</Subtype>
-        <MinFreq_Hz>17.0</MinFreq_Hz>
-        <MaxFreq_Hz>28.0</MaxFreq_Hz>
-        <Duration_s>21.0</Duration_s>
-      </Parameters>
-    </Detection>
-
-    <Detection>
-      <Start>2019-04-12T03:28:00</Start>
-      <End>2019-04-12T03:28:21</End>
       <Parameters>
         <Subtype>ABW Z</Subtype>
         <MinFreq_Hz>17.0</MinFreq_Hz>

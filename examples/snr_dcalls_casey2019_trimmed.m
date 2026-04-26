@@ -65,56 +65,13 @@ annots.soundFolder    = repmat({wavRoot}, nTP, 1);
 annots.t0             = chTP.t0;
 annots.duration       = chTP.duration;
 annots.tEnd           = chTP.t0 + chTP.duration / 86400;
-annots.freq(:,1) = chTP.LowFreq_Hz_;
-annots.freq(:,2) = chTP.HighFreq_Hz_;
-% annots.freq           = repmat([40 80], nTP, 1);
+annots.freq           = repmat([40 80], nTP, 1);
 annots.channel        = ones(nTP, 1);
 annots.classification = repmat({'Bm-D'}, nTP, 1);
 
 fprintf('  Duration: median=%.2f s, range=[%.2f %.2f] s\n', ...
     median(annots.duration), min(annots.duration), max(annots.duration));
 
-%% Trim annotations with various trim params
-at05 = trimAnnotation(annots)
-at10 = trimAnnotation(annots,'energyPercentile',10)
-at20 = trimAnnotation(annots,'energyPercentile',20)
-
-%% Plot trimmed annotations [default params]
-figure;
-tl = tiledlayout('flow');
-
-nexttile;
-
-
-tBins = 0:0.25:10; 
-histogram(annots.duration,tBins,'displayName','Original'); 
-hold on; 
-histogram(at05.duration,tBins,'DisplayName','Trim 2.5%'); 
-histogram(at10.duration,tBins,'DisplayName','Trim  10%'); 
-histogram(at20.duration,tBins,'DisplayName','Trim  20%'); 
-hold off; 
-hLeg = legend('position',[0.5838    0.2913    0.1804    0.1464]);
-xlabel('Duration');
-ylabel('Count');
-
-
-fBins = 20:2:110;
-freqs = [annots.freq];
-freqs05 = [at05.freq];
-freqs10 = [at10.freq];
-freqs20 = [at20.freq];
-for i = 1:2
-    nexttile;
-    histogram(freqs(:,i),fBins);
-    hold on;
-    histogram(freqs05(:,i),fBins,'DisplayName','Trim 2.5%');
-    histogram(freqs10(:,i),fBins,'DisplayName','Trim  10%');
-    histogram(freqs20(:,i),fBins,'DisplayName','Trim  20%');
-    hold off;
-    xlabel(sprintf('Frequency %g (Hz)',i));
-end
- 
-ylabel('Count');
 %% Canonical bsnr estimate
 
 fprintf('\nComputing canonical bsnr estimate...\n');
@@ -267,7 +224,7 @@ ylabel('Bias vs paper snrLurton (dB)'); title('Bias'); grid on;
 %% Save results
 
 outFile = fullfile(fileparts(mfilename('fullpath')), ...
-    'snr_dcalls_casey2019_trimmed_results.csv');
+    'snr_dcalls_casey2019_results.csv');
 resultsTable = table(annots.t0, annots.duration, ...
     annots.freq(:,1), annots.freq(:,2), snrCanon, paperSNR, ...
     'VariableNames', {'t0','duration_s','fLow_Hz','fHigh_Hz', ...

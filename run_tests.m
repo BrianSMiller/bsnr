@@ -110,7 +110,13 @@ if runPlots
     [passed(10), elapsed(10)] = runOne('test_snrEstimate_outputs', verbose, @() test_snrEstimate_outputs());
     [passed(11), elapsed(11)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation());
 [passed(12), elapsed(12)] = runOne('test_tethys',         verbose, @() test_tethys());
-    nTests = 12;
+if runParallel
+    [passed(13), elapsed(13)] = runOne('test_parallel_performance', verbose, @() test_parallel_performance());
+else
+    passed(13) = true;   % skipped counts as pass
+    elapsed(13) = 0;
+end
+    nTests = 13;
 else
     [passed(7), elapsed(7)] = runOne('test_snrEstimate_batch', verbose, @() test_snrEstimate_batch(runParallel));
     [passed(8), elapsed(8)] = runOne('test_snrEstimate_noiseWindows', verbose, @() test_snrEstimate_noiseWindows());
@@ -127,12 +133,14 @@ if runPlots
     names = {'test_snrMethods', 'test_snrEstimate_scalar', 'test_snrEstimate_correctness', ...
              'test_snrEstimate_methods', 'test_removeClicks', 'test_calibration', ...
              'test_plots', 'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
-             'test_snrEstimate_outputs', 'test_trimAnnotation', 'test_tethys'};
+             'test_snrEstimate_outputs', 'test_trimAnnotation', 'test_tethys', ...
+             'test_parallel_performance'};
 else
     names = {'test_snrMethods', 'test_snrEstimate_scalar', 'test_snrEstimate_correctness', ...
              'test_snrEstimate_methods', 'test_removeClicks', 'test_calibration', ...
              'test_snrEstimate_batch', 'test_snrEstimate_noiseWindows', ...
-             'test_snrEstimate_outputs', 'test_trimAnnotation', 'test_tethys'};
+             'test_snrEstimate_outputs', 'test_trimAnnotation', 'test_tethys', ...
+             'test_parallel_performance'};
 end
 
 fprintf('\n==============================================\n');

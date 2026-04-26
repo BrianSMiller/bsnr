@@ -1,0 +1,733 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>Parallel processing guide &#8212; Casey 2019 Common Ground ABZ calls</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-27"><meta name="DC.source" content="snr_parallel_guide_casey2019.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; }
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+span.typesection { color:#A0522D }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style>
+<link rel="stylesheet" href="bsnr.css">
+</head><body><div class="content"><h1>Parallel processing guide &#8212; Casey 2019 Common Ground ABZ calls</h1><!--introduction--><p>Demonstrates how to characterise a large dataset, measure parpool startup overhead, identify CPU vs I/O bottlenecks, and choose parallel settings before committing to a full batch run.</p><p>Uses the Casey 2019 Common Ground capture history (Miller et al., in press) as the worked example &#8212; adjudicated ABZ-call detections from three analyst observers and two automated detectors, across ~200 h of continuous recording. The five-observer &times; 10k-row workload (~50k annotation measurements) is large enough to make the parallel tradeoffs concrete and informative.</p><p>WHAT THIS GUIDE COVERS   1. Dataset characterisation   2. Pool startup cost &#8212; the tradeoff behind parallelThreshold   3. Serial baseline &#8212; time trim+SNR, extrapolate to full workload   4. Worker sweep + break-even N &#8212; measured parallel rate, lowest      absolute wall time, CPU vs I/O diagnosis, speedup plot   5. Full batch &#8212; trim+SNR per observer + merged union</p><p>INTERPRETING THE SPEEDUP CURVE   Near-linear speedup &#8594; CPU bound. More workers give proportional gains.   Speedup plateaus below nWorkers &#8594; I/O bound. Disk throughput is the     bottleneck. More workers will not help. Consider co-locating audio     and compute on the same machine, or using an SSD.</p><p>The saved results CSV can be used for downstream analysis &#8212; see companion notes on SNR as a discriminator of true vs false positives (Miller et al., in preparation).</p><p>REFERENCE   Miller, B.S. et al. (in press). Common ground: efficient, consistent,   observer-independent bioacoustic call density estimation with adjudicated   ground truth and capture-recapture detection functions.   Methods in Ecology and Evolution.</p><p>DATA   Capture history: included in examples/ (this script's directory)   Recordings: Australian Antarctic Data Centre (submission pending)     <a href="https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings">https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings</a></p><!--/introduction--><h2>Contents</h2><div><ul><li><a href="#1">User configuration</a></li><li><a href="#2">SNR and trim parameters &#8212; fixed [25 29] Hz band for all observers</a></li><li><a href="#3">1. Dataset characterisation</a></li><li><a href="#4">2. Pool startup cost</a></li><li><a href="#5">3. Serial baseline &#8212; trim + SNR on a small sample</a></li><li><a href="#6">5. Worker sweep at fixed N</a></li><li><a href="#7">6. Full batch &#8212; trim + SNR per observer + merged</a></li><li><a href="#8">Save results for downstream analysis</a></li></ul></div><h2 id="1">User configuration</h2><pre class="codeinput">wavRoot = <span class="string">'w:\annotatedLibrary\BAFAAL\Casey2019\wav'</span>;
+
+captureHistoryFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+    <span class="string">'MultiObserverCaptureHistory_Casey2019_Bm-Ant-ABZ-calls_analysts123sd_judgedBSM_simpleSnr.csv'</span>);
+
+sampleSize  = 500;   <span class="comment">% annotations for serial baseline (reliable extrapolation)</span>
+sweepSize   = 2000;  <span class="comment">% annotations for worker sweep (near break-even, ~67 per worker at 30)</span>
+</pre><h2 id="2">SNR and trim parameters &#8212; fixed [25 29] Hz band for all observers</h2><pre class="codeinput">snrP               = struct();
+snrP.snrType       = <span class="string">'spectrogramSlices'</span>;
+snrP.useLurton     = false;
+snrP.noiseLocation = <span class="string">'beforeAndAfter'</span>;
+snrP.noiseDelay    = 1;
+snrP.nfft          = 1024;
+snrP.nOverlap      = floor(1024 * 0.75);
+snrP.freq          = [25 29];
+snrP.showClips     = false;
+
+trimP = {<span class="string">'freq'</span>, [25 29], <span class="string">'nfft'</span>, 1024, <span class="string">'showPlot'</span>, false};
+
+obsNames = {<span class="string">'Analyst 1'</span>,<span class="string">'Analyst 2'</span>,<span class="string">'Analyst 3'</span>,<span class="string">'Detector 4'</span>,<span class="string">'Detector 5'</span>};
+obsKeys  = {<span class="string">'obs1'</span>,<span class="string">'obs2'</span>,<span class="string">'obs3'</span>,<span class="string">'obs4'</span>,<span class="string">'obs5'</span>,<span class="string">'merged'</span>};
+obsLabels = [obsNames, {<span class="string">'Merged'</span>}];
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><h2 id="3">1. Dataset characterisation</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+fprintf(<span class="string">'=== Parallel Processing Guide &#8212; Casey 2019 ABZ calls ===\n\n'</span>);
+fprintf(<span class="string">'--- 1. Dataset characterisation ---\n'</span>);
+
+ch    = readtable(captureHistoryFile, <span class="string">'VariableNamingRule'</span>, <span class="string">'preserve'</span>);
+nRows = height(ch);
+
+fprintf(<span class="string">'  Total rows (all observers):  %d\n'</span>, nRows);
+fprintf(<span class="string">'  Judged rows:                 %d  (true: %d  false: %d)\n'</span>, <span class="keyword">...</span>
+    sum(logical(ch.judged)), <span class="keyword">...</span>
+    sum(logical(ch.judged) &amp; ch.verdict == 1), <span class="keyword">...</span>
+    sum(logical(ch.judged) &amp; ch.verdict == 0));
+
+detCols = {<span class="string">'detect_observer1'</span>,<span class="string">'detect_observer2'</span>,<span class="string">'detect_observer3'</span>, <span class="keyword">...</span>
+           <span class="string">'detect_observer4'</span>,<span class="string">'detect_observer5'</span>};
+<span class="keyword">for</span> obs = 1:5
+    nDet = sum(logical(ch.(detCols{obs})));
+    fprintf(<span class="string">'  Observer %d (%s): %d detections\n'</span>, obs, obsNames{obs}, nDet);
+<span class="keyword">end</span>
+
+anyDet = any(ch{:, detCols} == 1, 2);
+fprintf(<span class="string">'  Union (any observer):        %d detections\n\n'</span>, sum(anyDet));
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><pre class="codeoutput">=== Parallel Processing Guide &#8212; Casey 2019 ABZ calls ===
+
+--- 1. Dataset characterisation ---
+  Total rows (all observers):  10312
+  Judged rows:                 1289  (true: 681  false: 608)
+  Observer 1 (Analyst 1): 3166 detections
+  Observer 2 (Analyst 2): 7048 detections
+  Observer 3 (Analyst 3): 9273 detections
+  Observer 4 (Detector 4): 2289 detections
+  Observer 5 (Detector 5): 3821 detections
+  Union (any observer):        10312 detections
+
+</pre><h2 id="4">2. Pool startup cost</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+fprintf(<span class="string">'--- 2. Pool startup cost ---\n'</span>);
+
+hasParallel = ~isempty(ver(<span class="string">'parallel'</span>));
+<span class="keyword">if</span> ~hasParallel
+    fprintf(<span class="string">'  Parallel Computing Toolbox not available.\n\n'</span>);
+    tStartup   = 0;
+    maxWorkers = 1;
+<span class="keyword">else</span>
+    maxWorkers = max(1, feature(<span class="string">'numcores'</span>) - 1);   <span class="comment">% leave one core free</span>
+    pool = gcp(<span class="string">'nocreate'</span>);
+    <span class="keyword">if</span> ~isempty(pool), evalc(<span class="string">'delete(pool)'</span>); <span class="keyword">end</span>
+
+    tPool    = tic;
+    evalc(<span class="string">'parpool(''Processes'', maxWorkers)'</span>);
+    tStartup = toc(tPool);
+
+    fprintf(<span class="string">'  parpool startup (%d workers): %.1f s\n'</span>, maxWorkers, tStartup);
+    fprintf(<span class="string">'  This fixed overhead must be recovered by parallel speedup.\n\n'</span>);
+<span class="keyword">end</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><pre class="codeoutput">--- 2. Pool startup cost ---
+  parpool startup (31 workers): 45.1 s
+  This fixed overhead must be recovered by parallel speedup.
+
+</pre><h2 id="5">3. Serial baseline &#8212; trim + SNR on a small sample</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+fprintf(<span class="string">'--- 3. Serial baseline (N=%d, trim + SNR) ---\n'</span>, sampleSize);
+
+<span class="comment">% Build observer 1 annotations</span>
+mask1 = logical(ch.detect_observer1);
+annotObs1 = table();
+annotObs1.soundFolder   = repmat({wavRoot}, sum(mask1), 1);
+annotObs1.t0            = ch.t0_observer1(mask1);
+annotObs1.tEnd          = ch.tEnd_observer1(mask1);
+annotObs1.duration      = ch.duration_observer1(mask1);
+annotObs1.freq          = repmat([25 29], sum(mask1), 1);
+annotObs1.channel       = ones(sum(mask1), 1);
+annotObs1.rowIdx        = find(mask1);
+
+sample = annotObs1(1:min(sampleSize, height(annotObs1)), :);
+
+<span class="comment">% Force serial by setting parallelThreshold above sampleSize</span>
+snrPserial = snrP; snrPserial.parallelThreshold = sampleSize + 1;
+
+tS = tic;
+evalc(<span class="string">"sampleTrimmed = trimAnnotation(sample, trimP{:}, 'parallelThreshold', sampleSize+1); snrEstimate(sampleTrimmed, snrPserial);"</span>);
+tSerial = toc(tS);
+
+tPerAnnot = tSerial / height(sample);
+
+<span class="comment">% Total workload across all observers + merged</span>
+totalAnnots = sum(cellfun(@(c) sum(logical(ch.(c))), detCols)) + sum(anyDet);
+tEstimatedMin = tPerAnnot * totalAnnots / 60;
+
+fprintf(<span class="string">'  %d annotations in %.1f s &#8594; %.3f s/annotation\n'</span>, <span class="keyword">...</span>
+    height(sample), tSerial, tPerAnnot);
+fprintf(<span class="string">'  Total workload (~%d annotations): estimated %.1f min serial\n\n'</span>, <span class="keyword">...</span>
+    totalAnnots, tEstimatedMin);
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+pThresh   = 100;   <span class="comment">% default; updated after worker sweep with measured rates</span>
+breakEven = nan;   <span class="comment">% computed from measured parallel rate after sweep</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><pre class="codeoutput">--- 3. Serial baseline (N=500, trim + SNR) ---
+  500 annotations in 11.4 s &#8594; 0.023 s/annotation
+  Total workload (~35909 annotations): estimated 13.6 min serial
+
+</pre><h2 id="6">5. Worker sweep at fixed N</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+fprintf(<span class="string">'--- 4. Worker sweep (N=%d) and break-even N ---\n'</span>, sweepSize);
+
+<span class="keyword">if</span> ~hasParallel
+    fprintf(<span class="string">'  Parallel Computing Toolbox not available &#8212; skipping.\n\n'</span>);
+    nWorkersList = 1;
+    tByWorkers   = tSerial * sweepSize / sampleSize;  <span class="comment">% scale estimate</span>
+    optWorkers   = 1;
+<span class="keyword">else</span>
+    sweep = annotObs1(1:min(sweepSize, height(annotObs1)), :);
+    nWorkersList = unique([1, 4, 8, 16, 30, maxWorkers]);
+    nWorkersList = nWorkersList(nWorkersList &lt;= maxWorkers);
+    tByWorkers   = nan(size(nWorkersList));
+
+    fprintf(<span class="string">'  %-8s  %-10s  %-8s  %s\n'</span>, <span class="string">'Workers'</span>, <span class="string">'Time (s)'</span>, <span class="string">'Speedup'</span>, <span class="string">'Diagnosis'</span>);
+    fprintf(<span class="string">'  %s\n'</span>, repmat(<span class="string">'-'</span>, 1, 55));
+
+    tW1 = nan;
+    snrPpar = snrP; snrPpar.parallelThreshold = 1;
+    <span class="keyword">for</span> ki = 1:numel(nWorkersList)
+        nW   = nWorkersList(ki);
+        pool = gcp(<span class="string">'nocreate'</span>);
+        <span class="keyword">if</span> ~isempty(pool) &amp;&amp; pool.NumWorkers ~= nW, evalc(<span class="string">'delete(pool)'</span>); <span class="keyword">end</span>
+        <span class="keyword">if</span> isempty(gcp(<span class="string">'nocreate'</span>)), evalc(<span class="string">'parpool(''Processes'', nW)'</span>); <span class="keyword">end</span>
+
+        tw = tic;
+        evalc(<span class="string">"sTrim = trimAnnotation(sweep, trimP{:}, 'parallelThreshold', 1); snrEstimate(sTrim, snrPpar);"</span>);
+        tByWorkers(ki) = toc(tw);
+
+        <span class="keyword">if</span> nW == 1, tW1 = tByWorkers(ki); <span class="keyword">end</span>
+        speedup = tW1 / tByWorkers(ki);
+
+        <span class="keyword">if</span>     nW == 1,              diagnosis = <span class="string">'baseline'</span>;
+        <span class="keyword">elseif</span> speedup &gt;= 0.7 * nW,  diagnosis = <span class="string">'CPU bound &#8212; good scaling'</span>;
+        <span class="keyword">elseif</span> speedup &gt;= 0.4 * nW,  diagnosis = <span class="string">'mixed CPU / I/O'</span>;
+        <span class="keyword">else</span>,                         diagnosis = <span class="string">'I/O bound &#8212; disk bottleneck'</span>;
+        <span class="keyword">end</span>
+
+        fprintf(<span class="string">'  %-8d  %-10.1f  %-8.1fx  %s\n'</span>, nW, tByWorkers(ki), speedup, diagnosis);
+    <span class="keyword">end</span>
+    fprintf(<span class="string">'\n'</span>);
+
+    <span class="comment">% Speedup plot</span>
+    speedups = tW1 ./ tByWorkers;
+    figure(<span class="string">'Name'</span>, <span class="string">'Worker scaling'</span>, <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [100 100 480 360]);
+    hold <span class="string">on</span>;
+    plot(nWorkersList, nWorkersList, <span class="string">'k--'</span>, <span class="string">'LineWidth'</span>, 1.2, <span class="string">'DisplayName'</span>, <span class="string">'Linear (ideal)'</span>);
+    plot(nWorkersList, speedups, <span class="string">'b-o'</span>, <span class="string">'LineWidth'</span>, 1.5, <span class="keyword">...</span>
+        <span class="string">'MarkerSize'</span>, 7, <span class="string">'MarkerFaceColor'</span>, <span class="string">'b'</span>, <span class="string">'DisplayName'</span>, <span class="string">'Measured'</span>);
+    hold <span class="string">off</span>;
+    xlabel(<span class="string">'Workers'</span>); ylabel(<span class="string">'Speedup'</span>);
+    title(sprintf(<span class="string">'Worker scaling &#8212; N=%d, trim + SNR'</span>, sweepSize));
+    legend(<span class="string">'Location'</span>, <span class="string">'northwest'</span>); grid <span class="string">on</span>; box <span class="string">on</span>;
+    ylim([0, max(nWorkersList) + 0.5]);
+
+    <span class="comment">% Optimal workers: lowest absolute wall time</span>
+    <span class="comment">% (for large workloads absolute speed matters more than efficiency)</span>
+    [~, bestIdx] = min(tByWorkers);
+    optWorkers   = nWorkersList(bestIdx);
+    fprintf(<span class="string">'  Recommended workers: %d (lowest wall time = %.1f s)\n'</span>, <span class="keyword">...</span>
+        optWorkers, tByWorkers(bestIdx));
+    <span class="keyword">if</span> tByWorkers(end) &lt; tByWorkers(bestIdx) * 1.05
+        fprintf(<span class="string">'  Note: %d workers gives similar time &#8212; diminishing returns\n'</span>, <span class="keyword">...</span>
+            nWorkersList(end));
+    <span class="keyword">end</span>
+
+    <span class="comment">% Break-even using measured parallel rate (more reliable than estimated)</span>
+    tParAnnot = tByWorkers(bestIdx) / sweepSize;   <span class="comment">% measured s/annotation in parallel</span>
+    <span class="keyword">if</span> tPerAnnot &gt; tParAnnot
+        breakEven = ceil(tStartup / (tPerAnnot - tParAnnot));
+        pThresh   = max(breakEven, 10);
+        fprintf(<span class="string">'  Break-even N:        ~%d annotations\n'</span>, breakEven);
+        fprintf(<span class="string">'    (startup %.1f s / saving %.3f s/annotation)\n'</span>, <span class="keyword">...</span>
+            tStartup, tPerAnnot - tParAnnot);
+    <span class="keyword">else</span>
+        breakEven = Inf;
+        fprintf(<span class="string">'  Break-even: N/A &#8212; parallel not faster at sweep size\n'</span>);
+    <span class="keyword">end</span>
+    fprintf(<span class="string">'  Recommended parallelThreshold: %d\n\n'</span>, pThresh);
+<span class="keyword">end</span>
+
+<span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+</pre><pre class="codeoutput">--- 4. Worker sweep (N=2000) and break-even N ---
+  Workers   Time (s)    Speedup   Diagnosis
+  -------------------------------------------------------
+  1         47.0        1.0     x  baseline
+  4         14.8        3.2     x  CPU bound &#8212; good scaling
+  8         9.6         4.9     x  mixed CPU / I/O
+  16        6.3         7.4     x  mixed CPU / I/O
+  30        5.0         9.3     x  I/O bound &#8212; disk bottleneck
+  31        5.1         9.3     x  I/O bound &#8212; disk bottleneck
+
+  Recommended workers: 30 (lowest wall time = 5.0 s)
+  Note: 31 workers gives similar time &#8212; diminishing returns
+  Break-even N:        ~2227 annotations
+    (startup 45.1 s / saving 0.020 s/annotation)
+  Recommended parallelThreshold: 2227
+
+--- 5. Full batch run ---
+  (Progress indicators from snrEstimate are expected for large batches)
+  Observer 1 (Analyst 1)... 3166 annotations, median SNR = 3.8 dB
+  Observer 2 (Analyst 2)... 7048 annotations, median SNR = 1.9 dB
+  Observer 3 (Analyst 3)... 9273 annotations, median SNR = 2.4 dB
+  Observer 4 (Detector 4)... 2289 annotations, median SNR = 3.5 dB
+  Observer 5 (Detector 5)... 3821 annotations, median SNR = 2.5 dB
+  Merged (union of all positives)... 10312 annotations, median SNR = 1.9 dB
+
+  Total wall time: 1.1 min (0.00 s/annotation equivalent)
+  Actual speedup vs serial estimate: 11.9x
+
+
+Results saved to: C:\analysis\bsnr\examples\snr_parallel_guide_casey2019_results.csv
+Load with: results = readtable('C:\analysis\bsnr\examples\snr_parallel_guide_casey2019_results.csv');
+</pre><img vspace="5" hspace="5" src="snr_parallel_guide_casey2019_01.png" alt=""> <h2 id="7">6. Full batch &#8212; trim + SNR per observer + merged</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+
+fprintf(<span class="string">'--- 5. Full batch run ---\n'</span>);
+fprintf(<span class="string">'  (Progress indicators from snrEstimate are expected for large batches)\n'</span>);
+
+<span class="keyword">if</span> hasParallel
+    pool = gcp(<span class="string">'nocreate'</span>);
+    <span class="keyword">if</span> ~isempty(pool) &amp;&amp; pool.NumWorkers ~= optWorkers, evalc(<span class="string">'delete(pool)'</span>); <span class="keyword">end</span>
+    <span class="keyword">if</span> isempty(gcp(<span class="string">'nocreate'</span>)), evalc(<span class="string">'parpool(''Processes'', optWorkers)'</span>); <span class="keyword">end</span>
+<span class="keyword">end</span>
+
+snrPbatch = snrP; snrPbatch.parallelThreshold = pThresh;
+snrResults = struct();
+tFull = tic;
+
+<span class="keyword">for</span> obs = 1:5
+    fprintf(<span class="string">'  Observer %d (%s)...'</span>, obs, obsNames{obs});
+    detCol_ = sprintf(<span class="string">'detect_observer%d'</span>,   obs);
+    t0Col_  = sprintf(<span class="string">'t0_observer%d'</span>,       obs);
+    tEnd_   = sprintf(<span class="string">'tEnd_observer%d'</span>,     obs);
+    dur_    = sprintf(<span class="string">'duration_observer%d'</span>, obs);
+    mask_   = logical(ch.(detCol_));
+    n_      = sum(mask_);
+
+    aObs               = table();
+    aObs.soundFolder   = repmat({wavRoot}, n_, 1);
+    aObs.t0            = ch.(t0Col_)(mask_);
+    aObs.tEnd          = ch.(tEnd_)(mask_);
+    aObs.duration      = ch.(dur_)(mask_);
+    aObs.freq          = repmat([25 29], n_, 1);
+    aObs.channel       = ones(n_, 1);
+    aObs.rowIdx        = find(mask_);
+
+    evalc(<span class="string">"aTrim = trimAnnotation(aObs, trimP{:}, 'parallelThreshold', pThresh);"</span>);
+    evalc(<span class="string">'res = snrEstimate(aTrim, snrPbatch);'</span>);
+
+    snrResults.(sprintf(<span class="string">'obs%d'</span>, obs)).annots  = aObs;
+    snrResults.(sprintf(<span class="string">'obs%d'</span>, obs)).trimmed = aTrim;
+    snrResults.(sprintf(<span class="string">'obs%d'</span>, obs)).result  = res;
+    fprintf(<span class="string">' %d annotations, median SNR = %.1f dB\n'</span>, height(res), median(res.snr,<span class="string">'omitnan'</span>));
+<span class="keyword">end</span>
+
+<span class="comment">% Merged: union of all positive detections</span>
+fprintf(<span class="string">'  Merged (union of all positives)...'</span>);
+nMerge               = sum(anyDet);
+aMerge               = table();
+aMerge.soundFolder   = repmat({wavRoot}, nMerge, 1);
+aMerge.t0            = ch.t0(anyDet);
+aMerge.tEnd          = ch.tEnd(anyDet);
+aMerge.duration      = (ch.tEnd(anyDet) - ch.t0(anyDet)) * 86400;
+aMerge.freq          = repmat([25 29], nMerge, 1);
+aMerge.channel       = ones(nMerge, 1);
+aMerge.rowIdx        = find(anyDet);
+
+evalc(<span class="string">"aMergeTrim = trimAnnotation(aMerge, trimP{:}, 'parallelThreshold', pThresh);"</span>);
+evalc(<span class="string">'resMerge = snrEstimate(aMergeTrim, snrPbatch);'</span>);
+snrResults.merged.annots  = aMerge;
+snrResults.merged.trimmed = aMergeTrim;
+snrResults.merged.result  = resMerge;
+fprintf(<span class="string">' %d annotations, median SNR = %.1f dB\n'</span>, height(resMerge), <span class="keyword">...</span>
+    median(resMerge.snr,<span class="string">'omitnan'</span>));
+
+tTotal = toc(tFull);
+fprintf(<span class="string">'\n  Total wall time: %.1f min (%.2f s/annotation equivalent)\n'</span>, <span class="keyword">...</span>
+    tTotal/60, tTotal/totalAnnots);
+fprintf(<span class="string">'  Actual speedup vs serial estimate: %.1fx\n\n'</span>, <span class="keyword">...</span>
+    tEstimatedMin*60 / tTotal);
+</pre><h2 id="8">Save results for downstream analysis</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
+    <span class="string">'snr_parallel_guide_casey2019_results.csv'</span>);
+
+allRows = table();
+<span class="keyword">for</span> k = 1:5
+    key            = obsKeys{k};
+    r              = snrResults.(key).result;
+    r.observer     = repmat(k, height(r), 1);
+    r.rowIdx       = snrResults.(key).annots.rowIdx;
+    allRows        = [allRows; r(:, {<span class="string">'observer'</span>,<span class="string">'rowIdx'</span>,<span class="string">'snr'</span>,<span class="string">'signalRMSdB'</span>,<span class="string">'noiseRMSdB'</span>})]; <span class="comment">%#ok&lt;AGROW&gt;</span>
+<span class="keyword">end</span>
+writetable(allRows, outFile);
+fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outFile);
+fprintf(<span class="string">'Load with: results = readtable(''%s'');\n'</span>, outFile);
+</pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+%% Parallel processing guide — Casey 2019 Common Ground ABZ calls
+%
+% Demonstrates how to characterise a large dataset, measure parpool
+% startup overhead, identify CPU vs I/O bottlenecks, and choose parallel
+% settings before committing to a full batch run.
+%
+% Uses the Casey 2019 Common Ground capture history (Miller et al., in press)
+% as the worked example — adjudicated ABZ-call detections from three analyst
+% observers and two automated detectors, across ~200 h of continuous recording.
+% The five-observer × 10k-row workload (~50k annotation measurements) is large
+% enough to make the parallel tradeoffs concrete and informative.
+%
+% WHAT THIS GUIDE COVERS
+%   1. Dataset characterisation
+%   2. Pool startup cost — the tradeoff behind parallelThreshold
+%   3. Serial baseline — time trim+SNR, extrapolate to full workload
+%   4. Worker sweep + break-even N — measured parallel rate, lowest
+%      absolute wall time, CPU vs I/O diagnosis, speedup plot
+%   5. Full batch — trim+SNR per observer + merged union
+%
+% INTERPRETING THE SPEEDUP CURVE
+%   Near-linear speedup → CPU bound. More workers give proportional gains.
+%   Speedup plateaus below nWorkers → I/O bound. Disk throughput is the
+%     bottleneck. More workers will not help. Consider co-locating audio
+%     and compute on the same machine, or using an SSD.
+%
+% The saved results CSV can be used for downstream analysis — see companion
+% notes on SNR as a discriminator of true vs false positives (Miller et al.,
+% in preparation).
+%
+% REFERENCE
+%   Miller, B.S. et al. (in press). Common ground: efficient, consistent,
+%   observer-independent bioacoustic call density estimation with adjudicated
+%   ground truth and capture-recapture detection functions.
+%   Methods in Ecology and Evolution.
+%
+% DATA
+%   Capture history: included in examples/ (this script's directory)
+%   Recordings: Australian Antarctic Data Centre (submission pending)
+%     https://data.aad.gov.au/metadata/AAS_4102_longTermAcousticRecordings
+
+%% User configuration
+
+wavRoot = 'w:\annotatedLibrary\BAFAAL\Casey2019\wav';
+
+captureHistoryFile = fullfile(fileparts(mfilename('fullpath')), ...
+    'MultiObserverCaptureHistory_Casey2019_Bm-Ant-ABZ-calls_analysts123sd_judgedBSM_simpleSnr.csv');
+
+sampleSize  = 500;   % annotations for serial baseline (reliable extrapolation)
+sweepSize   = 2000;  % annotations for worker sweep (near break-even, ~67 per worker at 30)
+
+%% SNR and trim parameters — fixed [25 29] Hz band for all observers
+
+snrP               = struct();
+snrP.snrType       = 'spectrogramSlices';
+snrP.useLurton     = false;
+snrP.noiseLocation = 'beforeAndAfter';
+snrP.noiseDelay    = 1;
+snrP.nfft          = 1024;
+snrP.nOverlap      = floor(1024 * 0.75);
+snrP.freq          = [25 29];
+snrP.showClips     = false;
+
+trimP = {'freq', [25 29], 'nfft', 1024, 'showPlot', false};
+
+obsNames = {'Analyst 1','Analyst 2','Analyst 3','Detector 4','Detector 5'};
+obsKeys  = {'obs1','obs2','obs3','obs4','obs5','merged'};
+obsLabels = [obsNames, {'Merged'}];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 1. Dataset characterisation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('=== Parallel Processing Guide — Casey 2019 ABZ calls ===\n\n');
+fprintf('REPLACE_WITH_DASH_DASH- 1. Dataset characterisation REPLACE_WITH_DASH_DASH-\n');
+
+ch    = readtable(captureHistoryFile, 'VariableNamingRule', 'preserve');
+nRows = height(ch);
+
+fprintf('  Total rows (all observers):  %d\n', nRows);
+fprintf('  Judged rows:                 %d  (true: %d  false: %d)\n', ...
+    sum(logical(ch.judged)), ...
+    sum(logical(ch.judged) & ch.verdict == 1), ...
+    sum(logical(ch.judged) & ch.verdict == 0));
+
+detCols = {'detect_observer1','detect_observer2','detect_observer3', ...
+           'detect_observer4','detect_observer5'};
+for obs = 1:5
+    nDet = sum(logical(ch.(detCols{obs})));
+    fprintf('  Observer %d (%s): %d detections\n', obs, obsNames{obs}, nDet);
+end
+
+anyDet = any(ch{:, detCols} == 1, 2);
+fprintf('  Union (any observer):        %d detections\n\n', sum(anyDet));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 2. Pool startup cost
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('REPLACE_WITH_DASH_DASH- 2. Pool startup cost REPLACE_WITH_DASH_DASH-\n');
+
+hasParallel = ~isempty(ver('parallel'));
+if ~hasParallel
+    fprintf('  Parallel Computing Toolbox not available.\n\n');
+    tStartup   = 0;
+    maxWorkers = 1;
+else
+    maxWorkers = max(1, feature('numcores') - 1);   % leave one core free
+    pool = gcp('nocreate');
+    if ~isempty(pool), evalc('delete(pool)'); end
+
+    tPool    = tic;
+    evalc('parpool(''Processes'', maxWorkers)');
+    tStartup = toc(tPool);
+
+    fprintf('  parpool startup (%d workers): %.1f s\n', maxWorkers, tStartup);
+    fprintf('  This fixed overhead must be recovered by parallel speedup.\n\n');
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 3. Serial baseline — trim + SNR on a small sample
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('REPLACE_WITH_DASH_DASH- 3. Serial baseline (N=%d, trim + SNR) REPLACE_WITH_DASH_DASH-\n', sampleSize);
+
+% Build observer 1 annotations
+mask1 = logical(ch.detect_observer1);
+annotObs1 = table();
+annotObs1.soundFolder   = repmat({wavRoot}, sum(mask1), 1);
+annotObs1.t0            = ch.t0_observer1(mask1);
+annotObs1.tEnd          = ch.tEnd_observer1(mask1);
+annotObs1.duration      = ch.duration_observer1(mask1);
+annotObs1.freq          = repmat([25 29], sum(mask1), 1);
+annotObs1.channel       = ones(sum(mask1), 1);
+annotObs1.rowIdx        = find(mask1);
+
+sample = annotObs1(1:min(sampleSize, height(annotObs1)), :);
+
+% Force serial by setting parallelThreshold above sampleSize
+snrPserial = snrP; snrPserial.parallelThreshold = sampleSize + 1;
+
+tS = tic;
+evalc("sampleTrimmed = trimAnnotation(sample, trimP{:}, 'parallelThreshold', sampleSize+1); snrEstimate(sampleTrimmed, snrPserial);");
+tSerial = toc(tS);
+
+tPerAnnot = tSerial / height(sample);
+
+% Total workload across all observers + merged
+totalAnnots = sum(cellfun(@(c) sum(logical(ch.(c))), detCols)) + sum(anyDet);
+tEstimatedMin = tPerAnnot * totalAnnots / 60;
+
+fprintf('  %d annotations in %.1f s → %.3f s/annotation\n', ...
+    height(sample), tSerial, tPerAnnot);
+fprintf('  Total workload (~%d annotations): estimated %.1f min serial\n\n', ...
+    totalAnnots, tEstimatedMin);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+pThresh   = 100;   % default; updated after worker sweep with measured rates
+breakEven = nan;   % computed from measured parallel rate after sweep
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 5. Worker sweep at fixed N
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('REPLACE_WITH_DASH_DASH- 4. Worker sweep (N=%d) and break-even N REPLACE_WITH_DASH_DASH-\n', sweepSize);
+
+if ~hasParallel
+    fprintf('  Parallel Computing Toolbox not available — skipping.\n\n');
+    nWorkersList = 1;
+    tByWorkers   = tSerial * sweepSize / sampleSize;  % scale estimate
+    optWorkers   = 1;
+else
+    sweep = annotObs1(1:min(sweepSize, height(annotObs1)), :);
+    nWorkersList = unique([1, 4, 8, 16, 30, maxWorkers]);
+    nWorkersList = nWorkersList(nWorkersList <= maxWorkers);
+    tByWorkers   = nan(size(nWorkersList));
+
+    fprintf('  %-8s  %-10s  %-8s  %s\n', 'Workers', 'Time (s)', 'Speedup', 'Diagnosis');
+    fprintf('  %s\n', repmat('-', 1, 55));
+
+    tW1 = nan;
+    snrPpar = snrP; snrPpar.parallelThreshold = 1;
+    for ki = 1:numel(nWorkersList)
+        nW   = nWorkersList(ki);
+        pool = gcp('nocreate');
+        if ~isempty(pool) && pool.NumWorkers ~= nW, evalc('delete(pool)'); end
+        if isempty(gcp('nocreate')), evalc('parpool(''Processes'', nW)'); end
+
+        tw = tic;
+        evalc("sTrim = trimAnnotation(sweep, trimP{:}, 'parallelThreshold', 1); snrEstimate(sTrim, snrPpar);");
+        tByWorkers(ki) = toc(tw);
+
+        if nW == 1, tW1 = tByWorkers(ki); end
+        speedup = tW1 / tByWorkers(ki);
+
+        if     nW == 1,              diagnosis = 'baseline';
+        elseif speedup >= 0.7 * nW,  diagnosis = 'CPU bound — good scaling';
+        elseif speedup >= 0.4 * nW,  diagnosis = 'mixed CPU / I/O';
+        else,                         diagnosis = 'I/O bound — disk bottleneck';
+        end
+
+        fprintf('  %-8d  %-10.1f  %-8.1fx  %s\n', nW, tByWorkers(ki), speedup, diagnosis);
+    end
+    fprintf('\n');
+
+    % Speedup plot
+    speedups = tW1 ./ tByWorkers;
+    figure('Name', 'Worker scaling', 'Units', 'pixels', 'Position', [100 100 480 360]);
+    hold on;
+    plot(nWorkersList, nWorkersList, 'kREPLACE_WITH_DASH_DASH', 'LineWidth', 1.2, 'DisplayName', 'Linear (ideal)');
+    plot(nWorkersList, speedups, 'b-o', 'LineWidth', 1.5, ...
+        'MarkerSize', 7, 'MarkerFaceColor', 'b', 'DisplayName', 'Measured');
+    hold off;
+    xlabel('Workers'); ylabel('Speedup');
+    title(sprintf('Worker scaling — N=%d, trim + SNR', sweepSize));
+    legend('Location', 'northwest'); grid on; box on;
+    ylim([0, max(nWorkersList) + 0.5]);
+
+    % Optimal workers: lowest absolute wall time
+    % (for large workloads absolute speed matters more than efficiency)
+    [~, bestIdx] = min(tByWorkers);
+    optWorkers   = nWorkersList(bestIdx);
+    fprintf('  Recommended workers: %d (lowest wall time = %.1f s)\n', ...
+        optWorkers, tByWorkers(bestIdx));
+    if tByWorkers(end) < tByWorkers(bestIdx) * 1.05
+        fprintf('  Note: %d workers gives similar time — diminishing returns\n', ...
+            nWorkersList(end));
+    end
+
+    % Break-even using measured parallel rate (more reliable than estimated)
+    tParAnnot = tByWorkers(bestIdx) / sweepSize;   % measured s/annotation in parallel
+    if tPerAnnot > tParAnnot
+        breakEven = ceil(tStartup / (tPerAnnot - tParAnnot));
+        pThresh   = max(breakEven, 10);
+        fprintf('  Break-even N:        ~%d annotations\n', breakEven);
+        fprintf('    (startup %.1f s / saving %.3f s/annotation)\n', ...
+            tStartup, tPerAnnot - tParAnnot);
+    else
+        breakEven = Inf;
+        fprintf('  Break-even: N/A — parallel not faster at sweep size\n');
+    end
+    fprintf('  Recommended parallelThreshold: %d\n\n', pThresh);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% 6. Full batch — trim + SNR per observer + merged
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('REPLACE_WITH_DASH_DASH- 5. Full batch run REPLACE_WITH_DASH_DASH-\n');
+fprintf('  (Progress indicators from snrEstimate are expected for large batches)\n');
+
+if hasParallel
+    pool = gcp('nocreate');
+    if ~isempty(pool) && pool.NumWorkers ~= optWorkers, evalc('delete(pool)'); end
+    if isempty(gcp('nocreate')), evalc('parpool(''Processes'', optWorkers)'); end
+end
+
+snrPbatch = snrP; snrPbatch.parallelThreshold = pThresh;
+snrResults = struct();
+tFull = tic;
+
+for obs = 1:5
+    fprintf('  Observer %d (%s)...', obs, obsNames{obs});
+    detCol_ = sprintf('detect_observer%d',   obs);
+    t0Col_  = sprintf('t0_observer%d',       obs);
+    tEnd_   = sprintf('tEnd_observer%d',     obs);
+    dur_    = sprintf('duration_observer%d', obs);
+    mask_   = logical(ch.(detCol_));
+    n_      = sum(mask_);
+
+    aObs               = table();
+    aObs.soundFolder   = repmat({wavRoot}, n_, 1);
+    aObs.t0            = ch.(t0Col_)(mask_);
+    aObs.tEnd          = ch.(tEnd_)(mask_);
+    aObs.duration      = ch.(dur_)(mask_);
+    aObs.freq          = repmat([25 29], n_, 1);
+    aObs.channel       = ones(n_, 1);
+    aObs.rowIdx        = find(mask_);
+
+    evalc("aTrim = trimAnnotation(aObs, trimP{:}, 'parallelThreshold', pThresh);");
+    evalc('res = snrEstimate(aTrim, snrPbatch);');
+
+    snrResults.(sprintf('obs%d', obs)).annots  = aObs;
+    snrResults.(sprintf('obs%d', obs)).trimmed = aTrim;
+    snrResults.(sprintf('obs%d', obs)).result  = res;
+    fprintf(' %d annotations, median SNR = %.1f dB\n', height(res), median(res.snr,'omitnan'));
+end
+
+% Merged: union of all positive detections
+fprintf('  Merged (union of all positives)...');
+nMerge               = sum(anyDet);
+aMerge               = table();
+aMerge.soundFolder   = repmat({wavRoot}, nMerge, 1);
+aMerge.t0            = ch.t0(anyDet);
+aMerge.tEnd          = ch.tEnd(anyDet);
+aMerge.duration      = (ch.tEnd(anyDet) - ch.t0(anyDet)) * 86400;
+aMerge.freq          = repmat([25 29], nMerge, 1);
+aMerge.channel       = ones(nMerge, 1);
+aMerge.rowIdx        = find(anyDet);
+
+evalc("aMergeTrim = trimAnnotation(aMerge, trimP{:}, 'parallelThreshold', pThresh);");
+evalc('resMerge = snrEstimate(aMergeTrim, snrPbatch);');
+snrResults.merged.annots  = aMerge;
+snrResults.merged.trimmed = aMergeTrim;
+snrResults.merged.result  = resMerge;
+fprintf(' %d annotations, median SNR = %.1f dB\n', height(resMerge), ...
+    median(resMerge.snr,'omitnan'));
+
+tTotal = toc(tFull);
+fprintf('\n  Total wall time: %.1f min (%.2f s/annotation equivalent)\n', ...
+    tTotal/60, tTotal/totalAnnots);
+fprintf('  Actual speedup vs serial estimate: %.1fx\n\n', ...
+    tEstimatedMin*60 / tTotal);
+
+%% Save results for downstream analysis
+
+outFile = fullfile(fileparts(mfilename('fullpath')), ...
+    'snr_parallel_guide_casey2019_results.csv');
+
+allRows = table();
+for k = 1:5
+    key            = obsKeys{k};
+    r              = snrResults.(key).result;
+    r.observer     = repmat(k, height(r), 1);
+    r.rowIdx       = snrResults.(key).annots.rowIdx;
+    allRows        = [allRows; r(:, {'observer','rowIdx','snr','signalRMSdB','noiseRMSdB'})]; %#ok<AGROW>
+end
+writetable(allRows, outFile);
+fprintf('\nResults saved to: %s\n', outFile);
+fprintf('Load with: results = readtable(''%s'');\n', outFile);
+
+##### SOURCE END #####
+--></body></html>

@@ -26,5 +26,8 @@ helpsearch/
 # OS specific
 .DS_Store
 desktop.ini
+
+#bsnr specific
 /examples/html
 /examples/*_results.csv
+/experimental/

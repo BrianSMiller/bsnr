@@ -26,9 +26,9 @@ fig = figure('Name', sprintf('trimAnnotation — %s', datestr(annot.t0)), ...
     'Units', 'pixels', 'Position', [50 50 820 520]);
 
 lm = 0.09; bm = 0.11;
-sp_w = 0.52; sp_h = 0.60;
-fp_w = 0.24; tp_h = 0.22;
-gap  = 0.03;
+sp_w = 0.50; sp_h = 0.60;
+fp_w = 0.30; tp_h = 0.22;
+gap  = 0.025;
 
 pos1 = [lm,          bm+tp_h+gap, sp_w, sp_h];
 pos2 = [lm+sp_w+gap, bm+tp_h+gap, fp_w, sp_h];
@@ -78,7 +78,10 @@ hold(ax2, 'off');
 xlabel(ax2, 'Energy', 'FontSize', 7);
 set(ax2, 'YTickLabel', {});
 ylim(ax2, fLim);
-title(ax2, 'Freq profile', 'FontSize', 8);
+% Title inside plot to avoid collision with secondary X axis
+text(ax2, 0.97, 0.97, 'Freq profile', 'Units', 'normalized', ...
+    'HorizontalAlignment', 'right', 'VerticalAlignment', 'top', ...
+    'FontSize', 7.5, 'Color', [0.3 0.3 0.3]);
 grid(ax2, 'on');
 
 % Overlay cumulative on secondary X axis using a twin axes
@@ -161,7 +164,7 @@ if ~isempty(snrBefore) && ~isempty(snrAfter)
     summaryStr = sprintf('%s\n%s', summaryStr, r5);
 end
 
-text(ax4, 0.98, 0.05, summaryStr, 'Units', 'normalized', ...
+text(ax4, 0.95, 0.05, summaryStr, 'Units', 'normalized', ...
     'FontSize', 7.5, 'VerticalAlignment', 'bottom', ...
     'HorizontalAlignment', 'right', 'FontName', 'FixedWidth');
 

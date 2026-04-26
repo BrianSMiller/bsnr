@@ -502,11 +502,12 @@ cleanupSRW();
 
 [annotTone8, cleanup8] = createTestFixture( ...
     'signalRMS', 1.0, 'noiseRMS', 0.1, ...
-    'toneFreqHz', 200, 'freq', [150 250], 'durationSec', 4);
+    'toneFreqHz', 200, 'freq', [150 250], 'durationSec', 7);
 
-% Wide annotation: 1.5s margins each side, freq band wider than tone
+% Wide annotation: 1.5s margins each side, freq band wider than tone.
+% Keep within file bounds — annotTone8 starts at file start + small offset,
+% so extend tEnd only and use pre-signal audio for the start margin.
 annotWide8          = annotTone8;
-annotWide8.t0       = annotTone8.t0   - 1.5/86400;
 annotWide8.tEnd     = annotTone8.tEnd + 1.5/86400;
 annotWide8.duration = (annotWide8.tEnd - annotWide8.t0) * 86400;
 annotWide8.freq     = [100 300];   % symmetric about 200 Hz tone
@@ -688,11 +689,13 @@ fprintf('\n=== gallery complete ===\n');
 fprintf('Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b\n');
 
 %% 11. Tethys round-trip — read, estimate, write
-% Demonstrates reading detections from a bundled Tethys XML file,
-% estimating SNR, and writing results back as Tethys-compatible XML.
+% Demonstrates the full workflow: reading detections from a Tethys XML file,
+% estimating SNR, and writing enriched results back as Tethys-compatible XML.
 %
-% In a real workflow, replace tethys_example.xml with your own Tethys
-% export or a file from a Tethys server query.
+% The bundled tethys_example.xml contains 5 Antarctic blue whale Z-call
+% detections in Tethys 3.x Detections format (Casey Station 2019).
+% In a real workflow, replace this file with your own Tethys export or
+% a document from a Tethys server query.
 
 fprintf('\n--- Section 11: Tethys round-trip ---\n');
 
@@ -702,49 +705,78 @@ audioDir   = fullfile(fileparts(mfilename('fullpath')), 'audio', 'abw_z');
 if ~isfile(tethysXml)
     fprintf('  tethys_example.xml not found — skipping section 11.\n');
 else
-    % Read detections from Tethys XML
-    % Note: detections use absolute timestamps from Casey 2019;
-    % the bundled audio clip covers a short excerpt so we remap t0 to
-    % match the clip for demonstration purposes.
-    annotsT = readTethysDetections(tethysXml, audioDir);
 
-    % Remap timestamps to match the bundled clip (demo only)
-    sf = wavFolderInfo(audioDir, '', false, false);
-    clipStart = sf(1).startDate;
-    for k = 1:numel(annotsT)
-        offset = (annotsT(k).t0 - annotsT(1).t0) * 86400;  % seconds from first
-        annotsT(k).t0   = clipStart + (17 + offset) / 86400;
-        annotsT(k).tEnd = annotsT(k).t0 + annotsT(k).duration / 86400;
+    %% Step 1: Show a snippet of the input XML
+    fprintf('\nStep 1 — Input Tethys XML (tethys_example.xml):\n');
+    fprintf('%s\n', repmat('-', 1, 60));
+    xmlLines = strsplit(fileread(tethysXml), newline);
+    % Print the first Detection element (lines ~40-55)
+    inDetection = false;
+    printedLines = 0;
+    for k = 1:numel(xmlLines)
+        ln = strtrim(xmlLines{k});
+        if contains(ln, '<Detection>'),   inDetection = true; end
+        if inDetection
+            fprintf('  %s\n', ln);
+            printedLines = printedLines + 1;
+        end
+        if contains(ln, '</Detection>') && inDetection
+            break
+        end
     end
+    fprintf('%s\n', repmat('-', 1, 60));
 
-    fprintf('  Read %d detections from Tethys XML\n', numel(annotsT));
+    %% Step 2: Read and display parsed annotation
+    fprintf('\nStep 2 — readTethysDetections → bsnr annotation struct:\n');
+    annotsT = readTethysDetections(tethysXml, audioDir);
+    an = annotsT(1);
 
-    % Estimate SNR
-    p11 = struct('snrType', 'spectrogramSlices', 'nfft', 512, ...
-        'showClips', false, 'verbose', false);
+    fprintf('  Start:      %s\n', datestr(an.t0,  'yyyy-mm-dd HH:MM:SS'));
+    fprintf('  End:        %s\n', datestr(an.tEnd, 'yyyy-mm-dd HH:MM:SS'));
+    fprintf('  Duration:   %.1f s\n', an.duration);
+    fprintf('  Freq:       [%.0f  %.0f] Hz\n', an.freq(1), an.freq(2));
+    fprintf('  Type:       %s\n', an.classification);
+
+    %% Step 3: Remap to bundled clip and estimate SNR
+    % Start/End in the example file are Casey 2019 absolute UTC.
+    % Remap to the bundled ABW Z-call clip for demonstration.
+    sf = wavFolderInfo(audioDir, '', false, false);
+    annotsT(1).t0          = sf(1).startDate + 17/86400;
+    annotsT(1).tEnd        = annotsT(1).t0 + annotsT(1).duration / 86400;
+    annotsT(1).soundFolder = audioDir;
+
+    fprintf('\nStep 3 — snrEstimate (spectrogramSlices, nfft=512):\n');
+    p11 = struct('snrType', 'spectrogramSlices', 'nfft', 512, 'showClips', false);
     result11 = snrEstimate(annotsT, p11);
+    fprintf('  SNR = %.1f dB\n', result11.snr(1));
 
-    fprintf('  SNR estimates (dB): ');
-    fprintf('%.1f  ', result11.snr);
-    fprintf('\n');
-
-    % Write results back as Tethys XML
+    %% Step 4: Write enriched results and show output XML snippet
     outXml = fullfile(tempdir, 'bsnr_tethys_results.xml');
     writeTethysXml(result11, annotsT, ...
         'project',      'AADC-Casey2019', ...
         'deploymentId', 'Casey2019_01', ...
         'software',     'bsnr', ...
+        'version',      '0.3.0-beta', ...
         'outputFile',   outXml);
-    fprintf('  Wrote Tethys results XML to: %s\n', outXml);
-    fprintf('  Fields written: SNR_dB, MinFreq_Hz, MaxFreq_Hz, Duration_s\n');
 
-    % Show summary table
-    fprintf('\n  Detection  SNR_dB  MinFreq  MaxFreq\n');
-    fprintf('  ---------  ------  -------  -------\n');
-    for k = 1:numel(annotsT)
-        fprintf('  %5d      %6.1f  %7.1f  %7.1f\n', ...
-            k, result11.snr(k), annotsT(k).freq(1), annotsT(k).freq(2));
+    fprintf('\nStep 4 — Output XML snippet (first Detection with SNR_dB added):\n');
+    fprintf('%s\n', repmat('-', 1, 60));
+    outLines = strsplit(fileread(outXml), newline);
+    inDetection = false;
+    for k = 1:numel(outLines)
+        ln = strtrim(outLines{k});
+        if contains(ln, '<Detection>'),  inDetection = true; end
+        if inDetection
+            fprintf('  %s\n', ln);
+        end
+        if contains(ln, '</Detection>') && inDetection
+            break
+        end
     end
+    fprintf('%s\n', repmat('-', 1, 60));
+    fprintf('  → SNR_dB and ReceivedLevel_dB added as native Tethys Parameters fields\n');
+    fprintf('  → Output: %s\n', outXml);
+
 end
 
 
