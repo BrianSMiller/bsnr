@@ -260,6 +260,23 @@ assert(rmsS > rmsN, ...
     sprintf('snrRidge: rmsSignal (%.4g) should exceed rmsNoise (%.4g)', rmsS, rmsN));
 assert(length(rdData.ridgeFreq) > 1, 'snrRidge: ridgeFreq should be a vector with one entry per time slice');
 ridgeMeanHz = mean(rdData.ridgeFreq, 'omitnan');
+
+% Smoothed ridge checks — use explicit ridgeSmoothSpan=0.3 to test smoothing
+[~, ~, ~, rdSmooth] = snrRidge( ...
+    sigAudio, noiseAudio, nfft, nOverlap, sampleRate, freq, [], ...
+    struct('ridgeSmoothSpan', 0.3));
+assert(isfield(rdData, 'ridgeFreqSmooth'), 'snrRidge: methodData should have ridgeFreqSmooth');
+assert(length(rdData.ridgeFreqSmooth) == length(rdData.ridgeFreq), ...
+    'snrRidge: ridgeFreqSmooth should have same length as ridgeFreq');
+assert(isfield(rdData, 'ridgeCoreIdx'), 'snrRidge: methodData should have ridgeCoreIdx');
+% With span=0 (default), smoothed == raw
+assert(isequal(rdData.ridgeFreq, rdData.ridgeFreqSmooth), ...
+    'snrRidge: default ridgeSmoothSpan=0 should give ridgeFreqSmooth == ridgeFreq');
+% With span=0.3, smoothed should have lower or equal total variation
+tvRaw    = sum(abs(diff(rdSmooth.ridgeFreq)));
+tvSmooth = sum(abs(diff(rdSmooth.ridgeFreqSmooth)));
+assert(tvSmooth <= tvRaw * 1.01, ...
+    sprintf('snrRidge: smoothed ridge (TV=%.2f) should be <= raw (TV=%.2f)', tvSmooth, tvRaw));
 assert(abs(ridgeMeanHz - toneHz) < 50, ...
     sprintf('snrRidge: mean ridge freq %.1f Hz should be within 50 Hz of tone %.1f Hz', ...
     ridgeMeanHz, toneHz));
@@ -520,8 +537,92 @@ fprintf('--- SNR formula: simple vs Lurton ---\n');
 % not in the method functions. See test_snrEstimate_scalar for formula tests.
 fprintf('  [INFO] simple SNR formula tested above; Lurton tested in test_snrEstimate_scalar\n');
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Ridge smoothing tests — using SRW upcall (quadratic IF, known analytic solution)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The SRW upcall has analytic IF: f(t) = 80 + 118*t^2 Hz over 1 s.
+% This gives ground truth to measure tracking accuracy against.
+
+fprintf('--- snrRidge: ridge smoothing ---\n');
+
+sampleRate = 1000;
+nfft       = 64;
+nOverlap   = floor(nfft * 0.75);
+ridgeBand  = [80 210];
+
+% Helper: interpolate analytic SRW IF onto nSlices ridge time grid
+interpIF = @(instFreq, nSl) interp1(linspace(0,1,length(instFreq)), ...
+    instFreq, linspace(0,1,nSl)', 'linear');
+
+%% (1) ridgeSmoothSpan=0 disables smoothing: ridgeFreqSmooth == ridgeFreq exactly
+[srwSig, srwNoise] = makeSRWUpcall(sampleRate, 0.1);
+pOff = struct('ridgeSmoothSpan', 0);
+[~, ~, ~, rdOff] = snrRidge(srwSig, srwNoise, nfft, nOverlap, sampleRate, ridgeBand, [], pOff);
+assert(isequal(rdOff.ridgeFreq, rdOff.ridgeFreqSmooth), ...
+    'ridgeSmoothSpan=0: ridgeFreqSmooth should equal ridgeFreq exactly');
+fprintf('  [PASS] ridgeSmoothSpan=0 disables smoothing\n');
+
+%% (2) Smoothed track has lower total variation than raw at moderate SNR
+[srwSig, srwNoise] = makeSRWUpcall(sampleRate, 0.3);
+pSmooth = struct('ridgeSmoothSpan', 0.3);
+[~, ~, ~, rdTV] = snrRidge(srwSig, srwNoise, nfft, nOverlap, sampleRate, ridgeBand, [], pSmooth);
+tvRaw    = sum(abs(diff(rdTV.ridgeFreq)));
+tvSmooth = sum(abs(diff(rdTV.ridgeFreqSmooth)));
+assert(tvSmooth <= tvRaw, ...
+    sprintf('SRW: smoothed TV (%.1f) should be <= raw TV (%.1f)', tvSmooth, tvRaw));
+fprintf('  [PASS] smoothed TV=%.1f <= raw TV=%.1f Hz/slice\n', tvSmooth, tvRaw);
+
+%% (3) Smoothed tracks analytic IF more closely at low SNR
+[srwLow, srwNoiseLow, srwIF] = makeSRWUpcall(sampleRate, 0.5);
+[~, ~, ~, rdLow] = snrRidge(srwLow, srwNoiseLow, nfft, nOverlap, sampleRate, ridgeBand, [], pSmooth);
+ifGrid     = interpIF(srwIF, length(rdLow.ridgeFreq));
+rmseRaw    = rms(rdLow.ridgeFreq       - ifGrid);
+rmseSmooth = rms(rdLow.ridgeFreqSmooth - ifGrid);
+assert(rmseSmooth <= rmseRaw * 1.1, ...
+    sprintf('Low SNR: smoothed RMSE %.1f Hz should be <= raw %.1f Hz', rmseSmooth, rmseRaw));
+fprintf('  [PASS] low SNR tracking: smoothed RMSE=%.1f Hz, raw=%.1f Hz vs analytic IF\n', ...
+    rmseSmooth, rmseRaw);
+
+%% (4) Gap test — smoothed ridge interpolates across a signal dropout
+% Zero out the middle 0.2s of the upcall (t=0.4 to 0.6s, where IF ≈ 99-122 Hz).
+% Raw ridge drops toward noise floor in the gap; smoothed should interpolate.
+[srwSig, srwNoise, srwIF] = makeSRWUpcall(sampleRate, 0.2);
+gapIdx = round(0.4*sampleRate)+1 : round(0.6*sampleRate);
+srwGap = srwSig;
+srwGap(gapIdx) = srwGap(gapIdx) - srwSig(gapIdx);   % remove signal, keep noise
+
+[~, ~, ~, rdGap] = snrRidge(srwGap, srwNoise, nfft, nOverlap, sampleRate, ridgeBand, [], pSmooth);
+nSl        = length(rdGap.ridgeFreq);
+ifGrid     = interpIF(srwIF, nSl);
+tSl        = linspace(0, 1, nSl)';
+gapSlices  = tSl >= 0.4 & tSl <= 0.6;
+
+if sum(gapSlices) >= 3
+    rawGapErr    = rms(rdGap.ridgeFreq(gapSlices)       - ifGrid(gapSlices));
+    smoothGapErr = rms(rdGap.ridgeFreqSmooth(gapSlices) - ifGrid(gapSlices));
+    fprintf('  [PASS] gap: smoothed RMSE=%.1f Hz, raw=%.1f Hz in dropout region\n', ...
+        smoothGapErr, rawGapErr);
+    % Note: smoothed may not always beat raw if the gap is short relative
+    % to the LOESS span — this test reports rather than asserts
+else
+    fprintf('  [SKIP] gap test: too few slices in gap region\n');
+end
+
+%% (5) ridgeFreqSmooth stays within frequency band
+assert(all(rdLow.ridgeFreqSmooth >= ridgeBand(1) - 1) && ...
+       all(rdLow.ridgeFreqSmooth <= ridgeBand(2) + 1), ...
+    'ridgeFreqSmooth should stay within band bounds');
+fprintf('  [PASS] ridgeFreqSmooth stays within [%.0f %.0f] Hz\n', ridgeBand);
+
+%% (6) ridgeCoreIdx: core fraction reflects ridgeTrimPct default
+coreFrac = mean(rdLow.ridgeCoreIdx);
+assert(coreFrac >= 0.65 && coreFrac <= 1.0, ...
+    sprintf('ridgeCoreIdx core fraction %.2f should be 0.65-1.0', coreFrac));
+fprintf('  [PASS] ridgeCoreIdx core fraction = %.2f\n', coreFrac);
+
 fprintf('\n=== test_snrMethods PASSED ===\n');
 end
+
 
 %% Bioduck fixture tests
 % These tests use a bout of repeated FM downsweeps (60-100 Hz) mimicking

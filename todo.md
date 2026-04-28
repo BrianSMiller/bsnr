@@ -4,6 +4,23 @@ bsnr is a working tool in active use, not a finished standard. This file tracks 
 
 ---
 
+## Known issues
+
+### Test output suppression via fprintf redirection
+Currently `run_tests` uses `evalc('fn()')` to suppress test output in quiet
+mode. This causes several problems: breakpoints are unreachable inside `evalc`,
+figure handles created inside `evalc` are not visible to the caller, and
+`evalc` can trigger implicit parallel pool initialisation in some MATLAB
+versions (work around: `test_trimAnnotation` explicitly closes any open pool
+at startup).
+
+The proper fix: add a `verbose` parameter to each test function and redirect
+`fprintf` calls to a no-op when `verbose=false`. This keeps output suppression
+in the test functions rather than the runner, and eliminates all `evalc` usage
+from `run_tests`.
+
+---
+
 ## Planned features
 
 ### Parallel processing for `trimAnnotation`
@@ -21,7 +38,35 @@ boxes. Reference: Hory, Martin & Chehikian (2002), "Spectrogram segmentation
 by means of statistical features for non-stationary signal interpretation."
 IEEE Trans. Signal Processing 50(12), 2915–2925.
 
-### Smooth ridge and synchrosqueeze pitch tracks
+### Contour and non-rectangular annotation support
+Accept richer annotation formats from contour-based detectors (e.g. silbido
+profundo — Conant et al. 2022, JASA 152(6)) and mask-based deep learning
+outputs, in addition to the current rectangular box (t0, tEnd, freq[lo hi]).
+
+Two natural extensions:
+- **Contour input** — pre-computed instantaneous frequency track (time × Hz).
+  `snrRidge` could accept a contour directly, skipping `tfridge` entirely.
+  Strictly better SNR for any detector that outputs contours.
+- **TF mask input** — binary mask of signal cells in a spectrogram.
+  Signal power = mean PSD of masked cells; noise = unmasked cells.
+  No frequency band or ridge tracking needed.
+
+Rectangular box remains the fallback. Implementation deferred until real
+contour/mask data and a target format (PAMGuard, Tethys, silbido) are
+available for testing.
+
+Note: Conant et al. (2022) implemented a pure MATLAB version of silbido
+profundo — worth checking whether its contour output format could serve
+as a reference implementation for the contour input interface.
+
+**Why not LOESS smoothing of tfridge output?**
+LOESS smoothing of the raw `tfridge` track (implemented, default off) helps
+on synthetic audio with tight annotation bounds. On real data with loose
+analyst-drawn boxes, the energy-trim heuristic selects noise-dominated edge
+slices and the smooth fits the noise rather than the signal. The fundamental
+problem is that simple energy heuristics cannot reliably distinguish call
+energy from broadband noise — a learned contour tracker (silbido profundo)
+is the right solution for general FM calls at low SNR.
 Apply smoothing to the instantaneous frequency estimates from `snrRidge` and
 `snrSynchrosqueeze` to reduce jitter. Candidate approaches: LOESS, GAM,
 spline, or polynomial fits. Smoothed track would be stored in

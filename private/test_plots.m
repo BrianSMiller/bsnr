@@ -218,8 +218,26 @@ for s = 1:nCols
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
 end
-fprintf('  [PASS] Figure 4 complete
-');
+fprintf('  [PASS] Figure 4 complete\n');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figure 5: synchrosqueeze
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('--- Figure 5: synchrosqueeze ---\n');
+fig5 = figure('Name','synchrosqueeze','Position',figPos);
+tlo5 = tiledlayout(fig5,1,nCols,'TileSpacing','compact','Padding','compact');
+title(tlo5,'synchrosqueeze','interpreter','none');
+for s = 1:nCols
+    nexttile(tlo5);
+    p = struct('snrType','synchrosqueeze','showClips',true,'pauseAfterPlot',false,...
+        'plotParams',allSP{s});
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
+    snrTable(5,s) = snr;
+    title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
+    fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
+end
+fprintf('  [PASS] Figure 5 complete\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure 6: quantiles (with percentile contour overlay)
@@ -302,15 +320,7 @@ annotWide.freq     = [100 300];   % symmetric about 200 Hz tone
 
 % Trim with per-annotation freq (no fixed params.freq)
 trimmed = trimAnnotation(annotWide, 'showPlot', true);
-
-% Find the trim diagnostic figure by name rather than gcf
-% (gcf may capture a different figure if pool is open)
-fig9 = findobj('Type', 'figure', 'Name', ...
-    sprintf('trimAnnotation — %s', datestr(annotWide.t0)));
-if isempty(fig9)
-    % Fall back to most recently created figure
-    fig9 = gcf;
-end
+fig9 = gcf;  % capture figure produced by plotTrimDiagnostic
 
 fprintf('  Original: %.2f s, [%.0f %.0f] Hz\n', ...
     annotWide.duration, annotWide.freq(1), annotWide.freq(2));

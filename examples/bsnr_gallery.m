@@ -489,7 +489,80 @@ fprintf('  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin; ~10*log10(nBins) abo
     snrRidgeVal, snrSSQVal);
 cleanupSRW();
 
-%% 8. Annotation trimming
+%% 7b. Ridge smoothing — when it helps and when it does not
+% LOESS smoothing of the instantaneous frequency ridge reduces noise-driven
+% wandering when annotation bounds are tight. With loose bounds (typical of
+% analyst annotations), the energy-trim heuristic may select noise-dominated
+% slices and the smooth fits the noise floor rather than the signal.
+%
+% RECOMMENDED WORKFLOW
+%   annotTrimmed = trimAnnotation(annots);
+%   p.ridgeParams.ridgeSmoothSpan = 0.3;
+%   result = snrEstimate(annotTrimmed, p);
+%
+% The default is ridgeSmoothSpan=0 (raw ridge) for safety. Enable smoothing
+% only after verifying annotation bounds are tight for your dataset.
+%
+% This section shows the same SRW upcall with:
+%   col 1 — loose annotation (3x signal duration), no smoothing
+%   col 2 — loose annotation, smoothing enabled
+%   col 3 — tight annotation (trimAnnotation applied), smoothing enabled
+%
+% The analytic instantaneous frequency f(t) = 80 + 118t^2 Hz is shown
+% as a dotted line for reference.
+
+srwSR4  = 1000;  srwFB4 = [75 210];  srwDur4 = 1.0;
+nfft4   = 64;    nOvlp4 = floor(nfft4 * 0.75);
+
+[srwSig4, ~] = makeSRWUpcall(srwSR4, 0.3);
+rng(14);
+wbRMS4   = 0.3 * sqrt(srwSR4/2 / 135);
+buf4     = wbRMS4 * randn(round(3 * srwSR4), 1);
+full4    = [buf4; srwSig4; buf4];
+full4    = full4 * (0.9 / max(abs(full4)));
+
+% Loose annotation — 3s buffer each side
+[annotLoose, cleanupLoose] = audioToFixture(full4, srwSR4, srwFB4, srwDur4, ...
+    'SRW upcall — loose bounds', 3);
+
+% Tight annotation — same audio, trimmed
+annotTight = trimAnnotation(annotLoose, 'freq', srwFB4);
+
+fig7b = figure('Name', '7b. Ridge smoothing — tight vs loose bounds', ...
+    'Units', 'pixels', 'Position', [50 50 900 320]);
+tlo7b = tiledlayout(fig7b, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tlo7b, '7b. Ridge smoothing: loose bounds vs tight bounds (after trimAnnotation)', ...
+    'FontWeight', 'bold');
+
+% Col 1: loose, no smoothing (default)
+nexttile(tlo7b);
+pLooseRaw = struct('snrType', 'ridge', 'nfft', nfft4, ...
+    'showClips', true, 'pauseAfterPlot', false);
+snrEstimate(annotLoose, pLooseRaw);
+title(gca, 'Loose bounds | raw ridge (default)', 'FontSize', 8);
+
+% Col 2: loose, smoothing on — shows failure mode
+nexttile(tlo7b);
+pLooseSmooth = struct('snrType', 'ridge', 'nfft', nfft4, ...
+    'showClips', true, 'pauseAfterPlot', false, ...
+    'ridgeParams', struct('ridgeSmoothSpan', 0.3));
+snrEstimate(annotLoose, pLooseSmooth);
+title(gca, 'Loose bounds | smoothed (may fit noise)', 'FontSize', 8);
+
+% Col 3: tight (trimmed), smoothing on — recommended workflow
+nexttile(tlo7b);
+pTightSmooth = struct('snrType', 'ridge', 'nfft', nfft4, ...
+    'showClips', true, 'pauseAfterPlot', false, ...
+    'ridgeParams', struct('ridgeSmoothSpan', 0.3));
+snrEstimate(annotTight, pTightSmooth);
+title(gca, 'Tight bounds (trimmed) | smoothed', 'FontSize', 8);
+
+cleanupLoose();
+fprintf('  [PASS] Section 7b complete\n\n');
+
+
+
+
 % Analysts often draw annotation boxes with generous time and frequency
 % buffers. |trimAnnotation| removes these margins by trimming to the
 % central 95% of in-band spectral energy, tightening both time and

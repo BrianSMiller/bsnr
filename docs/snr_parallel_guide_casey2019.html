@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>Parallel processing guide &#8212; Casey 2019 Common Ground ABZ calls</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-27"><meta name="DC.source" content="snr_parallel_guide_casey2019.m"><style type="text/css">
+      --><title>Parallel processing guide &#8212; Casey 2019 Common Ground ABZ calls</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-29"><meta name="DC.source" content="snr_parallel_guide_casey2019.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -154,7 +154,7 @@ hasParallel = ~isempty(ver(<span class="string">'parallel'</span>));
 
 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 </pre><pre class="codeoutput">--- 2. Pool startup cost ---
-  parpool startup (31 workers): 45.1 s
+  parpool startup (31 workers): 17.4 s
   This fixed overhead must be recovered by parallel speedup.
 
 </pre><h2 id="5">3. Serial baseline &#8212; trim + SNR on a small sample</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
@@ -198,8 +198,8 @@ breakEven = nan;   <span class="comment">% computed from measured parallel rate 
 
 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 </pre><pre class="codeoutput">--- 3. Serial baseline (N=500, trim + SNR) ---
-  500 annotations in 11.4 s &#8594; 0.023 s/annotation
-  Total workload (~35909 annotations): estimated 13.6 min serial
+  500 annotations in 2.3 s &#8594; 0.005 s/annotation
+  Total workload (~35909 annotations): estimated 2.7 min serial
 
 </pre><h2 id="6">5. Worker sweep at fixed N</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 
@@ -287,34 +287,19 @@ fprintf(<span class="string">'--- 4. Worker sweep (N=%d) and break-even N ---\n'
 </pre><pre class="codeoutput">--- 4. Worker sweep (N=2000) and break-even N ---
   Workers   Time (s)    Speedup   Diagnosis
   -------------------------------------------------------
-  1         47.0        1.0     x  baseline
-  4         14.8        3.2     x  CPU bound &#8212; good scaling
-  8         9.6         4.9     x  mixed CPU / I/O
-  16        6.3         7.4     x  mixed CPU / I/O
-  30        5.0         9.3     x  I/O bound &#8212; disk bottleneck
-  31        5.1         9.3     x  I/O bound &#8212; disk bottleneck
+  1         48.7        1.0     x  baseline
+  4         14.3        3.4     x  CPU bound &#8212; good scaling
+  8         9.0         5.4     x  mixed CPU / I/O
+  16        5.5         8.8     x  mixed CPU / I/O
+  30        4.9         9.9     x  I/O bound &#8212; disk bottleneck
+  31        4.9         9.9     x  I/O bound &#8212; disk bottleneck
 
-  Recommended workers: 30 (lowest wall time = 5.0 s)
+  Recommended workers: 31 (lowest wall time = 4.9 s)
   Note: 31 workers gives similar time &#8212; diminishing returns
-  Break-even N:        ~2227 annotations
-    (startup 45.1 s / saving 0.020 s/annotation)
-  Recommended parallelThreshold: 2227
+  Break-even N:        ~8272 annotations
+    (startup 17.4 s / saving 0.002 s/annotation)
+  Recommended parallelThreshold: 8272
 
---- 5. Full batch run ---
-  (Progress indicators from snrEstimate are expected for large batches)
-  Observer 1 (Analyst 1)... 3166 annotations, median SNR = 3.8 dB
-  Observer 2 (Analyst 2)... 7048 annotations, median SNR = 1.9 dB
-  Observer 3 (Analyst 3)... 9273 annotations, median SNR = 2.4 dB
-  Observer 4 (Detector 4)... 2289 annotations, median SNR = 3.5 dB
-  Observer 5 (Detector 5)... 3821 annotations, median SNR = 2.5 dB
-  Merged (union of all positives)... 10312 annotations, median SNR = 1.9 dB
-
-  Total wall time: 1.1 min (0.00 s/annotation equivalent)
-  Actual speedup vs serial estimate: 11.9x
-
-
-Results saved to: C:\analysis\bsnr\examples\snr_parallel_guide_casey2019_results.csv
-Load with: results = readtable('C:\analysis\bsnr\examples\snr_parallel_guide_casey2019_results.csv');
 </pre><img vspace="5" hspace="5" src="snr_parallel_guide_casey2019_01.png" alt=""> <h2 id="7">6. Full batch &#8212; trim + SNR per observer + merged</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 
 fprintf(<span class="string">'--- 5. Full batch run ---\n'</span>);
@@ -382,6 +367,18 @@ fprintf(<span class="string">'\n  Total wall time: %.1f min (%.2f s/annotation e
     tTotal/60, tTotal/totalAnnots);
 fprintf(<span class="string">'  Actual speedup vs serial estimate: %.1fx\n\n'</span>, <span class="keyword">...</span>
     tEstimatedMin*60 / tTotal);
+</pre><pre class="codeoutput">--- 5. Full batch run ---
+  (Progress indicators from snrEstimate are expected for large batches)
+  Observer 1 (Analyst 1)... 3166 annotations, median SNR = 3.8 dB
+  Observer 2 (Analyst 2)... 7048 annotations, median SNR = 1.9 dB
+  Observer 3 (Analyst 3)... 9273 annotations, median SNR = 2.4 dB
+  Observer 4 (Detector 4)... 2289 annotations, median SNR = 3.5 dB
+  Observer 5 (Detector 5)... 3821 annotations, median SNR = 2.5 dB
+  Merged (union of all positives)... 10312 annotations, median SNR = 1.9 dB
+
+  Total wall time: 1.2 min (0.00 s/annotation equivalent)
+  Actual speedup vs serial estimate: 2.2x
+
 </pre><h2 id="8">Save results for downstream analysis</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_parallel_guide_casey2019_results.csv'</span>);
 
@@ -396,6 +393,9 @@ allRows = table();
 writetable(allRows, outFile);
 fprintf(<span class="string">'\nResults saved to: %s\n'</span>, outFile);
 fprintf(<span class="string">'Load with: results = readtable(''%s'');\n'</span>, outFile);
+</pre><pre class="codeoutput">
+Results saved to: C:\analysis\bsnr\examples\snr_parallel_guide_casey2019_results.csv
+Load with: results = readtable('C:\analysis\bsnr\examples\snr_parallel_guide_casey2019_results.csv');
 </pre><p class="footer"><br><a href="https://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2022a</a><br></p></div><!--
 ##### SOURCE BEGIN #####
 %% Parallel processing guide — Casey 2019 Common Ground ABZ calls

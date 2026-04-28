@@ -36,9 +36,21 @@ function [rmsSignal, rmsNoise, noiseVar, methodData] = snrRidge( ...
 %                 .ridgePenalty  tfridge frequency-jump penalty (default 1).
 %                                Increase to force a smoother ridge; decrease
 %                                to allow faster frequency modulation.
-%                 .guardBins     Number of FFT bins either side of the ridge
-%                                to exclude from the noise estimate (default 2).
-%                                Prevents spectral leakage from inflating noise.
+%                 .guardBins        Number of FFT bins either side of the ridge
+%                                   to exclude from the noise estimate (default 2).
+%                 .ridgeSmoothSpan  LOESS span for ridge smoothing as fraction of
+%                                   slices (default 0). Set > 0 to enable.
+%                                   Only effective when annotation bounds are tight
+%                                   (e.g. after trimAnnotation). With loose bounds,
+%                                   smoothing may fit the noise rather than the
+%                                   signal and degrade results.
+%                                   Recommended workflow:
+%                                     annotTrimmed = trimAnnotation(annots);
+%                                     p.ridgeParams.ridgeSmoothSpan = 0.3;
+%                                     result = snrEstimate(annotTrimmed, p);
+%                 .ridgeTrimPct     Fraction of lowest-energy slices to exclude
+%                                   before smoothing (default 0.25). Only used
+%                                   when ridgeSmoothSpan > 0.
 %
 % OUTPUTS
 %   rmsSignal   Mean power at the ridge across time slices (linear)
@@ -63,6 +75,12 @@ if ~isfield(params, 'ridgePenalty') || isempty(params.ridgePenalty)
 end
 if ~isfield(params, 'guardBins') || isempty(params.guardBins)
     params.guardBins = 2;
+end
+if ~isfield(params, 'ridgeSmoothSpan') || isempty(params.ridgeSmoothSpan)
+    params.ridgeSmoothSpan = 0;    % LOESS smoothing disabled by default; enable after trimAnnotation
+end
+if ~isfield(params, 'ridgeTrimPct') || isempty(params.ridgeTrimPct)
+    params.ridgeTrimPct = 0.25;    % trim bottom fraction of slice powers before smoothing
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -131,21 +149,68 @@ ridgeBinIdx = max(1, min(nBins, ridgeBinIdx)); % clamp to valid range
 ridgeFreq   = fBand(ridgeBinIdx);           % convert to Hz
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% LOESS smoothing of ridge track
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Two-step: (1) energy-based trim to find core slices where the call is
+% strongest, (2) LOESS smooth fitted to core only, interpolated to full
+% length. This reduces noise-driven ridge wandering at annotation edges,
+% which is common at low SNR.
+
+nSlices = length(sT);
+nBand   = size(sigBand, 1);
+
+% Compute raw signal power at each ridge bin (for trim threshold)
+sigSliceRaw = arrayfun(@(i) sigBand(ridgeBinIdx(i), i), (1:nSlices)');
+
+ridgeFreqSmooth = ridgeFreq;   % default: no smoothing
+ridgeCoreIdx    = true(nSlices, 1);
+
+if params.ridgeSmoothSpan > 0 && nSlices >= 5
+    % Energy trim: keep slices above ridgeTrimPct percentile of raw power
+    trimThresh   = prctile(sigSliceRaw, params.ridgeTrimPct * 100);
+    coreIdx      = find(sigSliceRaw >= trimThresh);
+    if numel(coreIdx) >= 4
+        ridgeCoreIdx(:)      = false;
+        ridgeCoreIdx(coreIdx) = true;
+
+        % LOESS smooth on core slice indices
+        % smooth() requires the Statistics and Machine Learning Toolbox;
+        % fall back to movmean if unavailable.
+        try
+            ridgeFreqCore   = ridgeFreq(coreIdx);
+            ridgeSmoothed   = smooth(coreIdx, ridgeFreqCore, ...
+                params.ridgeSmoothSpan, 'loess');
+            % Interpolate smoothed core back to all slices
+            ridgeFreqSmooth = interp1(coreIdx, ridgeSmoothed, ...
+                (1:nSlices)', 'linear', 'extrap');
+            % Clamp to band limits
+            ridgeFreqSmooth = max(freq(1), min(freq(2), ridgeFreqSmooth));
+        catch
+            % smooth() unavailable — fall back to moving average
+            winLen = max(3, round(params.ridgeSmoothSpan * nSlices));
+            ridgeFreqSmooth = movmean(ridgeFreq, winLen, 'omitnan');
+        end
+    end
+end
+
+% Convert smoothed frequencies back to bin indices for power measurement
+ridgeBinIdxSmooth = arrayfun(@(f) ...
+    max(1, min(nBand, round(interp1(fBand, 1:numel(fBand), f, 'linear', 'extrap')))), ...
+    ridgeFreqSmooth);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Per-slice signal and noise power from un-normalised spectrogram
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-nSlices      = length(sT);
-nBand        = size(sigBand, 1);
 sigSlice     = nan(nSlices, 1);
 noiseSlice   = nan(nSlices, 1);
 noiseSliceN  = nan(nSlices, 1);
 
 % Restrict the noise spectrogram to the same band and average over time
-% (noise is a background estimate — no need for per-slice indexing)
 noiseBand = mean(noisePsd(fIx, :), 2);   % [nBand x 1]
 
 for i = 1:nSlices
-    rb = ridgeBinIdx(i);
+    rb = ridgeBinIdxSmooth(i);   % use smoothed ridge for power measurement
 
     % Signal: power at the ridge bin
     sigSlice(i) = sigBand(rb, i);
@@ -169,7 +234,9 @@ noiseVar   = var(noiseSliceN(~isnan(noiseSliceN)));
 
 % Build methodData
 methodData.method           = 'ridge';
-methodData.ridgeFreq        = ridgeFreq;
+methodData.ridgeFreq        = ridgeFreq;         % raw tfridge output
+methodData.ridgeFreqSmooth  = ridgeFreqSmooth;   % LOESS-smoothed (used for power)
+methodData.ridgeCoreIdx     = ridgeCoreIdx;      % core energy slices used for smoothing
 methodData.sliceSnrdB       = 10 * log10(sigSlice ./ noiseSlice);
 methodData.sigSlicePowers   = sigSlice;
 methodData.noiseSlicePowers = noiseSlice;
@@ -179,6 +246,8 @@ end
 function md = emptyRidgeData(method)
 md.method           = method;
 md.ridgeFreq        = nan(1);
+md.ridgeFreqSmooth  = nan(1);
+md.ridgeCoreIdx     = false(1);
 md.sliceSnrdB       = nan(1);
 md.sigSlicePowers   = [];
 md.noiseSlicePowers = [];

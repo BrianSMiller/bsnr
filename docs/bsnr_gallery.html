@@ -6,7 +6,7 @@
    <!--
 This HTML was auto-generated from MATLAB code.
 To make changes, update the MATLAB code and republish this document.
-      --><title>bsnr_gallery</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-27"><meta name="DC.source" content="bsnr_gallery.m"><style type="text/css">
+      --><title>bsnr_gallery</title><meta name="generator" content="MATLAB 9.12"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2026-04-29"><meta name="DC.source" content="bsnr_gallery.m"><style type="text/css">
 html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
 
 html { min-height:100%; margin-bottom:1px; }
@@ -69,7 +69,7 @@ table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px soli
 
   </style>
 <link rel="stylesheet" href="bsnr.css">
-</head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">bsnr Gallery</a></li><li><a href="#2">Path setup</a></li><li><a href="#3">PART 1 &#8212; Synthetic fixtures: concepts and comparisons</a></li><li><a href="#4">1. Noise window strategies</a></li><li><a href="#5">2. Lurton formula vs simple power ratio</a></li><li><a href="#6">3. Calibrated acoustic levels</a></li><li><a href="#7">4. Click removal</a></li><li><a href="#8">5. Duty cycle and mean-power SNR</a></li><li><a href="#9">6. Distribution-based methods &#8212; quantiles and NIST</a></li><li><a href="#10">6a. Quantiles</a></li><li><a href="#11">6b. NIST histogram</a></li><li><a href="#12">7. Ridge and synchrosqueeze &#8212; FM signal</a></li><li><a href="#13">8. Annotation trimming</a></li><li><a href="#14">PART 2 &#8212; Real recordings: functional demos</a></li><li><a href="#15">8b. Annotation trimming &#8212; real ABW D-call</a></li><li><a href="#16">9a. Tonal calls &#8212; ABW A, B, Z</a></li><li><a href="#17">9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</a></li><li><a href="#18">10. Method comparison &#8212; SNR heatmap</a></li><li><a href="#19">11. Tethys round-trip &#8212; read, estimate, write</a></li><li><a href="#21">Step 1: Show a snippet of the input XML</a></li><li><a href="#22">Step 2: Read and display parsed annotation</a></li><li><a href="#23">Step 3: Remap to bundled clip and estimate SNR</a></li><li><a href="#24">Step 4: Write enriched results and show output XML snippet</a></li><li><a href="#26">Local helpers</a></li></ul></div><h2 id="1">bsnr Gallery</h2><p>Illustrated reference for the bsnr SNR estimation toolbox.</p><p><b>Part 1</b> illustrates each method on synthetic signals, with every section self-contained: signal generation, SNR estimation, and display in one block. Synthetic signals allow controlled comparison across methods at known SNR.</p><p><b>Part 2</b> demonstrates each method on real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021), with spectrogram parameters matched to the published figures.</p><p>Audio clips (CC-BY 4.0, included in <tt>examples/audio/</tt>): Miller et al. (2021). doi:10.26179/5e6056035c01b</p><p><b>To publish to HTML:</b></p><pre class="language-matlab">cd <span class="string">C:\analysis\bsnr\examples</span>
+</head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#1">bsnr Gallery</a></li><li><a href="#2">Path setup</a></li><li><a href="#3">PART 1 &#8212; Synthetic fixtures: concepts and comparisons</a></li><li><a href="#4">1. Noise window strategies</a></li><li><a href="#5">2. Lurton formula vs simple power ratio</a></li><li><a href="#6">3. Calibrated acoustic levels</a></li><li><a href="#7">4. Click removal</a></li><li><a href="#8">5. Duty cycle and mean-power SNR</a></li><li><a href="#9">6. Distribution-based methods &#8212; quantiles and NIST</a></li><li><a href="#10">6a. Quantiles</a></li><li><a href="#11">6b. NIST histogram</a></li><li><a href="#12">7. Ridge and synchrosqueeze &#8212; FM signal</a></li><li><a href="#13">7b. Ridge smoothing &#8212; when it helps and when it does not</a></li><li><a href="#14">PART 2 &#8212; Real recordings: functional demos</a></li><li><a href="#15">8b. Annotation trimming &#8212; real ABW D-call</a></li><li><a href="#16">9a. Tonal calls &#8212; ABW A, B, Z</a></li><li><a href="#17">9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</a></li><li><a href="#18">10. Method comparison &#8212; SNR heatmap</a></li><li><a href="#19">11. Tethys round-trip &#8212; read, estimate, write</a></li><li><a href="#21">Step 1: Show a snippet of the input XML</a></li><li><a href="#22">Step 2: Read and display parsed annotation</a></li><li><a href="#23">Step 3: Remap to bundled clip and estimate SNR</a></li><li><a href="#24">Step 4: Write enriched results and show output XML snippet</a></li><li><a href="#26">Local helpers</a></li></ul></div><h2 id="1">bsnr Gallery</h2><p>Illustrated reference for the bsnr SNR estimation toolbox.</p><p><b>Part 1</b> illustrates each method on synthetic signals, with every section self-contained: signal generation, SNR estimation, and display in one block. Synthetic signals allow controlled comparison across methods at known SNR.</p><p><b>Part 2</b> demonstrates each method on real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021), with spectrogram parameters matched to the published figures.</p><p>Audio clips (CC-BY 4.0, included in <tt>examples/audio/</tt>): Miller et al. (2021). doi:10.26179/5e6056035c01b</p><p><b>To publish to HTML:</b></p><pre class="language-matlab">cd <span class="string">C:\analysis\bsnr\examples</span>
 publishDocs
 </pre><pre class="codeinput">close <span class="string">all</span>;
 galleryDir = fileparts(mfilename(<span class="string">'fullpath'</span>));
@@ -376,8 +376,70 @@ snrSSQVal   = runAndTitle(annotSRW, makeParams(<span class="string">'synchrosque
 fprintf(<span class="string">'  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin; ~10*log10(nBins) above band average)\n'</span>, <span class="keyword">...</span>
     snrRidgeVal, snrSSQVal);
 cleanupSRW();
-</pre><pre class="codeoutput">  ridge=27.6 dB  synchrosqueeze=31.9 dB  (per-bin; ~10*log10(nBins) above band average)
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_08.png" alt=""> <h2 id="13">8. Annotation trimming</h2><p>Analysts often draw annotation boxes with generous time and frequency buffers. <tt>trimAnnotation</tt> removes these margins by trimming to the central 95% of in-band spectral energy, tightening both time and frequency bounds before SNR estimation.</p><p>This section uses a synthetic 200 Hz tone with 1.5s silence on each side and a frequency box wider than the signal band. The trim diagnostic shows the spectrogram with original (blue dashed) and trimmed (red) bounds, plus the per-slice and per-bin energy profiles.</p><pre class="codeinput">[annotTone8, cleanup8] = createTestFixture( <span class="keyword">...</span>
+</pre><pre class="codeoutput">  ridge=27.6 dB  synchrosqueeze=31.6 dB  (per-bin; ~10*log10(nBins) above band average)
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_08.png" alt=""> <h2 id="13">7b. Ridge smoothing &#8212; when it helps and when it does not</h2><p>LOESS smoothing of the instantaneous frequency ridge reduces noise-driven wandering when annotation bounds are tight. With loose bounds (typical of analyst annotations), the energy-trim heuristic may select noise-dominated slices and the smooth fits the noise floor rather than the signal.</p><p>RECOMMENDED WORKFLOW   annotTrimmed = trimAnnotation(annots);   p.ridgeParams.ridgeSmoothSpan = 0.3;   result = snrEstimate(annotTrimmed, p);</p><p>The default is ridgeSmoothSpan=0 (raw ridge) for safety. Enable smoothing only after verifying annotation bounds are tight for your dataset.</p><p>This section shows the same SRW upcall with:   col 1 &#8212; loose annotation (3x signal duration), no smoothing   col 2 &#8212; loose annotation, smoothing enabled   col 3 &#8212; tight annotation (trimAnnotation applied), smoothing enabled</p><p>The analytic instantaneous frequency f(t) = 80 + 118t^2 Hz is shown as a dotted line for reference.</p><pre class="codeinput">srwSR4  = 1000;  srwFB4 = [75 210];  srwDur4 = 1.0;
+nfft4   = 64;    nOvlp4 = floor(nfft4 * 0.75);
+
+[srwSig4, ~] = makeSRWUpcall(srwSR4, 0.3);
+rng(14);
+wbRMS4   = 0.3 * sqrt(srwSR4/2 / 135);
+buf4     = wbRMS4 * randn(round(3 * srwSR4), 1);
+full4    = [buf4; srwSig4; buf4];
+full4    = full4 * (0.9 / max(abs(full4)));
+
+<span class="comment">% Loose annotation &#8212; 3s buffer each side</span>
+[annotLoose, cleanupLoose] = audioToFixture(full4, srwSR4, srwFB4, srwDur4, <span class="keyword">...</span>
+    <span class="string">'SRW upcall &#8212; loose bounds'</span>, 3);
+
+<span class="comment">% Tight annotation &#8212; same audio, trimmed</span>
+annotTight = trimAnnotation(annotLoose, <span class="string">'freq'</span>, srwFB4);
+
+fig7b = figure(<span class="string">'Name'</span>, <span class="string">'7b. Ridge smoothing &#8212; tight vs loose bounds'</span>, <span class="keyword">...</span>
+    <span class="string">'Units'</span>, <span class="string">'pixels'</span>, <span class="string">'Position'</span>, [50 50 900 320]);
+tlo7b = tiledlayout(fig7b, 1, 3, <span class="string">'TileSpacing'</span>, <span class="string">'compact'</span>, <span class="string">'Padding'</span>, <span class="string">'compact'</span>);
+title(tlo7b, <span class="string">'7b. Ridge smoothing: loose bounds vs tight bounds (after trimAnnotation)'</span>, <span class="keyword">...</span>
+    <span class="string">'FontWeight'</span>, <span class="string">'bold'</span>);
+
+<span class="comment">% Col 1: loose, no smoothing (default)</span>
+nexttile(tlo7b);
+pLooseRaw = struct(<span class="string">'snrType'</span>, <span class="string">'ridge'</span>, <span class="string">'nfft'</span>, nfft4, <span class="keyword">...</span>
+    <span class="string">'showClips'</span>, true, <span class="string">'pauseAfterPlot'</span>, false);
+snrEstimate(annotLoose, pLooseRaw);
+title(gca, <span class="string">'Loose bounds | raw ridge (default)'</span>, <span class="string">'FontSize'</span>, 8);
+
+<span class="comment">% Col 2: loose, smoothing on &#8212; shows failure mode</span>
+nexttile(tlo7b);
+pLooseSmooth = struct(<span class="string">'snrType'</span>, <span class="string">'ridge'</span>, <span class="string">'nfft'</span>, nfft4, <span class="keyword">...</span>
+    <span class="string">'showClips'</span>, true, <span class="string">'pauseAfterPlot'</span>, false, <span class="keyword">...</span>
+    <span class="string">'ridgeParams'</span>, struct(<span class="string">'ridgeSmoothSpan'</span>, 0.3));
+snrEstimate(annotLoose, pLooseSmooth);
+title(gca, <span class="string">'Loose bounds | smoothed (may fit noise)'</span>, <span class="string">'FontSize'</span>, 8);
+
+<span class="comment">% Col 3: tight (trimmed), smoothing on &#8212; recommended workflow</span>
+nexttile(tlo7b);
+pTightSmooth = struct(<span class="string">'snrType'</span>, <span class="string">'ridge'</span>, <span class="string">'nfft'</span>, nfft4, <span class="keyword">...</span>
+    <span class="string">'showClips'</span>, true, <span class="string">'pauseAfterPlot'</span>, false, <span class="keyword">...</span>
+    <span class="string">'ridgeParams'</span>, struct(<span class="string">'ridgeSmoothSpan'</span>, 0.3));
+snrEstimate(annotTight, pTightSmooth);
+title(gca, <span class="string">'Tight bounds (trimmed) | smoothed'</span>, <span class="string">'FontSize'</span>, 8);
+
+cleanupLoose();
+fprintf(<span class="string">'  [PASS] Section 7b complete\n\n'</span>);
+
+
+
+
+<span class="comment">% Analysts often draw annotation boxes with generous time and frequency</span>
+<span class="comment">% buffers. |trimAnnotation| removes these margins by trimming to the</span>
+<span class="comment">% central 95% of in-band spectral energy, tightening both time and</span>
+<span class="comment">% frequency bounds before SNR estimation.</span>
+<span class="comment">%</span>
+<span class="comment">% This section uses a synthetic 200 Hz tone with 1.5s silence on each</span>
+<span class="comment">% side and a frequency box wider than the signal band. The trim diagnostic</span>
+<span class="comment">% shows the spectrogram with original (blue dashed) and trimmed (red)</span>
+<span class="comment">% bounds, plus the per-slice and per-bin energy profiles.</span>
+
+[annotTone8, cleanup8] = createTestFixture( <span class="keyword">...</span>
     <span class="string">'signalRMS'</span>, 1.0, <span class="string">'noiseRMS'</span>, 0.1, <span class="keyword">...</span>
     <span class="string">'toneFreqHz'</span>, 200, <span class="string">'freq'</span>, [150 250], <span class="string">'durationSec'</span>, 7);
 
@@ -404,11 +466,13 @@ snrAfter8  = snrEstimate(annotTrimmed8, p8).snr(1);
 fprintf(<span class="string">'  SNR before trim: %.1f dB\n'</span>, snrBefore8);
 fprintf(<span class="string">'  SNR after trim:  %.1f dB\n'</span>, snrAfter8);
 cleanup8();
-</pre><pre class="codeoutput">  Original: 8.50 s  [100 300] Hz
+</pre><pre class="codeoutput">  [PASS] Section 7b complete
+
+  Original: 8.50 s  [100 300] Hz
   Trimmed:  6.71 s  [197 201] Hz
   SNR before trim: 13.4 dB
   SNR after trim:  29.6 dB
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_09.png" alt=""> <h2 id="14">PART 2 &#8212; Real recordings: functional demos</h2><p>Part 2 applies all seven methods to real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips were extracted from DIFAR sonobuoy recordings made near Kerguelen Island by the Australian Antarctic Division.</p><p>Spectrogram parameters are matched to the published figures in Miller et al. (2021) for each call type. The ABW A call band [24&#8211;28 Hz] is too narrow for reliable ridge tracking, so those methods return NaN for that call type and the cells are blank in the comparison heatmap.</p><p>Call types covered:</p><div><ul><li><b>ABW A</b> &#8212; Antarctic blue whale (Bm) A-call: 10 s tonal, [24&#8211;28 Hz]</li><li><b>ABW B</b> &#8212; Bm B-call: 12 s tonal, [20&#8211;28 Hz]</li><li><b>ABW Z</b> &#8212; Bm Z-call: 21 s tonal, [17&#8211;28 Hz]</li><li><b>ABW D</b> &#8212; Bm D-call: 4 s FM downsweep, [44&#8211;72 Hz]</li><li><b>Fin 40Hz</b> &#8212; Fin whale 40 Hz call: 2 s pulsed, [32&#8211;61 Hz]</li><li><b>Fin 20Hz</b> &#8212; Fin whale 20 Hz call: 4 s tonal, [15&#8211;35 Hz]</li></ul></div><pre class="codeinput">callTypes = {
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_09.png" alt=""> <img vspace="5" hspace="5" src="bsnr_gallery_10.png" alt=""> <h2 id="14">PART 2 &#8212; Real recordings: functional demos</h2><p>Part 2 applies all seven methods to real Antarctic baleen whale recordings from the IWC-SORP Annotated Library (Miller et al. 2021). The audio clips were extracted from DIFAR sonobuoy recordings made near Kerguelen Island by the Australian Antarctic Division.</p><p>Spectrogram parameters are matched to the published figures in Miller et al. (2021) for each call type. The ABW A call band [24&#8211;28 Hz] is too narrow for reliable ridge tracking, so those methods return NaN for that call type and the cells are blank in the comparison heatmap.</p><p>Call types covered:</p><div><ul><li><b>ABW A</b> &#8212; Antarctic blue whale (Bm) A-call: 10 s tonal, [24&#8211;28 Hz]</li><li><b>ABW B</b> &#8212; Bm B-call: 12 s tonal, [20&#8211;28 Hz]</li><li><b>ABW Z</b> &#8212; Bm Z-call: 21 s tonal, [17&#8211;28 Hz]</li><li><b>ABW D</b> &#8212; Bm D-call: 4 s FM downsweep, [44&#8211;72 Hz]</li><li><b>Fin 40Hz</b> &#8212; Fin whale 40 Hz call: 2 s pulsed, [32&#8211;61 Hz]</li><li><b>Fin 20Hz</b> &#8212; Fin whale 20 Hz call: 4 s tonal, [15&#8211;35 Hz]</li></ul></div><pre class="codeinput">callTypes = {
   <span class="string">'ABW A'</span>    <span class="string">'abw_a'</span>  10   10   [24  28]
   <span class="string">'ABW B'</span>    <span class="string">'abw_b'</span>  13   12   [20  28]
   <span class="string">'ABW Z'</span>    <span class="string">'abw_z'</span>  17   21   [17  28]
@@ -490,15 +554,15 @@ snrByMethod = nan(nMethods, nCallTypes);
   Trimmed:  2.67 s  [43 66] Hz
   SNR before trim: -0.5 dB
   SNR after trim:  5.3 dB
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_10.png" alt=""> <h2 id="16">9a. Tonal calls &#8212; ABW A, B, Z</h2><p>Three Antarctic blue whale tonal calls covering a range of bandwidths and durations. The narrow [24&#8211;28 Hz] band of the A-call has fewer than 3 FFT bins at the nSlices-derived nfft, so <tt>ridge</tt> and <tt>synchrosqueeze</tt> return NaN for that call type.</p><pre class="codeinput">tonalIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW A'</span>, <span class="string">'ABW B'</span>, <span class="string">'ABW Z'</span>}) &amp; callAvailable);
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_11.png" alt=""> <h2 id="16">9a. Tonal calls &#8212; ABW A, B, Z</h2><p>Three Antarctic blue whale tonal calls covering a range of bandwidths and durations. The narrow [24&#8211;28 Hz] band of the A-call has fewer than 3 FFT bins at the nSlices-derived nfft, so <tt>ridge</tt> and <tt>synchrosqueeze</tt> return NaN for that call type.</p><pre class="codeinput">tonalIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW A'</span>, <span class="string">'ABW B'</span>, <span class="string">'ABW Z'</span>}) &amp; callAvailable);
 snrByMethod = drawRealCallFigure(tonalIdx, callTypes, callAnnots, callSP, <span class="keyword">...</span>
     methodNames, snrByMethod, <span class="string">'9a. Tonal calls &#8212; ABW A, B, Z'</span>);
 </pre><pre class="codeoutput">Warning: Fewer than 3 FFT bins in [24.0 28.0] Hz &#8212; cannot track ridge. 
 Warning: Fewer than 3 frequency bins in [24.0 28.0] Hz. 
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_11.png" alt=""> <h2 id="17">9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</h2><p>A frequency-modulated downsweep (ABW D) and two call types from fin whales. These have wider bands, shorter durations, or pulsed structure, providing a contrast with the narrow tonal calls in 8a.</p><pre class="codeinput">fmIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW D'</span>, <span class="string">'Fin 40Hz'</span>, <span class="string">'Fin 20Hz'</span>}) &amp; callAvailable);
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_12.png" alt=""> <h2 id="17">9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz</h2><p>A frequency-modulated downsweep (ABW D) and two call types from fin whales. These have wider bands, shorter durations, or pulsed structure, providing a contrast with the narrow tonal calls in 8a.</p><pre class="codeinput">fmIdx = find(ismember(callTypes(:,1), {<span class="string">'ABW D'</span>, <span class="string">'Fin 40Hz'</span>, <span class="string">'Fin 20Hz'</span>}) &amp; callAvailable);
 snrByMethod = drawRealCallFigure(fmIdx, callTypes, callAnnots, callSP, <span class="keyword">...</span>
     methodNames, snrByMethod, <span class="string">'9b. FM and pulsed calls &#8212; ABW D, Fin 40Hz, Fin 20Hz'</span>);
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_12.png" alt=""> <h2 id="18">10. Method comparison &#8212; SNR heatmap</h2><p>SNR estimates (dB, simple power ratio) for all seven methods across all available call types. Ridge and synchrosqueeze report per-bin SNR and are not directly comparable to the band-average methods; they are included for completeness and shown in the same colour scale.</p><pre class="codeinput">colLabels = strrep(callTypes(availableIdx, 1)', <span class="string">' '</span>, <span class="string">'_'</span>);
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_13.png" alt=""> <h2 id="18">10. Method comparison &#8212; SNR heatmap</h2><p>SNR estimates (dB, simple power ratio) for all seven methods across all available call types. Ridge and synchrosqueeze report per-bin SNR and are not directly comparable to the band-average methods; they are included for completeness and shown in the same colour scale.</p><pre class="codeinput">colLabels = strrep(callTypes(availableIdx, 1)', <span class="string">' '</span>, <span class="string">'_'</span>);
 snrTable  = array2table(snrByMethod(:, availableIdx), <span class="keyword">...</span>
     <span class="string">'RowNames'</span>, methodNames, <span class="string">'VariableNames'</span>, colLabels);
 disp(snrTable);
@@ -534,7 +598,7 @@ fprintf(<span class="string">'Audio: Miller et al. (2021) doi:10.26179/5e6056035
     spectrogram          6.5481    6.1112    9.7403    5.2091     6.2017      9.0338 
     spectrogramSlices    4.4271     5.419    9.2957    4.4495      2.963      8.4065 
     ridge                   NaN    10.783      17.1    10.672     9.1694      14.111 
-    synchrosqueeze          NaN    14.513    20.925    13.591     12.002      16.795 
+    synchrosqueeze          NaN    12.958    19.253    12.048     11.422      15.716 
     quantiles            6.0787    11.888    14.668     11.26     16.125      20.778 
     nist                     27        28     14.75        25         28        33.5 
     timeDomain           7.1853    6.0153    10.091    5.3919     6.2496       7.865 
@@ -542,7 +606,7 @@ fprintf(<span class="string">'Audio: Miller et al. (2021) doi:10.26179/5e6056035
 
 === gallery complete ===
 Audio: Miller et al. (2021) doi:10.26179/5e6056035c01b
-</pre><img vspace="5" hspace="5" src="bsnr_gallery_13.png" alt=""> <h2 id="19">11. Tethys round-trip &#8212; read, estimate, write</h2><p>Demonstrates the full workflow: reading detections from a Tethys XML file, estimating SNR, and writing enriched results back as Tethys-compatible XML.</p><p>The bundled tethys_example.xml contains 5 Antarctic blue whale Z-call detections in Tethys 3.x Detections format (Casey Station 2019). In a real workflow, replace this file with your own Tethys export or a document from a Tethys server query.</p><pre class="codeinput">fprintf(<span class="string">'\n--- Section 11: Tethys round-trip ---\n'</span>);
+</pre><img vspace="5" hspace="5" src="bsnr_gallery_14.png" alt=""> <h2 id="19">11. Tethys round-trip &#8212; read, estimate, write</h2><p>Demonstrates the full workflow: reading detections from a Tethys XML file, estimating SNR, and writing enriched results back as Tethys-compatible XML.</p><p>The bundled tethys_example.xml contains 5 Antarctic blue whale Z-call detections in Tethys 3.x Detections format (Casey Station 2019). In a real workflow, replace this file with your own Tethys export or a document from a Tethys server query.</p><pre class="codeinput">fprintf(<span class="string">'\n--- Section 11: Tethys round-trip ---\n'</span>);
 
 tethysXml  = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="string">'tethys_example.xml'</span>);
 audioDir   = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="string">'audio'</span>, <span class="string">'abw_z'</span>);
@@ -1246,7 +1310,80 @@ fprintf('  ridge=%.1f dB  synchrosqueeze=%.1f dB  (per-bin; ~10*log10(nBins) abo
     snrRidgeVal, snrSSQVal);
 cleanupSRW();
 
-%% 8. Annotation trimming
+%% 7b. Ridge smoothing — when it helps and when it does not
+% LOESS smoothing of the instantaneous frequency ridge reduces noise-driven
+% wandering when annotation bounds are tight. With loose bounds (typical of
+% analyst annotations), the energy-trim heuristic may select noise-dominated
+% slices and the smooth fits the noise floor rather than the signal.
+%
+% RECOMMENDED WORKFLOW
+%   annotTrimmed = trimAnnotation(annots);
+%   p.ridgeParams.ridgeSmoothSpan = 0.3;
+%   result = snrEstimate(annotTrimmed, p);
+%
+% The default is ridgeSmoothSpan=0 (raw ridge) for safety. Enable smoothing
+% only after verifying annotation bounds are tight for your dataset.
+%
+% This section shows the same SRW upcall with:
+%   col 1 — loose annotation (3x signal duration), no smoothing
+%   col 2 — loose annotation, smoothing enabled
+%   col 3 — tight annotation (trimAnnotation applied), smoothing enabled
+%
+% The analytic instantaneous frequency f(t) = 80 + 118t^2 Hz is shown
+% as a dotted line for reference.
+
+srwSR4  = 1000;  srwFB4 = [75 210];  srwDur4 = 1.0;
+nfft4   = 64;    nOvlp4 = floor(nfft4 * 0.75);
+
+[srwSig4, ~] = makeSRWUpcall(srwSR4, 0.3);
+rng(14);
+wbRMS4   = 0.3 * sqrt(srwSR4/2 / 135);
+buf4     = wbRMS4 * randn(round(3 * srwSR4), 1);
+full4    = [buf4; srwSig4; buf4];
+full4    = full4 * (0.9 / max(abs(full4)));
+
+% Loose annotation — 3s buffer each side
+[annotLoose, cleanupLoose] = audioToFixture(full4, srwSR4, srwFB4, srwDur4, ...
+    'SRW upcall — loose bounds', 3);
+
+% Tight annotation — same audio, trimmed
+annotTight = trimAnnotation(annotLoose, 'freq', srwFB4);
+
+fig7b = figure('Name', '7b. Ridge smoothing — tight vs loose bounds', ...
+    'Units', 'pixels', 'Position', [50 50 900 320]);
+tlo7b = tiledlayout(fig7b, 1, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+title(tlo7b, '7b. Ridge smoothing: loose bounds vs tight bounds (after trimAnnotation)', ...
+    'FontWeight', 'bold');
+
+% Col 1: loose, no smoothing (default)
+nexttile(tlo7b);
+pLooseRaw = struct('snrType', 'ridge', 'nfft', nfft4, ...
+    'showClips', true, 'pauseAfterPlot', false);
+snrEstimate(annotLoose, pLooseRaw);
+title(gca, 'Loose bounds | raw ridge (default)', 'FontSize', 8);
+
+% Col 2: loose, smoothing on — shows failure mode
+nexttile(tlo7b);
+pLooseSmooth = struct('snrType', 'ridge', 'nfft', nfft4, ...
+    'showClips', true, 'pauseAfterPlot', false, ...
+    'ridgeParams', struct('ridgeSmoothSpan', 0.3));
+snrEstimate(annotLoose, pLooseSmooth);
+title(gca, 'Loose bounds | smoothed (may fit noise)', 'FontSize', 8);
+
+% Col 3: tight (trimmed), smoothing on — recommended workflow
+nexttile(tlo7b);
+pTightSmooth = struct('snrType', 'ridge', 'nfft', nfft4, ...
+    'showClips', true, 'pauseAfterPlot', false, ...
+    'ridgeParams', struct('ridgeSmoothSpan', 0.3));
+snrEstimate(annotTight, pTightSmooth);
+title(gca, 'Tight bounds (trimmed) | smoothed', 'FontSize', 8);
+
+cleanupLoose();
+fprintf('  [PASS] Section 7b complete\n\n');
+
+
+
+
 % Analysts often draw annotation boxes with generous time and frequency
 % buffers. |trimAnnotation| removes these margins by trimming to the
 % central 95% of in-band spectral energy, tightening both time and

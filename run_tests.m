@@ -92,6 +92,7 @@ if isempty(reply), reply = 'n'; end
 verbose = strcmpi(strtrim(reply), 'y');
 fprintf('Verbose output %s.\n\n', onOff(verbose));
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Run tests
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -108,7 +109,7 @@ if runPlots
     [passed(8), elapsed(8)] = runOne('test_snrEstimate_batch', verbose, @() test_snrEstimate_batch(runParallel));
     [passed(9), elapsed(9)] = runOne('test_snrEstimate_noiseWindows', verbose, @() test_snrEstimate_noiseWindows());
     [passed(10), elapsed(10)] = runOne('test_snrEstimate_outputs', verbose, @() test_snrEstimate_outputs());
-    [passed(11), elapsed(11)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation());
+    [passed(11), elapsed(11)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation(runParallel));
 [passed(12), elapsed(12)] = runOne('test_tethys',         verbose, @() test_tethys());
 if runParallel
     [passed(13), elapsed(13)] = runOne('test_parallel_performance', verbose, @() test_parallel_performance());
@@ -121,7 +122,7 @@ else
     [passed(7), elapsed(7)] = runOne('test_snrEstimate_batch', verbose, @() test_snrEstimate_batch(runParallel));
     [passed(8), elapsed(8)] = runOne('test_snrEstimate_noiseWindows', verbose, @() test_snrEstimate_noiseWindows());
     [passed(9), elapsed(9)] = runOne('test_snrEstimate_outputs', verbose, @() test_snrEstimate_outputs());
-    [passed(10), elapsed(10)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation());
+    [passed(10), elapsed(10)] = runOne('test_trimAnnotation', verbose, @() test_trimAnnotation(runParallel));
     nTests = 10;
 end
 

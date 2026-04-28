@@ -100,14 +100,12 @@ end
 nAnnot = numel(annotStruct);
 
 % Parallel processing — same threshold logic as snrEstimate
-% Use parallel if above threshold, or if a pool is already running
-useParfor = nAnnot >= params.parallelThreshold || ...
-    (~isempty(ver('parallel')) && ~isempty(gcp('nocreate')));
-if useParfor && params.showPlot
-    warning('trimAnnotation:noParallelPlots', ...
-        'showPlot is not supported in parallel mode and has been disabled.');
-    params.showPlot = false;
-end
+% Use parfor if batch >= parallelThreshold (starts pool if needed)
+% or if a pool is already running (always use it, no downside).
+% plotFlag (showPlot) forces serial — plots require the main thread.
+hasParallel = ~isempty(ver('parallel'));
+useParfor   = ~params.showPlot && hasParallel && ...
+    (nAnnot >= params.parallelThreshold || ~isempty(gcp('nocreate')));
 if useParfor && isempty(gcp('nocreate'))
     parpool('Processes', max(1, feature('numcores') - 1));
 end

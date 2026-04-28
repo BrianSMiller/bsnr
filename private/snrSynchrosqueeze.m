@@ -40,8 +40,17 @@ function [rmsSignal, rmsNoise, noiseVar, methodData] = snrSynchrosqueeze( ...
 %   metadata    Calibration metadata struct, or [] for no calibration
 %   params      Optional struct of method-specific parameters:
 %                 .ridgePenalty  tfridge frequency-jump penalty (default 1)
-%                 .guardBins     Bins either side of ridge excluded from
-%                                noise estimate (default 2)
+%                 .guardBins        Bins either side of ridge excluded from
+%                                   noise estimate (default 2)
+%                 .ridgeSmoothSpan  LOESS span for ridge smoothing as fraction
+%                                   of slices (default 0). Set > 0 to enable.
+%                                   Only effective when annotation bounds are
+%                                   tight (e.g. after trimAnnotation). With
+%                                   loose bounds, smoothing may fit noise rather
+%                                   than the signal and degrade results.
+%                 .ridgeTrimPct     Fraction of lowest-energy slices to exclude
+%                                   before smoothing (default 0.25). Only used
+%                                   when ridgeSmoothSpan > 0.
 %
 % OUTPUTS
 %   rmsSignal   Mean power at the ridge across time slices (linear)
@@ -62,6 +71,12 @@ if ~isfield(params, 'ridgePenalty') || isempty(params.ridgePenalty)
 end
 if ~isfield(params, 'guardBins') || isempty(params.guardBins)
     params.guardBins = 2;
+end
+if ~isfield(params, 'ridgeSmoothSpan') || isempty(params.ridgeSmoothSpan)
+    params.ridgeSmoothSpan = 0.3;
+end
+if ~isfield(params, 'ridgeTrimPct') || isempty(params.ridgeTrimPct)
+    params.ridgeTrimPct = 0.25;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -134,14 +149,47 @@ ridgeBinIdx  = max(1, min(nBins, round(ridgeVals(:))));
 ridgeFreq    = fBand(ridgeBinIdx);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% LOESS smoothing of ridge track
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+nSlices = length(sT);
+
+% Raw signal power at each ridge bin for energy trim
+sigSliceRaw = arrayfun(@(i) sigBand(ridgeBinIdx(i), i), (1:nSlices)');
+
+ridgeFreqSmooth = ridgeFreq;
+ridgeCoreIdx    = true(nSlices, 1);
+
+if params.ridgeSmoothSpan > 0 && nSlices >= 5
+    trimThresh = prctile(sigSliceRaw, params.ridgeTrimPct * 100);
+    coreIdx    = find(sigSliceRaw >= trimThresh);
+    if numel(coreIdx) >= 4
+        ridgeCoreIdx(:)       = false;
+        ridgeCoreIdx(coreIdx) = true;
+        try
+            ridgeSmoothed   = smooth(coreIdx, ridgeFreq(coreIdx), ...
+                params.ridgeSmoothSpan, 'loess');
+            ridgeFreqSmooth = interp1(coreIdx, ridgeSmoothed, ...
+                (1:nSlices)', 'linear', 'extrap');
+            ridgeFreqSmooth = max(freq(1), min(freq(2), ridgeFreqSmooth));
+        catch
+            winLen = max(3, round(params.ridgeSmoothSpan * nSlices));
+            ridgeFreqSmooth = movmean(ridgeFreq, winLen, 'omitnan');
+        end
+    end
+end
+
+% Convert smoothed frequencies to bin indices
+ridgeBinIdxSmooth = arrayfun(@(f) ...
+    max(1, min(nBand, round(interp1(fBand, 1:numel(fBand), f, 'linear', 'extrap')))), ...
+    ridgeFreqSmooth);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Per-slice signal and noise power
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% For the signal: measure power at the ridge bin per time slice.
+% For the signal: measure power at the smoothed ridge bin per time slice.
 % For the noise: use a single per-bin mean across all noise slices.
-% This is more robust than per-slice noise matching when noise audio
-% has been spliced (exclusion zone removed) and may have a different
-% number of slices than the signal audio.
 nSlices  = length(sT);
 sigSlice = nan(nSlices, 1);
 
@@ -153,7 +201,7 @@ noiseSlice = nan(nSlices, 1);
 noiseVarSlice = nan(nSlices, 1);
 
 for i = 1:nSlices
-    rb = ridgeBinIdx(i);
+    rb = ridgeBinIdxSmooth(i);   % smoothed ridge
     sigSlice(i) = sigBand(rb, i);
 
     guardLo = max(1,     rb - params.guardBins);
@@ -172,6 +220,8 @@ noiseVar   = mean(noiseVarSlice, 'omitnan');
 
 methodData.method           = 'synchrosqueeze';
 methodData.ridgeFreq        = ridgeFreq;
+methodData.ridgeFreqSmooth  = ridgeFreqSmooth;
+methodData.ridgeCoreIdx     = ridgeCoreIdx;
 methodData.sliceSnrdB       = 10 * log10(sigSlice ./ noiseSlice);
 methodData.sigSlicePowers   = sigSlice;
 methodData.noiseSlicePowers = noiseSlice;
@@ -181,6 +231,8 @@ end
 function md = emptyRidgeData(method)
 md.method           = method;
 md.ridgeFreq        = nan(1);
+md.ridgeFreqSmooth  = nan(1);
+md.ridgeCoreIdx     = false(1);
 md.sliceSnrdB       = nan(1);
 md.sigSlicePowers   = [];
 md.noiseSlicePowers = [];

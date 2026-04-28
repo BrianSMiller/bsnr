@@ -249,14 +249,14 @@ text(tOffset(noise.t0), yMin, noiseStr, ...
     'color', [0.5 0 0], 'FontSize', 7, 'verticalAlignment', 'bottom', ...
     'horizontalAlignment', 'left', 'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);
 
-% Ridge overlay (cyan) — only present for snrType='ridge' or 'synchrosqueeze'
+% Ridge overlay — only present for snrType='ridge' or 'synchrosqueeze'
+% ridgeFreq = smoothed ridge (default, solid cyan)
 if isfield(plotParams, 'ridgeFreq') && ~isempty(plotParams.ridgeFreq)
     nRidge = length(plotParams.ridgeFreq);
     tRidge = linspace(tOffset(detection.t0), tOffset(detection.tEnd), nRidge);
     line(tRidge, plotParams.ridgeFreq(:)', 'color', 'c', 'linewidth', 1.5);
-    % Place label just below the annotation band (below freq(1)) so it does
-    % not overlap the green/red signal-window boundary lines.
-    labelOffset = (freq(2) - freq(1)) * 0.15;   % 15% of band width below band
+    % Place label just below the annotation band
+    labelOffset = (freq(2) - freq(1)) * 0.15;
     text(tOffset(detection.t0), freq(1) - labelOffset, 'Ridge', ...
         'color', 'c', 'FontSize', 7, 'verticalAlignment', 'top', ...
         'BackgroundColor', 'w', 'EdgeColor', 'none', 'Margin', 1);

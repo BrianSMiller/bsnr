@@ -1,4 +1,7 @@
-function test_trimAnnotation()
+function test_trimAnnotation(runParallel)
+% Tests for trimAnnotation.m
+
+if nargin < 1, runParallel = false; end
 % Tests for trimAnnotation.m
 %
 % Tests:
@@ -140,6 +143,36 @@ assert(all(isfinite(resAfter.snr)), 'SNR after trim should be finite');
 assert(mean(resAfter.snr) > 0, ...
     sprintf('Mean SNR after trim should be positive, got %.1f dB', mean(resAfter.snr)));
 fprintf('  [PASS] SNR after trim = %.1f dB\n', mean(resAfter.snr));
+
+%% (9) Parallel trim matches serial trim results
+
+fprintf('--- (9) Parallel trim matches serial results ---\n');
+
+if ~runParallel
+    fprintf('  [SKIP] parallel test (runParallel=false)\n');
+else
+    nParTest   = 12;
+    annotBatch = repmat(annotWide, nParTest, 1);
+
+    % Serial path: threshold above nParTest
+    trimSerial   = trimAnnotation(annotBatch, 'freq', freq, ...
+        'parallelThreshold', nParTest+1);
+    % Parallel path: threshold below nParTest, uses existing pool
+    trimParallel = trimAnnotation(annotBatch, 'freq', freq, ...
+        'parallelThreshold', nParTest-1);
+
+    assert(numel(trimSerial)   == nParTest, 'serial: wrong output size');
+    assert(numel(trimParallel) == nParTest, 'parallel: wrong output size');
+
+    maxDt0   = max(abs([trimSerial.t0]   - [trimParallel.t0]))   * 86400;
+    maxDtEnd = max(abs([trimSerial.tEnd] - [trimParallel.tEnd])) * 86400;
+    assert(maxDt0  < 1e-6, sprintf('parallel t0 mismatch: %.2e s', maxDt0));
+    assert(maxDtEnd < 1e-6, sprintf('parallel tEnd mismatch: %.2e s', maxDtEnd));
+    assert(isequal([trimSerial.trimApplied], [trimParallel.trimApplied]), ...
+        'parallel trimApplied mismatch');
+    fprintf('  [PASS] parallel matches serial (max t0 diff = %.2e s, %d/%d trimmed)\n', ...
+        maxDt0, sum([trimParallel.trimApplied]), nParTest);
+end
 
 fprintf('\n=== test_trimAnnotation PASSED ===\n');
 end

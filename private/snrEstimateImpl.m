@@ -220,10 +220,15 @@ function [snr, rmsSignal, rmsNoise, noiseVar, fileInfo] = ...
     processBatch(annot, params)
 
 nDet      = numel(annot);
-% Use parallel if above threshold, or if a pool is already running
-% (no point leaving idle workers unused).
-useParfor = nDet >= params.parallelThreshold || ...
-    (~isempty(ver('parallel')) && ~isempty(gcp('nocreate')));
+% Use parfor if batch >= parallelThreshold (starts pool if needed)
+% or if a pool is already running (always use it, no downside).
+% plotFlag (showClips) forces serial — plots require the main thread.
+hasParallel = ~isempty(ver('parallel'));
+useParfor   = ~params.showClips && hasParallel && ...
+    (nDet >= params.parallelThreshold || ~isempty(gcp('nocreate')));
+if useParfor && isempty(gcp('nocreate'))
+    parpool('Processes', max(1, feature('numcores') - 1));
+end
 
 %--------------------------------------------------------------------------
 % Resolve nfft/nOverlap at the batch level before any processing begins.
@@ -279,11 +284,7 @@ if isempty(params.nfft)
     params.nOverlap = nOverlapBatch;
 end
 
-if useParfor && params.showClips
-    warning('snrEstimate:noParallelPlots', ...
-        'showClips is not supported in parallel mode and has been disabled.');
-    params.showClips = false;
-elseif params.showClips && nDet > 1 && ~params.pauseAfterPlot
+if useParfor && params.showClips && nDet > 1 && ~params.pauseAfterPlot
     warning('snrEstimate:plotsClobbered', ...
         ['showClips=true with %d annotations and pauseAfterPlot=false: ' ...
          'plots will be overwritten without a chance to inspect them. ' ...
@@ -624,7 +625,9 @@ if params.showClips
     switch displayType
         case 'spectrogram'
             plotParams.snrType = params.snrType;
-            if isfield(methodData,'ridgeFreq') && ~isempty(methodData.ridgeFreq)
+            if isfield(methodData,'ridgeFreqSmooth') && ~isempty(methodData.ridgeFreqSmooth)
+                plotParams.ridgeFreq = methodData.ridgeFreqSmooth;  % smoothed = default
+            elseif isfield(methodData,'ridgeFreq') && ~isempty(methodData.ridgeFreq)
                 plotParams.ridgeFreq = methodData.ridgeFreq; end
             if params.useLurton,       plotParams.noiseVar        = noiseVar;        end
             if isfield(methodData,'q85thresh') && ~isempty(methodData.q85thresh)
