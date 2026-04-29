@@ -218,8 +218,26 @@ for s = 1:nCols
     title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
     fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
 end
-fprintf('  [PASS] Figure 4 complete
-');
+fprintf('  [PASS] Figure 4 complete\n');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Figure 5: synchrosqueeze
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+fprintf('--- Figure 5: synchrosqueeze ---\n');
+fig5 = figure('Name','synchrosqueeze','Position',figPos);
+tlo5 = tiledlayout(fig5,1,nCols,'TileSpacing','compact','Padding','compact');
+title(tlo5,'synchrosqueeze','interpreter','none');
+for s = 1:nCols
+    nexttile(tlo5);
+    p = struct('snrType','synchrosqueeze','showClips',true,'pauseAfterPlot',false,...
+        'plotParams',allSP{s});
+    snr = snrEstimate(allAnnots{s}, p).snr(1);
+    snrTable(5,s) = snr;
+    title(gca, sprintf('%s | %.1f dB', colLabels{s}, snr), 'interpreter','none','FontSize',8);
+    fprintf('  %s: SNR=%.2f dB\n', colLabels{s}, snr);
+end
+fprintf('  [PASS] Figure 5 complete\n');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Figure 6: quantiles (with percentile contour overlay)
