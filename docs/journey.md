@@ -91,11 +91,13 @@ broke 9/13 tests and had to be reverted. The AI proposed the API extension
 without adequately considering the scope and breakage risk. Reverting and
 using inline code in the gallery was the right call, but cost significant time.
 
-**String escaping in generated gallery code.** Python's `r"""..."""` raw strings
-consistently produced unterminated MATLAB string literals when written to
-`.m` files, because `\n` was not escaped as `\\n`. This happened multiple
-times across multiple sessions. The fix (use `str_replace` directly rather
-than Python string manipulation for MATLAB code) was obvious in retrospect.
+**Generated code requires more scrutiny than written code.** When the AI
+produced code through tool use rather than writing it directly — manipulating
+files programmatically, generating gallery sections, threading parameters
+through call chains — the results were harder to inspect and more likely to
+contain subtle errors that weren't visible until runtime. The lesson: any
+code that wasn't written line-by-line in the conversation deserves an extra
+read before committing, regardless of how confident the explanation sounded.
 
 **Context window loss.** Over long sessions, earlier architectural decisions
 would exit the context window. The AI would occasionally propose solutions

@@ -110,8 +110,8 @@ at10 = trimAnnotation(annots,<span class="string">'energyPercentile'</span>,10)
 at20 = trimAnnotation(annots,<span class="string">'energyPercentile'</span>,20)
 </pre><pre class="codeoutput">Starting parallel pool (parpool) using the 'Processes' profile ...
 Connected to the parallel pool (number of workers: 31).
-Trim started: 29-Apr-2026 06:57:06 &#8212; 1319 annotations
-Trim completed: 29-Apr-2026 06:57:08
+Trim started: 29-Apr-2026 11:27:24 &#8212; 1319 annotations
+Trim completed: 29-Apr-2026 11:27:26
 
 at05 =
 
@@ -1440,8 +1440,8 @@ at05 =
     {'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'}    7.3757e+05      3.728     7.3757e+05    35.156    50.781       1          {'Bm-D'}          true    
     {'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'}    7.3756e+05      7.856     7.3756e+05    42.969    64.453       1          {'Bm-D'}          true    
 
-Trim started: 29-Apr-2026 06:57:08 &#8212; 1319 annotations
-Trim completed: 29-Apr-2026 06:57:08
+Trim started: 29-Apr-2026 11:27:26 &#8212; 1319 annotations
+Trim completed: 29-Apr-2026 11:27:27
 
 at10 =
 
@@ -2770,8 +2770,8 @@ at10 =
     {'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'}    7.3757e+05      2.704     7.3757e+05    39.062    50.781       1          {'Bm-D'}          true    
     {'S:\work\annotatedLibrary\BAFAAL\wav\Casey2019'}    7.3756e+05       5.68     7.3756e+05    44.922      62.5       1          {'Bm-D'}          true    
 
-Trim started: 29-Apr-2026 06:57:08 &#8212; 1319 annotations
-Trim completed: 29-Apr-2026 06:57:09
+Trim started: 29-Apr-2026 11:27:27 &#8212; 1319 annotations
+Trim completed: 29-Apr-2026 11:27:27
 
 at20 =
 
@@ -4154,12 +4154,12 @@ fprintf(<span class="string">'  Paper: median=%.1f dB\n'</span>, median(paperSNR
 fprintf(<span class="string">'  r=%.3f  bias=%+.1f dB\n'</span>, r, bias);
 </pre><pre class="codeoutput">
 Computing canonical bsnr estimate...
-SNR analysis started:  29-Apr-2026 06:57:10
+SNR analysis started:  29-Apr-2026 11:27:28
 1319 annotations to process (parallel)
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 29-Apr-2026 06:57:11
+SNR analysis completed: 29-Apr-2026 11:27:29
   bsnr:  median=-4.4 dB  n=1319
   Paper: median=-2.7 dB
   r=0.419  bias=-1.0 dB
@@ -4192,33 +4192,33 @@ snrSweep = cell(nC, 1);
     snrSweep{c} = res.snr;
 <span class="keyword">end</span>
 </pre><pre class="codeoutput">Computing sweep: [40 80], B&amp;A,    annot, delay=0.5...
-SNR analysis started:  29-Apr-2026 06:57:11
+SNR analysis started:  29-Apr-2026 11:27:29
 1319 annotations to process (parallel)
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 29-Apr-2026 06:57:12
+SNR analysis completed: 29-Apr-2026 11:27:31
 Computing sweep: [40 80], before, 5s,  delay=0.5...
-SNR analysis started:  29-Apr-2026 06:57:12
+SNR analysis started:  29-Apr-2026 11:27:31
 1319 annotations to process (parallel)
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 29-Apr-2026 06:57:13
+SNR analysis completed: 29-Apr-2026 11:27:32
 Computing sweep: [40 80], before, 20s, delay=0.5...
-SNR analysis started:  29-Apr-2026 06:57:13
+SNR analysis started:  29-Apr-2026 11:27:32
 1319 annotations to process (parallel)
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 29-Apr-2026 06:57:14
+SNR analysis completed: 29-Apr-2026 11:27:33
 Computing sweep: analyst, B&amp;A,   annot, delay=0.5...
-SNR analysis started:  29-Apr-2026 06:57:14
+SNR analysis started:  29-Apr-2026 11:27:33
 1319 annotations to process (parallel)
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 29-Apr-2026 06:57:15
+SNR analysis completed: 29-Apr-2026 11:27:34
 </pre><h2 id="7">Summary table</h2><pre class="codeinput">allSNR    = [{snrCanon}; snrSweep; {paperSNR}];
 allLabels = [{<span class="string">'canonical ([40 80], B&amp;A, annot dur, delay=0.5)'</span>}; <span class="keyword">...</span>
               configs(:,1); {<span class="string">'paper snrLurton'</span>}];

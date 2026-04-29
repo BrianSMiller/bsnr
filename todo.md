@@ -72,7 +72,12 @@ Apply smoothing to the instantaneous frequency estimates from `snrRidge` and
 spline, or polynomial fits. Smoothed track would be stored in
 `methodData.ridgeFreqSmooth` alongside the raw track.
 
-### Real-world trimAnnotation validation — Casey 2019 D-calls
+### Selective publishDocs rebuild
+`publishDocs` reruns all example scripts including `snr_parallel_guide_casey2019.m`
+which takes several minutes due to pool startup and large batch processing.
+Consider adding a mechanism to skip republishing examples that haven't changed —
+either a timestamp check, a flag argument to `publishDocs`, or simply a comment
+listing which scripts are expensive and can be skipped unless their code has changed.
 `examples/snr_dcalls_casey2019_trimmed.m` is a partial example applying
 `trimAnnotation` to the D-call dataset before SNR estimation. Complete this
 as a companion to `snr_dcalls_casey2019.m` showing the effect of trimming

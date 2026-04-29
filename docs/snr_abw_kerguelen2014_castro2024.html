@@ -162,12 +162,12 @@ allDetections.noiseLevel  = allDetections.noiseLevel  - bandwidthCorrection_dB;
 allDetections.signalLevel = allDetections.signalLevel - bandwidthCorrection_dB;
 </pre><pre class="codeoutput">
 Computing SNR (spectrogramSlices, calibrated)...
-SNR analysis started:  29-Apr-2026 06:57:38
+SNR analysis started:  29-Apr-2026 11:27:57
 4297 annotations to process (parallel)
 0          25          50          75         100%
 |-----------|-----------|-----------|------------|
 ##################################################
-SNR analysis completed: 29-Apr-2026 06:57:41
+SNR analysis completed: 29-Apr-2026 11:28:01
 </pre><h2 id="7">Assign seasons (Southern Hemisphere)</h2><p>summer: Dec-Feb, autumn: Mar-May, winter: Jun-Aug, spring: Sep-Nov</p><pre class="codeinput">detectionDatetime = datetime(allDetections.t0, <span class="string">'ConvertFrom'</span>, <span class="string">'datenum'</span>);
 allDetections.season = dt2season(detectionDatetime);
 </pre><h2 id="8">Summary statistics by season</h2><pre class="codeinput">seasonOrder  = {<span class="string">'summer'</span>, <span class="string">'autumn'</span>, <span class="string">'winter'</span>, <span class="string">'spring'</span>, <span class="string">'year'</span>};

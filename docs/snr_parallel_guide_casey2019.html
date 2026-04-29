@@ -154,7 +154,7 @@ hasParallel = ~isempty(ver(<span class="string">'parallel'</span>));
 
 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 </pre><pre class="codeoutput">--- 2. Pool startup cost ---
-  parpool startup (31 workers): 17.4 s
+  parpool startup (31 workers): 17.9 s
   This fixed overhead must be recovered by parallel speedup.
 
 </pre><h2 id="5">3. Serial baseline &#8212; trim + SNR on a small sample</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
@@ -198,8 +198,8 @@ breakEven = nan;   <span class="comment">% computed from measured parallel rate 
 
 <span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 </pre><pre class="codeoutput">--- 3. Serial baseline (N=500, trim + SNR) ---
-  500 annotations in 2.3 s &#8594; 0.005 s/annotation
-  Total workload (~35909 annotations): estimated 2.7 min serial
+  500 annotations in 2.7 s &#8594; 0.005 s/annotation
+  Total workload (~35909 annotations): estimated 3.2 min serial
 
 </pre><h2 id="6">5. Worker sweep at fixed N</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 
@@ -287,18 +287,18 @@ fprintf(<span class="string">'--- 4. Worker sweep (N=%d) and break-even N ---\n'
 </pre><pre class="codeoutput">--- 4. Worker sweep (N=2000) and break-even N ---
   Workers   Time (s)    Speedup   Diagnosis
   -------------------------------------------------------
-  1         48.7        1.0     x  baseline
-  4         14.3        3.4     x  CPU bound &#8212; good scaling
-  8         9.0         5.4     x  mixed CPU / I/O
-  16        5.5         8.8     x  mixed CPU / I/O
-  30        4.9         9.9     x  I/O bound &#8212; disk bottleneck
-  31        4.9         9.9     x  I/O bound &#8212; disk bottleneck
+  1         50.2        1.0     x  baseline
+  4         18.5        2.7     x  mixed CPU / I/O
+  8         11.0        4.6     x  mixed CPU / I/O
+  16        7.2         6.9     x  mixed CPU / I/O
+  30        5.8         8.7     x  I/O bound &#8212; disk bottleneck
+  31        5.7         8.8     x  I/O bound &#8212; disk bottleneck
 
-  Recommended workers: 31 (lowest wall time = 4.9 s)
+  Recommended workers: 31 (lowest wall time = 5.7 s)
   Note: 31 workers gives similar time &#8212; diminishing returns
-  Break-even N:        ~8272 annotations
-    (startup 17.4 s / saving 0.002 s/annotation)
-  Recommended parallelThreshold: 8272
+  Break-even N:        ~7007 annotations
+    (startup 17.9 s / saving 0.003 s/annotation)
+  Recommended parallelThreshold: 7007
 
 </pre><img vspace="5" hspace="5" src="snr_parallel_guide_casey2019_01.png" alt=""> <h2 id="7">6. Full batch &#8212; trim + SNR per observer + merged</h2><pre class="codeinput"><span class="comment">%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
 
@@ -377,7 +377,7 @@ fprintf(<span class="string">'  Actual speedup vs serial estimate: %.1fx\n\n'</s
   Merged (union of all positives)... 10312 annotations, median SNR = 1.9 dB
 
   Total wall time: 1.2 min (0.00 s/annotation equivalent)
-  Actual speedup vs serial estimate: 2.2x
+  Actual speedup vs serial estimate: 2.6x
 
 </pre><h2 id="8">Save results for downstream analysis</h2><pre class="codeinput">outFile = fullfile(fileparts(mfilename(<span class="string">'fullpath'</span>)), <span class="keyword">...</span>
     <span class="string">'snr_parallel_guide_casey2019_results.csv'</span>);

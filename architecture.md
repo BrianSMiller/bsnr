@@ -240,29 +240,60 @@ via `onCleanup`. No real recordings required for testing.
 
 ## Key design decisions
 
-**Why `private/` for method functions?**
-Prevents users from calling `snrRidge` directly in scripts — they'd bypass
-calibration, noise window logic, and the Lurton formula. All of that lives
-in `snrEstimateImpl`. The gallery works around this by replicating minimal
-ridge logic inline where needed for visualisation.
+**SNR estimation is a pipeline, not a function.**
+The most consequential early decision was to separate *how to measure power*
+(the method functions in `private/`) from *what to do with those measurements*
+(noise window construction, calibration, the Lurton formula, output formatting)
+which lives in `snrEstimateImpl`. This means adding a new method requires only
+a new `snrXxx.m` in `private/` with a standard `[rmsSignal, rmsNoise, noiseVar, methodData]`
+signature — the rest of the pipeline is free. It also means calibration and
+noise window logic are tested once, not seven times.
 
-**Why always return a table?**
-Consistent downstream code. Before v0.2, scalar input returned a scalar and
-batch input returned a table, which required `if istable(result)` everywhere.
+**The annotation box is both the interface and the limitation.**
+Every function in bsnr accepts annotations as rectangular time-frequency boxes
+`(t0, tEnd, freq[lo hi])` — the universal PAMGuard/Raven format. This made
+the tool immediately useful for real datasets without format conversion, but
+it is also the root cause of the ridge smoothing limitation: without tight
+bounds, energy-based heuristics cannot reliably distinguish call energy from
+noise. The annotation format is not wrong — it is simply the wrong level of
+abstraction for FM call analysis. Contour-based detectors (silbido profundo)
+operate at the right level. Bridging these two worlds is the main open
+architectural question.
 
-**Why `resolvedParams` as 6th output?**
-Reproducibility. `nfft` is derived from annotation duration at runtime; without
-`resolvedParams` you can't know what parameters were actually used.
+**Reproduction and exploration pull in opposite directions.**
+bsnr began as a reproduction tool (can we recover published SNR values from
+published supplemental data?) and grew into an exploration tool (what happens
+if we try ridge tracking? LOESS smoothing? Tethys I/O?). These two goals
+have different requirements: reproduction needs stability and exact parameter
+documentation; exploration needs flexibility and tolerance for dead ends.
+The current resolution — stable API in `snrEstimate`, exploratory features
+in `experimental/`, honest documentation of limitations — is pragmatic but
+not fully satisfying. The tension is documented rather than resolved.
 
-**Why `ridgeSmoothSpan=0` (disabled) by default?**
-LOESS smoothing of the ridge track helps when annotation bounds are tight
-(after `trimAnnotation`), but degrades results with loose analyst-drawn boxes
-because the energy-trim heuristic selects noise-dominated edge slices.
-The correct long-term solution is learned contour tracking (silbido profundo).
-See `todo.md`.
+**Calibration is optional but designed in.**
+Every method accepts a `metadata` struct that converts raw PSD (V²/Hz) to
+calibrated PSD (µPa²/Hz). Passing `[]` skips calibration and returns
+dimensionless power ratios — useful for relative comparisons and testing.
+This was a deliberate design choice: calibration should not be required for
+the tool to be useful, but it should be present and correct when needed.
+The alternative — requiring calibration always — would have made the test
+suite much harder to write and the tool much less accessible.
 
-**Why no auto-parpool in tests?**
-`test_snrEstimate_batch` and `test_trimAnnotation` accept a `runParallel`
-argument (default false) and are only exercised in parallel when the user
-opts in via `run_tests`. This prevents unexpected 30s pool startups during
-routine `run_tests` sessions.
+**Tests live where they can see what they need to test.**
+MATLAB's `private/` directory has unusual access semantics: functions there
+are only accessible from the parent directory, not via `addpath`. This forced
+a split between tests that need to call private method functions directly
+(`private/test_snrMethods.m`) and tests that only use the public API
+(`tests/test_snrEstimate_*.m`). The split turned out to be useful in its own
+right — it mirrors the distinction between unit tests (method correctness)
+and integration tests (pipeline correctness), which are genuinely different
+things.
+
+**Parallel processing follows the pool, not the threshold.**
+The `parallelThreshold` parameter answers "is this batch large enough to be
+worth parallelising?" — but the answer also depends on whether a pool is
+already running. If one is, there is no startup cost and no reason not to
+use it regardless of batch size. If there isn't, starting a pool takes 15–45
+seconds and should only happen when the batch is large enough to recover that
+cost. The threshold is therefore a startup gate, not an execution gate. This
+distinction took longer to get right than it should have.
