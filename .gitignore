@@ -31,3 +31,12 @@ desktop.ini
 /examples/html
 /examples/*_results.csv
 /experimental/
+examples/prepareGalleryAudio.m
+# RStudio markdown render artefacts
+README.html
+architecture.html
+todo.html
+docs/architecture.html
+docs/journey.html
+docs/getting_started.html
+docs/CHANGELOG.html

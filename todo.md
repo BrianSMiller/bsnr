@@ -72,7 +72,11 @@ Apply smoothing to the instantaneous frequency estimates from `snrRidge` and
 spline, or polynomial fits. Smoothed track would be stored in
 `methodData.ridgeFreqSmooth` alongside the raw track.
 
-### Makara output (`writeMakaraDetections`)
+### Real-world trimAnnotation validation — Casey 2019 D-calls
+`examples/snr_dcalls_casey2019_trimmed.m` is a partial example applying
+`trimAnnotation` to the D-call dataset before SNR estimation. Complete this
+as a companion to `snr_dcalls_casey2019.m` showing the effect of trimming
+on SNR distributions and paper correlation. Deferred pending prioritisation.
 NOAA is developing Makara as a US-centric successor to Tethys, using CSV
 templates. Add `writeMakaraDetections()` once the format stabilises (tracked
 at NOAA Fisheries passive acoustics). Currently `writeTethysXml` covers the
