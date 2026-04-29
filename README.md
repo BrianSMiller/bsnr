@@ -1,6 +1,6 @@
 # bsnr — Bioacoustic SNR Estimation
 
-**Version 0.3.0-beta** | **Documentation:** https://briansmiller.github.io/bsnr
+**Version 0.3.1-beta** | **Documentation:** https://briansmiller.github.io/bsnr
 
 MATLAB toolbox for estimating signal-to-noise ratio of bioacoustic detections from hydrophone recordings. Designed for tonal and frequency-modulated calls (whale song, upcalls, clicks) against broadband ocean noise.
 
@@ -238,6 +238,10 @@ bsnr/
 ## Roadmap
 
 See [todo.md](todo.md) for planned features and known issues.
+
+See [architecture.md](architecture.md) for codebase structure and key design decisions.
+
+See [docs/journey.md](docs/journey.md) for the development story behind bsnr, including experience with AI-assisted development.
 
 ## Acknowledgements
 
