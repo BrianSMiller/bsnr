@@ -17,7 +17,7 @@ addpath(testsDir,  '-begin');
 % bsnr paths are already at the front so its versions take precedence.
 % Dependencies required by bsnr (in load order):
 %   longTermRecorders  — wavFolderInfo, getAudioFromFiles, removeClicks
-%   annotatedLibrary   — doTimespansOverlap, getInclusionTimes
+%   annotatedLibrary   — doTimespansOverlap, timespanOverlap, timespanIntersect, timespanUnion, getInclusionTimes
 % External dependencies required by bsnr.
 % Each entry: {display_name, {candidate_path_1, candidate_path_2, ...}}
 % Paths are added only if the directory exists and is not already on the path.
