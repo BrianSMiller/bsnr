@@ -34,7 +34,7 @@ analysisRoot = 'C:\analysis';
 deps = {
     'longTermRecorders', fullfile(analysisRoot, 'longTermRecorders')
     'annotatedLibrary',  fullfile(analysisRoot, 'annotatedLibrary')
-    'bsmTools',          fullfile(analysisRoot, 'bsmTools')
+    'bsmUtils',           fullfile(analysisRoot, 'bsmUtils')
     'soundFolder',       fullfile(analysisRoot, 'soundFolder')
 };
 existingPaths = strsplit(path, pathsep);

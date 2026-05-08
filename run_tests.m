@@ -26,7 +26,7 @@ analysisRoot = 'C:\analysis';
 deps = {
     'longTermRecorders', fullfile(analysisRoot, 'longTermRecorders')
     'annotatedLibrary',  fullfile(analysisRoot, 'annotatedLibrary')
-    'bsmTools',          fullfile(analysisRoot, 'bsmTools')   % removeClicks now in bsnr; keep for other tools
+    'bsmUtils',           fullfile(analysisRoot, 'bsmUtils')   % removeClicks now in bsnr; keep for other tools
     'soundFolder',       fullfile(analysisRoot, 'soundFolder')
 };
 pathDirs = strsplit(path, pathsep);
